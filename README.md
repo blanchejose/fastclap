@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FastClap
 
-## Getting Started
+Course de frappe au clavier en temps réel pour les élèves de 12 à 17 ans.
+Projet Web V (420-5U3-SO), Cégep de Sorel-Tracy.
 
-First, run the development server:
+## Stack
+
+- Next.js (App Router : composants serveur et composants clients)
+- React, TypeScript, Tailwind CSS
+- ESLint + Prettier
+- PostgreSQL (à venir, via Prisma)
+
+## Démarrer
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvre http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script                 | Rôle                                            |
+| ---------------------- | ----------------------------------------------- |
+| `npm run dev`          | Serveur de développement                        |
+| `npm run build`        | Build de production                             |
+| `npm run lint`         | ESLint (inclut la vérification Prettier)        |
+| `npm run lint:fix`     | Corrige automatiquement ESLint et le formatage  |
+| `npm run format`       | Formate tout le projet avec Prettier            |
+| `npm run format:check` | Vérifie le formatage sans modifier (utilisé CI) |
+| `npm run typecheck`    | Vérification TypeScript                         |
 
-## Learn More
+## Composants serveur et clients
 
-To learn more about Next.js, take a look at the following resources:
+Dans l'App Router, chaque composant est un **composant serveur** par défaut.
+On ajoute `"use client"` en haut d'un fichier seulement quand il a besoin
+d'interactivité (état, événements, `localStorage`, API du navigateur).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/app/page.tsx` : composant serveur (page d'accueil)
+- `src/components/JoinRaceButton.tsx` : composant client (clic)
+- `src/components/ThemeToggle.tsx` : composant client (thème sombre/clair)
