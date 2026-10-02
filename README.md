@@ -8,16 +8,23 @@ Projet Web V (420-5U3-SO), Cégep de Sorel-Tracy.
 - Next.js (App Router : composants serveur et composants clients)
 - React, TypeScript, Tailwind CSS
 - ESLint + Prettier
-- PostgreSQL (à venir, via Prisma)
+- PostgreSQL + Prisma 7
 
 ## Démarrer
 
 ```bash
 npm install
+cp .env.example .env        # puis adapte DATABASE_URL si besoin
+docker compose up -d        # lance PostgreSQL en local
+npm run db:migrate          # crée les tables
+npm run db:seed             # ajoute les textes de départ
 npm run dev
 ```
 
-Ouvre http://localhost:3000.
+Ouvre http://localhost:3000. Pages utiles :
+
+- `/salles` : liste des salles publiques (lue dans la base)
+- `/api/health` : vérifie que l'application et la base répondent
 
 ## Scripts
 
@@ -30,6 +37,10 @@ Ouvre http://localhost:3000.
 | `npm run format`       | Formate tout le projet avec Prettier            |
 | `npm run format:check` | Vérifie le formatage sans modifier (utilisé CI) |
 | `npm run typecheck`    | Vérification TypeScript                         |
+| `npm run db:migrate`   | Crée ou met à jour les tables (développement)   |
+| `npm run db:deploy`    | Applique les migrations en production           |
+| `npm run db:seed`      | Ajoute les données de départ                    |
+| `npm run db:studio`    | Ouvre Prisma Studio pour voir les données       |
 
 ## Composants serveur et clients
 
@@ -40,3 +51,11 @@ d'interactivité (état, événements, `localStorage`, API du navigateur).
 - `src/app/page.tsx` : composant serveur (page d'accueil)
 - `src/components/JoinRaceButton.tsx` : composant client (clic)
 - `src/components/ThemeToggle.tsx` : composant client (thème sombre/clair)
+- `src/app/salles/page.tsx` : composant serveur asynchrone qui lit la base avec Prisma
+
+## Base de données
+
+- `prisma/schema.prisma` : les tables (voir la page Architecture)
+- `prisma/migrations/` : l'historique des changements de la base, versionné dans Git
+- `prisma/seed.ts` : les données de départ
+- `src/lib/prisma.ts` : la connexion unique à la base utilisée par l'application

@@ -9,7 +9,7 @@ const eslintConfig = defineConfig([
   // Prettier en dernier : désactive les règles ESLint de style qui entrent
   // en conflit et signale tout écart de formatage comme une erreur ESLint.
   prettierRecommended,
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "src/generated/**"]),
 ]);
 
 export default eslintConfig;
