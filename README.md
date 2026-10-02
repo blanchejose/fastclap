@@ -11,6 +11,11 @@ Projet Web V (420-5U3-SO), Cégep de Sorel-Tracy.
 - PostgreSQL + Prisma 7
 - Auth.js (next-auth v5) : Discord, GitHub, pseudo seul, pseudo + mot de passe
 
+## Production
+
+Hébergé sur Render (HTTPS, PostgreSQL). Voir le
+[guide de déploiement](docs/DEPLOIEMENT.md).
+
 ## Démarrer
 
 ```bash

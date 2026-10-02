@@ -39,7 +39,12 @@ const texts: { content: string; language: Locale; difficulty: Difficulty }[] = [
 ];
 
 async function main() {
-  await prisma.text.deleteMany({ where: { source: "CORPUS", races: { none: {} } } });
+  // Le seed tourne à chaque déploiement : on n'ajoute les textes qu'une fois.
+  const existing = await prisma.text.count({ where: { source: "CORPUS" } });
+  if (existing > 0) {
+    console.log(`${existing} textes déjà présents, rien à ajouter.`);
+    return;
+  }
   await prisma.text.createMany({
     data: texts.map((t) => ({
       ...t,
