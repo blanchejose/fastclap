@@ -1,14 +1,11 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "./Logo";
 
-// Icône FC + nom du site, utilisée dans l'en-tête de toutes les pages.
+// Logo dans l'en-tête de toutes les pages, avec retour à l'accueil.
 export function Brand() {
   return (
-    <Link href="/" className="font-display flex items-center gap-2 text-2xl font-bold">
-      <Image src="/icon-fc.png" alt="" width={36} height={36} className="rounded-lg" priority />
-      <span>
-        FAST<span className="text-info">CLAP</span>
-      </span>
+    <Link href="/" aria-label="FastClap, accueil" className="block w-20 sm:w-24">
+      <Logo priority />
     </Link>
   );
 }
