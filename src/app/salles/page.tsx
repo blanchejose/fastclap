@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Brand } from "@/components/Brand";
 import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -33,9 +33,7 @@ export default async function PublicRoomsPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-10">
-      <Link href="/" className="font-display text-2xl font-bold">
-        FAST<span className="text-info">CLAP</span>
-      </Link>
+      <Brand />
       <h1 className="font-display text-4xl font-bold">Salles publiques</h1>
       <p className="text-muted">{textCount} textes disponibles pour les courses.</p>
 

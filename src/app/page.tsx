@@ -1,3 +1,5 @@
+import Image from "next/image";
+import { Brand } from "@/components/Brand";
 import { JoinRaceButton } from "@/components/JoinRaceButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserMenu } from "@/components/UserMenu";
@@ -9,9 +11,7 @@ export default function Home() {
   return (
     <>
       <header className="flex items-center justify-between px-4 py-4 sm:px-8">
-        <span className="font-display text-2xl font-bold">
-          FAST<span className="text-info">CLAP</span>
-        </span>
+        <Brand />
         <div className="flex items-center gap-3">
           <UserMenu />
           <ThemeToggle />
@@ -19,9 +19,16 @@ export default function Home() {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-6 px-4 text-center">
-        <h1 className="font-display text-5xl font-bold text-balance sm:text-7xl">
-          Tape plus rapide que tes amis
-        </h1>
+        <Image
+          src="/logo.webp"
+          alt="FastClap"
+          width={1200}
+          height={975}
+          priority
+          className="w-full max-w-sm rounded-3xl"
+        />
+        {/* Le slogan est déjà dans le logo : le titre reste pour les lecteurs d'écran. */}
+        <h1 className="sr-only">FastClap : tape plus rapide que tes amis</h1>
         <p className="text-muted max-w-xl">
           Des courses de frappe en temps réel, de 2 à 30 joueurs. Rejoins une course publique ou
           entre le code de ta salle.

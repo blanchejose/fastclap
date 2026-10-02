@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Brand } from "@/components/Brand";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { signInWithOAuth, signInWithPassword, signInWithUsername } from "./actions";
@@ -34,9 +34,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-8 px-4 py-10">
-      <Link href="/" className="font-display text-2xl font-bold">
-        FAST<span className="text-info">CLAP</span>
-      </Link>
+      <Brand />
       <h1 className="font-display text-4xl font-bold">Connexion</h1>
 
       {error && (
