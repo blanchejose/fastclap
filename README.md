@@ -9,6 +9,7 @@ Projet Web V (420-5U3-SO), Cégep de Sorel-Tracy.
 - React, TypeScript, Tailwind CSS
 - ESLint + Prettier
 - PostgreSQL + Prisma 7
+- Auth.js (next-auth v5) : Discord, GitHub, pseudo seul, pseudo + mot de passe
 
 ## Démarrer
 
@@ -52,6 +53,21 @@ d'interactivité (état, événements, `localStorage`, API du navigateur).
 - `src/components/JoinRaceButton.tsx` : composant client (clic)
 - `src/components/ThemeToggle.tsx` : composant client (thème sombre/clair)
 - `src/app/salles/page.tsx` : composant serveur asynchrone qui lit la base avec Prisma
+
+## Authentification
+
+Page `/connexion`, dans l'ordre demandé par le cahier des charges :
+
+1. Discord (AUTH-1) et GitHub (AUTH-2) : boutons actifs seulement si les clés
+   `AUTH_DISCORD_*` / `AUTH_GITHUB_*` sont dans `.env`
+2. Pseudo seul, sans mot de passe (AUTH-3) : un pseudo déjà pris est refusé
+3. Pseudo + mot de passe (AUTH-4), replié en bas de page : crée le compte si le
+   pseudo est libre, sinon vérifie le mot de passe (bcrypt)
+
+Fichiers : `src/auth.ts` (configuration), `src/app/connexion/` (page et Server
+Actions), `src/components/UserMenu.tsx` (nom affiché dans l'en-tête).
+
+Génère `AUTH_SECRET` avec `npx auth secret` avant le premier lancement.
 
 ## Base de données
 
