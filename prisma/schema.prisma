@@ -1,0 +1,279 @@
+// Schéma de données FastClap.
+// Voir la page Architecture (section 2) pour le diagramme et les choix.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Énumérations ────────────────────────────────────────────
+
+enum Locale {
+  FR
+  EN
+}
+
+enum Theme {
+  DARK
+  LIGHT
+}
+
+enum Visibility {
+  PUBLIC // listée sur le site
+  SEMI_PUBLIC // code de salle requis
+  PRIVATE // lien unique
+}
+
+enum RoomStatus {
+  OPEN
+  CLOSED
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  PRO
+}
+
+enum TextLength {
+  SHORT
+  MEDIUM
+  LONG
+}
+
+enum TextSource {
+  API
+  CORPUS
+}
+
+// Machine à états d'une course (Architecture, section 3)
+enum RaceState {
+  LOBBY
+  WAITING
+  COUNTDOWN
+  RUNNING
+  FINISHED
+  CLOSED
+}
+
+enum ParticipantRole {
+  ORGANIZER
+  PLAYER
+  SPECTATOR
+  BOT
+}
+
+enum ParticipantStatus {
+  WAITING
+  RACING
+  DISCONNECTED
+  FINISHED
+  ABANDONED
+  KICKED
+}
+
+enum BotLevel {
+  BEGINNER
+  INTERMEDIATE
+  PRO
+  IMPOSSIBLE
+}
+
+// ─── Utilisateurs et authentification (Auth.js) ──────────────
+
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  // Null pour les comptes OAuth et « username seul » (AUTH-3).
+  passwordHash  String?
+  // Champs attendus par l'adaptateur Prisma d'Auth.js.
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  locale        Locale    @default(FR)
+  theme         Theme     @default(DARK)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  roomsOwned   Room[]        @relation("RoomOrganizer")
+  participants Participant[]
+  keyStats     KeyStat[]
+  badges       UserBadge[]
+}
+
+// Compte OAuth lié (Discord, GitHub).
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Salles et courses ───────────────────────────────────────
+
+model Room {
+  id           String     @id @default(cuid())
+  // 6 caractères sans ambiguïté (pas de 0/O, 1/I/L), ex. K7X2QP.
+  code         String     @unique @db.VarChar(6)
+  visibility   Visibility @default(PUBLIC)
+  status       RoomStatus @default(OPEN)
+  organizerId  String
+  maxPlayers   Int        @default(30) // H-1
+  lobbyWaitSec Int        @default(30) // H-2
+  countdownSec Int        @default(5) // H-2
+  difficulty   Difficulty @default(BEGINNER)
+  length       TextLength @default(MEDIUM)
+  blacklist    String     @default("") // TEXT-4
+  timeLimitSec Int?
+  createdAt    DateTime   @default(now())
+  closedAt     DateTime?
+
+  organizer   User         @relation("RoomOrganizer", fields: [organizerId], references: [id])
+  races       Race[]
+  inviteLinks InviteLink[]
+
+  @@index([visibility, status])
+}
+
+// Lien à usage unique pour une salle privée (AUTH-6).
+model InviteLink {
+  id        String    @id @default(cuid())
+  roomId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
+
+model Text {
+  id         String     @id @default(cuid())
+  content    String     @db.Text
+  source     TextSource @default(CORPUS)
+  language   Locale     @default(FR)
+  difficulty Difficulty
+  wordCount  Int
+  createdAt  DateTime   @default(now())
+
+  races Race[]
+
+  @@index([language, difficulty])
+}
+
+// Une salle enchaîne plusieurs courses (relance, RACE-6).
+model Race {
+  id        String    @id @default(cuid())
+  roomId    String
+  textId    String
+  state     RaceState @default(LOBBY)
+  startAt   DateTime?
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+
+  room         Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  text         Text          @relation(fields: [textId], references: [id])
+  participants Participant[]
+
+  @@index([roomId, state])
+}
+
+// Une personne (utilisateur, invité ou bot) dans une course.
+model Participant {
+  id        String            @id @default(cuid())
+  raceId    String
+  userId    String?
+  guestName String?
+  botLevel  BotLevel?
+  role      ParticipantRole   @default(PLAYER)
+  status    ParticipantStatus @default(WAITING)
+  // Progression copiée depuis la mémoire du serveur (RACE-2).
+  position  Int               @default(0)
+  errors    Int               @default(0)
+  joinedAt  DateTime          @default(now())
+
+  race   Race        @relation(fields: [raceId], references: [id], onDelete: Cascade)
+  user   User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  result RaceResult?
+
+  @@unique([raceId, userId])
+  @@index([raceId])
+}
+
+model RaceResult {
+  id            String   @id @default(cuid())
+  participantId String   @unique
+  rank          Int
+  wpm           Float
+  accuracy      Float
+  durationMs    Int
+  createdAt     DateTime @default(now())
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+}
+
+// ─── Statistiques et progression ─────────────────────────────
+
+// Compteur agrégé par touche, pour la heatmap (STATS-2).
+model KeyStat {
+  userId String
+  key    String @db.VarChar(4)
+  hits   Int    @default(0)
+  errors Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, key])
+}
+
+model Badge {
+  id    String      @id @default(cuid())
+  slug  String      @unique
+  users UserBadge[]
+}
+
+model UserBadge {
+  userId     String
+  badgeId    String
+  unlockedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, badgeId])
+}
