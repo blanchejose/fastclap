@@ -1,5 +1,6 @@
 import { JoinRaceButton } from "@/components/JoinRaceButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 
 // Composant serveur (par défaut dans l'App Router) : rendu sur le serveur,
 // aucun JavaScript envoyé pour cette partie. Les boutons interactifs sont
@@ -11,7 +12,10 @@ export default function Home() {
         <span className="font-display text-2xl font-bold">
           FAST<span className="text-info">CLAP</span>
         </span>
-        <ThemeToggle />
+        <div className="flex items-center gap-3">
+          <UserMenu />
+          <ThemeToggle />
+        </div>
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-6 px-4 text-center">
