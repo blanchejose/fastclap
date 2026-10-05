@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogoMark } from "./Logo";
+import { LogoMark, Wordmark } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { UserMenu } from "./UserMenu";
 
@@ -7,9 +7,9 @@ import { UserMenu } from "./UserMenu";
 export function SiteHeader() {
   return (
     <header className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 pt-5">
-      <Link href="/" className="flex items-center gap-2.5" aria-label="Touché, accueil">
+      <Link href="/" className="flex items-center gap-2.5" aria-label="FastClap, accueil">
         <LogoMark className="size-10" />
-        <span className="font-display text-3xl font-black tracking-wider">TOUCHÉ</span>
+        <Wordmark className="text-3xl" />
       </Link>
       <nav
         aria-label="Navigation principale"
@@ -21,8 +21,8 @@ export function SiteHeader() {
         <Link href="/#comment" className="underline-offset-4 hover:underline">
           Comment ça marche
         </Link>
-        <Link href="/#cartons" className="underline-offset-4 hover:underline">
-          Cartons
+        <Link href="/#dossards" className="underline-offset-4 hover:underline">
+          Dossards
         </Link>
       </nav>
       <div className="flex items-center gap-2.5">

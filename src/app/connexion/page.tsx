@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { DiscordIcon, GitHubIcon } from "@/components/BrandIcons";
+import { LogoMark } from "@/components/Logo";
 import { SiteHeader } from "@/components/SiteHeader";
 import { signInWithOAuth, signInWithPassword, signInWithUsername } from "./actions";
 
@@ -18,7 +19,7 @@ const pseudoErrors = new Set(["username_taken", "invalid_username"]);
 const passwordErrors = new Set(["weak_password", "wrong_password"]);
 
 const fieldClass =
-  "min-h-14 w-full rounded-lg border-[2.5px] bg-piste px-4 font-mono text-lg font-semibold text-encre placeholder:text-sourdine";
+  "min-h-14 w-full rounded-2xl border-[2.5px] bg-piste px-4 font-mono text-lg font-semibold text-encre placeholder:text-sourdine";
 
 function ErrorText({ id, children }: { id: string; children: React.ReactNode }) {
   return (
@@ -76,26 +77,23 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
       <SiteHeader />
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-wrap items-center gap-12 px-6 py-14">
         <div className="flex min-w-0 flex-[1_1_420px] flex-col gap-5">
-          <h1 className="font-display text-[clamp(52px,7vw,88px)] leading-[0.9] font-black uppercase">
-            Salue,
+          <h1 className="font-display text-[clamp(52px,7vw,88px)] leading-[0.92] font-extrabold tracking-tight">
+            Prêt pour
             <br />
-            puis en garde.
+            le départ ?
           </h1>
           <p className="text-sourdine max-w-[30em] text-lg leading-relaxed">
-            En escrime, on salue avant chaque duel. Ici, il suffit d&apos;un pseudo. Connecte-toi
-            avec Discord ou GitHub si tu veux garder tes stats et tes cartons.
+            Un pseudo suffit pour prendre le départ. Connecte-toi avec Discord ou GitHub si tu veux
+            garder tes stats et tes dossards.
           </p>
-          <div className="flex items-center gap-2.5" aria-hidden="true">
-            <span className="bg-juste h-4.5 w-8.5 rounded" />
-            <span className="bg-faute h-4.5 w-8.5 rounded" />
-          </div>
+          <LogoMark className="size-24" />
         </div>
 
         <main
           id="contenu"
-          className="border-encre bg-surface flex min-w-0 flex-[1_1_420px] flex-col gap-6 rounded-2xl border-2 p-7"
+          className="bg-surface ring-bleu flex min-w-0 flex-[1_1_420px] flex-col gap-6 rounded-3xl p-7 shadow-[0_8px_0_var(--bleu)] ring-2"
         >
-          <h2 className="font-display text-4xl font-black uppercase">Connexion</h2>
+          <h2 className="font-display text-4xl font-extrabold tracking-tight">Connexion</h2>
           {otherError && <ErrorText id="erreur-generale">{message}</ErrorText>}
 
           {/* AUTH-1 et AUTH-2 : les connexions recommandées, en premier */}
@@ -106,10 +104,10 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
                 <button
                   type="submit"
                   disabled={!provider.enabled}
-                  className={`flex min-h-14 w-full items-center justify-center gap-3 rounded-lg text-[17px] font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                  className={`flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl text-[17px] font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                     provider.id === "discord"
                       ? "bg-[#4752C4] text-white hover:bg-[#3C45A5]"
-                      : "border-encre bg-cta text-cta-encre border-2 hover:opacity-90"
+                      : "bg-encre text-piste hover:opacity-90"
                   }`}
                 >
                   <provider.Icon className="size-6" />
@@ -152,9 +150,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
             {pseudoError && <ErrorText id="pseudo-erreur">{message}</ErrorText>}
             <button
               type="submit"
-              className="bg-cta font-display text-cta-encre mt-2 min-h-14 rounded-lg text-2xl font-black tracking-wide uppercase shadow-[4px_4px_0_var(--faute)] transition hover:-translate-x-px hover:-translate-y-px hover:shadow-[6px_6px_0_var(--faute)]"
+              className="bg-jaune font-display text-nuit mt-2 min-h-14 rounded-2xl text-2xl font-extrabold shadow-[0_5px_0_var(--orange)] transition hover:-translate-y-0.5 hover:shadow-[0_7px_0_var(--orange)] active:translate-y-1 active:shadow-[0_1px_0_var(--orange)]"
             >
-              Entrer sur la piste
+              Go ! Prendre le départ
             </button>
           </form>
 
@@ -191,7 +189,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
               {passwordError && <ErrorText id="mdp-erreur">{message}</ErrorText>}
               <button
                 type="submit"
-                className="border-encre hover:bg-encre hover:text-piste mt-1 min-h-12 rounded-lg border-2 font-bold transition"
+                className="border-encre hover:bg-encre hover:text-piste mt-1 min-h-12 rounded-2xl border-2 font-bold transition"
               >
                 Se connecter
               </button>

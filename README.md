@@ -1,13 +1,13 @@
-# Touché
+# FastClap
 
-Duels de frappe au clavier en temps réel pour les élèves de 12 à 17 ans.
-Chaque touche compte. (Le dépôt garde son ancien nom, `fastclap`.)
+Courses de frappe au clavier en temps réel pour les élèves de 12 à 17 ans.
+À vos claviers, prêts… go !
 Projet Web V (420-5U3-SO), Cégep de Sorel-Tracy.
 
 ## Stack
 
 - Next.js (App Router : composants serveur et composants clients)
-- React, TypeScript, Tailwind CSS v4 (thème Touché dans `src/app/globals.css`)
+- React, TypeScript, Tailwind CSS v4 (thème FastClap dans `src/app/globals.css`)
 - ESLint + Prettier
 - PostgreSQL + Prisma 7
 - Auth.js (next-auth v5) : Discord, GitHub, pseudo seul, pseudo + mot de passe

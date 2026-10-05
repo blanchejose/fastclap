@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Big_Shoulders, Figtree, Martian_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Figtree, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const bigShoulders = Big_Shoulders({
-  variable: "--font-big-shoulders",
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
-  weight: ["700", "900"],
+  weight: ["700", "800"],
 });
 
 const figtree = Figtree({
@@ -13,14 +13,15 @@ const figtree = Figtree({
   subsets: ["latin"],
 });
 
-const martianMono = Martian_Mono({
-  variable: "--font-martian-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: { default: "Touché", template: "%s · Touché" },
-  description: "Duels de frappe au clavier en direct pour les 12 à 17 ans. Chaque touche compte.",
+  title: { default: "FastClap", template: "%s · FastClap" },
+  description:
+    "Courses de frappe au clavier en direct pour les 12 à 17 ans. À vos claviers, prêts… go !",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -28,7 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="fr"
       suppressHydrationWarning
-      className={`${bigShoulders.variable} ${figtree.variable} ${martianMono.variable} h-full antialiased`}
+      className={`${bricolage.variable} ${figtree.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <head>
         {/* Applique le thème choisi avant l'affichage pour éviter un flash. */}
@@ -41,7 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col font-sans">
         <a
           href="#contenu"
-          className="bg-cta text-cta-encre sr-only rounded-md px-3 py-2 text-sm font-bold focus:not-sr-only focus:fixed focus:top-2 focus:left-4 focus:z-50"
+          className="bg-jaune text-nuit sr-only rounded-md px-3 py-2 text-sm font-bold focus:not-sr-only focus:fixed focus:top-2 focus:left-4 focus:z-50"
         >
           Aller au contenu
         </a>
