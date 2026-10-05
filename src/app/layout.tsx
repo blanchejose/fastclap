@@ -1,23 +1,27 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Figtree, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { getDictionary, getLocale } from "@/i18n/server";
 import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
 
-const bricolage = Bricolage_Grotesque({
+// Polices hébergées dans le projet (src/fonts, licence SIL OFL) : aucun
+// téléchargement chez Google au démarrage, donc le même rendu partout.
+const bricolage = localFont({
+  src: "../fonts/bricolage-grotesque.woff2",
   variable: "--font-bricolage",
-  subsets: ["latin"],
-  weight: ["700", "800"],
+  weight: "200 800",
 });
 
-const figtree = Figtree({
+const figtree = localFont({
+  src: "../fonts/figtree.woff2",
   variable: "--font-figtree",
-  subsets: ["latin"],
+  weight: "300 900",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const jetbrainsMono = localFont({
+  src: "../fonts/jetbrains-mono.woff2",
   variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
+  weight: "100 800",
 });
 
 export async function generateMetadata(): Promise<Metadata> {
