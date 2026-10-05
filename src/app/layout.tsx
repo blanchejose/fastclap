@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Figtree, JetBrains_Mono } from "next/font/google";
 import { getDictionary, getLocale } from "@/i18n/server";
+import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -52,6 +53,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           {t.common.skip}
         </a>
         {children}
+        <SiteFooter />
       </body>
     </html>
   );

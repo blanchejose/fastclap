@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Wordmark } from "@/components/Logo";
 import { RaceDemo } from "@/components/RaceDemo";
 import { RoomCodeForm } from "@/components/RoomCodeForm";
 import { RoomList } from "@/components/RoomList";
@@ -121,12 +120,6 @@ export default async function Home({ searchParams }: PageProps<"/">) {
           </ul>
         </section>
       </main>
-      <footer className="border-trait text-sourdine mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 border-t-[1.5px] px-6 py-5 text-sm">
-        <span>
-          <Wordmark className="text-base" /> · {t.common.footer}
-        </span>
-        <span>{t.common.slogan}</span>
-      </footer>
     </>
   );
 }
