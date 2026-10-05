@@ -1,55 +1,58 @@
 @import "tailwindcss";
 
 /*
- * Identité Touché : la piste d'escrime (fond clair), le masque (encre)
- * et les lampes du tableau de score (vert = lettre juste, rouge = faute).
- * Mode clair par défaut, mode sombre selon l'appareil ou la bascule (UI-1).
+ * Identité FastClap : la piste bleue, la barre d'espace jaune (le bouton de
+ * départ) et l'orange des traînées de vitesse. Mode clair par défaut, mode
+ * sombre selon l'appareil ou la bascule (UI-1).
  */
 :root {
-  --piste: #f5f4f0;
+  --piste: #f5f7ff;
   --surface: #ffffff;
-  --surface-2: #e8e7e2;
-  --encre: #121316;
-  --sourdine: #55595f;
-  --trait: rgb(18 19 22 / 0.14);
-  --juste: #13874b;
-  --faute: #d3261f;
-  --carton: #f2b705;
-  --cta: #121316;
-  --cta-encre: #f5f4f0;
-  --focus: #2f7bff;
+  --surface-2: #e6eafb;
+  --encre: #0d1240;
+  --sourdine: #4f5682;
+  --trait: rgb(13 18 64 / 0.12);
+  --bleu: #2448ff;
+  --orange: #ff7a45;
+  --orange-texte: #c2410c;
+  --jaune: #ffd23f;
+  --juste: #0b7a4b;
+  --faute: #d92d2d;
+  --focus: #2448ff;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --piste: #111215;
-    --surface: #1a1c20;
-    --surface-2: #26292e;
-    --encre: #f2f1ec;
-    --sourdine: #a9aeb5;
-    --trait: rgb(242 241 236 / 0.16);
-    --juste: #35c27a;
-    --faute: #ff5148;
-    --carton: #ffc83d;
-    --cta: #f2f1ec;
-    --cta-encre: #111215;
+    --piste: #0d1240;
+    --surface: #151b54;
+    --surface-2: #212865;
+    --encre: #f5f7ff;
+    --sourdine: #b3b9e6;
+    --trait: rgb(245 247 255 / 0.14);
+    --bleu: #3d5cff;
+    --orange: #ff8f5e;
+    --orange-texte: #ff8f5e;
+    --juste: #3dd68c;
+    --faute: #ff6b6b;
+    --focus: #8fa3ff;
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --piste: #111215;
-  --surface: #1a1c20;
-  --surface-2: #26292e;
-  --encre: #f2f1ec;
-  --sourdine: #a9aeb5;
-  --trait: rgb(242 241 236 / 0.16);
-  --juste: #35c27a;
-  --faute: #ff5148;
-  --carton: #ffc83d;
-  --cta: #f2f1ec;
-  --cta-encre: #111215;
+  --piste: #0d1240;
+  --surface: #151b54;
+  --surface-2: #212865;
+  --encre: #f5f7ff;
+  --sourdine: #b3b9e6;
+  --trait: rgb(245 247 255 / 0.14);
+  --bleu: #3d5cff;
+  --orange: #ff8f5e;
+  --orange-texte: #ff8f5e;
+  --juste: #3dd68c;
+  --faute: #ff6b6b;
+  --focus: #8fa3ff;
   color-scheme: dark;
 }
 
@@ -60,30 +63,45 @@
   --color-encre: var(--encre);
   --color-sourdine: var(--sourdine);
   --color-trait: var(--trait);
+  --color-bleu: var(--bleu);
+  --color-orange: var(--orange);
+  --color-orange-texte: var(--orange-texte);
+  --color-jaune: var(--jaune);
   --color-juste: var(--juste);
   --color-faute: var(--faute);
-  --color-carton: var(--carton);
-  --color-cta: var(--cta);
-  --color-cta-encre: var(--cta-encre);
   --color-focus: var(--focus);
+  /* Texte sur le jaune : toujours la nuit, dans les deux modes. */
+  --color-nuit: #0d1240;
 
-  --font-display: var(--font-big-shoulders);
+  --font-display: var(--font-bricolage);
   --font-sans: var(--font-figtree);
-  --font-mono: var(--font-martian-mono);
+  --font-mono: var(--font-jetbrains-mono);
 
-  --animate-avance: avance 7s ease-in-out infinite;
+  --animate-foulee: foulee 0.5s ease-in-out infinite;
+  --animate-course: course 6s cubic-bezier(0.5, 0, 0.2, 1) infinite;
   --animate-curseur: curseur 1s steps(1) infinite;
-  --animate-lampe: lampe 2.4s ease-in-out infinite;
+  --animate-pulse-lent: pulse-lent 2s ease-in-out infinite;
 }
 
-/* Les voitures du duel de démonstration avancent puis repartent. */
-@keyframes avance {
+/* Le coureur du logo rebondit à chaque foulée. */
+@keyframes foulee {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Les coureurs de la démo avancent sur leur couloir, puis repartent. */
+@keyframes course {
   0% {
-    transform: scaleX(0.08);
+    left: 0%;
   }
   85%,
   100% {
-    transform: scaleX(1);
+    left: var(--arrivee, 60%);
   }
 }
 
@@ -93,13 +111,13 @@
   }
 }
 
-@keyframes lampe {
+@keyframes pulse-lent {
   0%,
   100% {
     opacity: 1;
   }
   50% {
-    opacity: 0.35;
+    opacity: 0.4;
   }
 }
 

@@ -14,7 +14,7 @@ export default function PublicRoomsPage() {
         id="contenu"
         className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 pt-12 pb-16"
       >
-        <h1 className="font-display text-6xl leading-[0.9] font-black uppercase">
+        <h1 className="font-display text-6xl leading-[0.92] font-extrabold tracking-tight">
           Salles ouvertes
         </h1>
         <p className="text-sourdine max-w-[40em] text-lg">
