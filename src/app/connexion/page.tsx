@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { DiscordIcon, GitHubIcon } from "@/components/BrandIcons";
 import { SiteHeader } from "@/components/SiteHeader";
 import { signInWithOAuth, signInWithPassword, signInWithUsername } from "./actions";
 
@@ -56,8 +57,18 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
   const otherError = message && !pseudoError && !passwordError;
 
   const oauth = [
-    { id: "discord", label: "Continuer avec Discord", enabled: !!process.env.AUTH_DISCORD_ID },
-    { id: "github", label: "Continuer avec GitHub", enabled: !!process.env.AUTH_GITHUB_ID },
+    {
+      id: "discord",
+      label: "Continuer avec Discord",
+      enabled: !!process.env.AUTH_DISCORD_ID,
+      Icon: DiscordIcon,
+    },
+    {
+      id: "github",
+      label: "Continuer avec GitHub",
+      enabled: !!process.env.AUTH_GITHUB_ID,
+      Icon: GitHubIcon,
+    },
   ];
 
   return (
@@ -95,14 +106,17 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
                 <button
                   type="submit"
                   disabled={!provider.enabled}
-                  className={`min-h-14 w-full rounded-lg text-[17px] font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                  className={`flex min-h-14 w-full items-center justify-center gap-3 rounded-lg text-[17px] font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                     provider.id === "discord"
                       ? "bg-[#4752C4] text-white hover:bg-[#3C45A5]"
                       : "border-encre bg-cta text-cta-encre border-2 hover:opacity-90"
                   }`}
                 >
-                  {provider.label}
-                  {!provider.enabled && " (non configuré)"}
+                  <provider.Icon className="size-6" />
+                  <span>
+                    {provider.label}
+                    {!provider.enabled && " (non configuré)"}
+                  </span>
                 </button>
               </form>
             ))}
