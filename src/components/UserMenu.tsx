@@ -2,7 +2,7 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { logout } from "@/app/connexion/actions";
 
-// Composant serveur : lit la session côté serveur, aucun appel réseau du navigateur.
+// Composant serveur : lit la session côté serveur.
 export async function UserMenu() {
   const session = await auth();
 
@@ -10,7 +10,7 @@ export async function UserMenu() {
     return (
       <Link
         href="/connexion"
-        className="bg-surface hover:ring-info rounded-full px-4 py-1.5 text-sm font-bold hover:ring-2"
+        className="bg-surface-2 hover:bg-trait flex min-h-11 items-center rounded-md px-4 text-[15px] font-bold transition"
       >
         Se connecter
       </Link>
@@ -19,9 +19,12 @@ export async function UserMenu() {
 
   return (
     <div className="flex items-center gap-3 text-sm">
-      <span className="text-info font-mono">{session.user.username}</span>
+      <span className="font-mono font-semibold">{session.user.username}</span>
       <form action={logout}>
-        <button type="submit" className="text-muted hover:text-foreground">
+        <button
+          type="submit"
+          className="text-sourdine hover:text-encre min-h-11 px-2 underline-offset-4 hover:underline"
+        >
           Déconnexion
         </button>
       </form>
