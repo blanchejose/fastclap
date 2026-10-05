@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Figtree, JetBrains_Mono } from "next/font/google";
+import { getDictionary, getLocale } from "@/i18n/server";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -18,16 +19,20 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: { default: "FastClap", template: "%s · FastClap" },
-  description:
-    "Courses de frappe au clavier en direct pour les 12 à 17 ans. À vos claviers, prêts… go !",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getDictionary();
+  return {
+    title: { default: "FastClap", template: "%s · FastClap" },
+    description: t.meta.description,
+  };
+}
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const [locale, t] = await Promise.all([getLocale(), getDictionary()]);
+
   return (
     <html
-      lang="fr"
+      lang={locale}
       suppressHydrationWarning
       className={`${bricolage.variable} ${figtree.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
@@ -44,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           href="#contenu"
           className="bg-jaune text-nuit sr-only rounded-md px-3 py-2 text-sm font-bold focus:not-sr-only focus:fixed focus:top-2 focus:left-4 focus:z-50"
         >
-          Aller au contenu
+          {t.common.skip}
         </a>
         {children}
       </body>

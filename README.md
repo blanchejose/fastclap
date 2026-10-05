@@ -11,6 +11,9 @@ Projet Web V (420-5U3-SO), Cégep de Sorel-Tracy.
 - ESLint + Prettier
 - PostgreSQL + Prisma 7
 - Auth.js (next-auth v5) : Discord, GitHub, pseudo seul, pseudo + mot de passe
+- Socket.IO pour les courses en temps réel (serveur `server.ts`)
+- Vitest pour les tests unitaires
+- Français et anglais (`src/i18n/`)
 
 ## Production
 
@@ -37,13 +40,14 @@ Ouvre http://localhost:3000. Pages utiles :
 
 | Script                 | Rôle                                            |
 | ---------------------- | ----------------------------------------------- |
-| `npm run dev`          | Serveur de développement                        |
+| `npm run dev`          | Serveur de développement (Next.js + Socket.IO)  |
 | `npm run build`        | Build de production                             |
 | `npm run lint`         | ESLint (inclut la vérification Prettier)        |
 | `npm run lint:fix`     | Corrige automatiquement ESLint et le formatage  |
 | `npm run format`       | Formate tout le projet avec Prettier            |
 | `npm run format:check` | Vérifie le formatage sans modifier (utilisé CI) |
 | `npm run typecheck`    | Vérification TypeScript                         |
+| `npm test`             | Tests unitaires (Vitest)                        |
 | `npm run db:migrate`   | Crée ou met à jour les tables (développement)   |
 | `npm run db:deploy`    | Applique les migrations en production           |
 | `npm run db:seed`      | Ajoute les données de départ                    |
@@ -59,6 +63,25 @@ d'interactivité (état, événements, `localStorage`, API du navigateur).
 - `src/components/JoinRaceButton.tsx` : composant client (clic)
 - `src/components/ThemeToggle.tsx` : composant client (thème sombre/clair)
 - `src/app/salles/page.tsx` : composant serveur asynchrone qui lit la base avec Prisma
+
+## Courses en temps réel
+
+`server.ts` démarre Next.js et Socket.IO sur le même port (voir l'ADR-001 de
+l'architecture).
+
+- `src/lib/race/engine.ts` : la machine à états d'une course (LOBBY → WAITING →
+  COUNTDOWN → RUNNING → FINISHED), sans réseau, testée dans `engine.test.ts`
+- `server.ts` : reçoit chaque touche, la fait vérifier par le moteur et diffuse
+  l'état de la course 10 fois par seconde
+- `src/components/RoomLive.tsx` : la salle en direct dans le navigateur
+- `src/lib/socket-token.ts` : jeton signé qui identifie le joueur auprès de Socket.IO
+
+Créer une salle : page `/salles`. La rejoindre : son code sur l'accueil.
+
+## Documentation
+
+- [Matrice des exigences](docs/MATRICE.md)
+- [Guide de déploiement](docs/DEPLOIEMENT.md)
 
 ## Authentification
 
