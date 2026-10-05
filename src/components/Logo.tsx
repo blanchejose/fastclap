@@ -1,34 +1,24 @@
-import Image from "next/image";
-
-// Le fichier public/logo.webp est l'image originale du logo, non modifiée
-// (2000 × 2000 px, avec une marge blanche). On affiche seulement le cadre
-// sombre en masquant la marge avec CSS : aucun pixel n'est retouché.
-// Cadre sombre dans l'image : x 200 → 1837, y 327 → 1657 (3 px de marge en plus).
-const SOURCE = 2000;
-const FRAME = { x: 203, y: 330, width: 1631, height: 1324 };
-
-type LogoProps = { className?: string; priority?: boolean };
-
-export function Logo({ className = "", priority = false }: LogoProps) {
+// Logo Touché : une touche de clavier avec un T. L'accent du « é » devient
+// une lame d'épée, et les deux lampes du tableau de score d'escrime sont en bas.
+// Les couleurs suivent le thème (clair ou sombre).
+export function LogoMark({ className = "size-10" }: { className?: string }) {
   return (
-    <div
-      className={`relative overflow-hidden rounded-[12%/15%] ${className}`}
-      style={{ aspectRatio: `${FRAME.width} / ${FRAME.height}` }}
-    >
-      <Image
-        src="/logo.webp"
-        alt="FastClap : tape plus rapide que tes amis"
-        width={SOURCE}
-        height={SOURCE}
-        priority={priority}
-        unoptimized // servi tel quel, sans recompression
-        className="absolute max-w-none"
-        style={{
-          width: `${(SOURCE / FRAME.width) * 100}%`,
-          left: `${(-FRAME.x / FRAME.width) * 100}%`,
-          top: `${(-FRAME.y / FRAME.height) * 100}%`,
-        }}
+    <svg viewBox="0 0 120 120" className={className} aria-hidden="true">
+      <rect x="6" y="10" width="108" height="104" rx="18" fill="var(--encre)" />
+      <rect x="16" y="14" width="88" height="82" rx="12" fill="var(--piste)" />
+      <rect x="34" y="38" width="52" height="11" fill="var(--encre)" />
+      <rect x="54.5" y="38" width="11" height="44" fill="var(--encre)" />
+      <line
+        x1="64"
+        y1="30"
+        x2="88"
+        y2="16"
+        stroke="var(--faute)"
+        strokeWidth="7"
+        strokeLinecap="round"
       />
-    </div>
+      <circle cx="32" cy="105" r="4.5" fill="var(--juste)" />
+      <circle cx="46" cy="105" r="4.5" fill="var(--faute)" />
+    </svg>
   );
 }

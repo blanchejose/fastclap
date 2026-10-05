@@ -1,46 +1,126 @@
 @import "tailwindcss";
 
-/* Le mode sombre est piloté par l'attribut data-theme sur <html> (bascule permanente, UI-1). */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
-
+/*
+ * Identité Touché : la piste d'escrime (fond clair), le masque (encre)
+ * et les lampes du tableau de score (vert = lettre juste, rouge = faute).
+ * Mode clair par défaut, mode sombre selon l'appareil ou la bascule (UI-1).
+ */
 :root {
-  /* Mode clair */
-  --background: #f4f7fc;
+  --piste: #f5f4f0;
   --surface: #ffffff;
-  --foreground: #0b1a33;
-  --muted: #5a6b85;
-  --accent: #a85400;
-  --info: #0066cc;
+  --surface-2: #e8e7e2;
+  --encre: #121316;
+  --sourdine: #55595f;
+  --trait: rgb(18 19 22 / 0.14);
+  --juste: #13874b;
+  --faute: #d3261f;
+  --carton: #f2b705;
+  --cta: #121316;
+  --cta-encre: #f5f4f0;
+  --focus: #2f7bff;
+  color-scheme: light;
 }
 
-[data-theme="dark"] {
-  /* Mode sombre (par défaut) */
-  --background: #030d21;
-  --surface: #0d1f3c;
-  --foreground: #ffffff;
-  --muted: #8ba4c8;
-  --accent: #fc8201;
-  --info: #008bfe;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --piste: #111215;
+    --surface: #1a1c20;
+    --surface-2: #26292e;
+    --encre: #f2f1ec;
+    --sourdine: #a9aeb5;
+    --trait: rgb(242 241 236 / 0.16);
+    --juste: #35c27a;
+    --faute: #ff5148;
+    --carton: #ffc83d;
+    --cta: #f2f1ec;
+    --cta-encre: #111215;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --piste: #111215;
+  --surface: #1a1c20;
+  --surface-2: #26292e;
+  --encre: #f2f1ec;
+  --sourdine: #a9aeb5;
+  --trait: rgb(242 241 236 / 0.16);
+  --juste: #35c27a;
+  --faute: #ff5148;
+  --carton: #ffc83d;
+  --cta: #f2f1ec;
+  --cta-encre: #111215;
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
+  --color-piste: var(--piste);
   --color-surface: var(--surface);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-accent: var(--accent);
-  --color-info: var(--info);
-  --color-eclair: #fc8201;
-  --color-turbo: #008bfe;
-  --color-nuit: #030d21;
-  --color-succes: #22c55e;
-  --color-alerte: #ef4444;
-  --font-display: var(--font-rajdhani);
-  --font-sans: var(--font-nunito);
-  --font-mono: var(--font-jetbrains-mono);
+  --color-surface-2: var(--surface-2);
+  --color-encre: var(--encre);
+  --color-sourdine: var(--sourdine);
+  --color-trait: var(--trait);
+  --color-juste: var(--juste);
+  --color-faute: var(--faute);
+  --color-carton: var(--carton);
+  --color-cta: var(--cta);
+  --color-cta-encre: var(--cta-encre);
+  --color-focus: var(--focus);
+
+  --font-display: var(--font-big-shoulders);
+  --font-sans: var(--font-figtree);
+  --font-mono: var(--font-martian-mono);
+
+  --animate-avance: avance 7s ease-in-out infinite;
+  --animate-curseur: curseur 1s steps(1) infinite;
+  --animate-lampe: lampe 2.4s ease-in-out infinite;
+}
+
+/* Les voitures du duel de démonstration avancent puis repartent. */
+@keyframes avance {
+  0% {
+    transform: scaleX(0.08);
+  }
+  85%,
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes curseur {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes lampe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--piste);
+  color: var(--encre);
+}
+
+/* Contour de focus visible partout, au clavier comme au contacteur. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* « Réduire les animations » activé sur l'appareil : tout s'arrête. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
