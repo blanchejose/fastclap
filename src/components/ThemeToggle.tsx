@@ -23,7 +23,9 @@ function subscribe(onChange: () => void) {
 }
 
 // Composant client : il a besoin du DOM, de localStorage et des événements.
-export function ThemeToggle() {
+type Props = { toDark: string; toLight: string };
+
+export function ThemeToggle({ toDark, toLight }: Props) {
   const theme = useSyncExternalStore(subscribe, currentTheme, () => "light" as Theme);
   const next: Theme = theme === "dark" ? "light" : "dark";
 
@@ -40,7 +42,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      aria-label={next === "dark" ? "Passer en mode sombre" : "Passer en mode clair"}
+      aria-label={next === "dark" ? toDark : toLight}
       className="border-trait text-encre hover:bg-surface-2 flex size-11 items-center justify-center rounded-md border-[1.5px] transition"
     >
       {theme === "dark" ? (

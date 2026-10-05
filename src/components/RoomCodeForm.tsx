@@ -1,19 +1,15 @@
 import { joinByCode } from "@/app/salle/actions";
+import type { Dictionary } from "@/i18n/dictionaries";
 
-const messages = {
-  invalide: "Un code a 6 caractères, par exemple K7X-2QP.",
-  introuvable: "Aucune salle ouverte avec ce code. Vérifie avec ton ami.",
-} as const;
+type Props = { t: Dictionary["code"]; error?: "invalide" | "introuvable" };
 
-type Props = { error?: keyof typeof messages };
-
-// Formulaire sans JavaScript : il appelle une Server Action.
-export function RoomCodeForm({ error }: Props) {
+// Formulaire sans JavaScript : il appelle une Server Action (ROOM-1).
+export function RoomCodeForm({ t, error }: Props) {
   return (
     <form id="rejoindre" action={joinByCode} className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <label htmlFor="code-salle" className="text-[15px] font-semibold">
-          Un ami t&apos;a donné un code ?
+          {t.label}
         </label>
         <input
           id="code-salle"
@@ -23,13 +19,13 @@ export function RoomCodeForm({ error }: Props) {
           placeholder="K7X-2QP"
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "code-erreur" : undefined}
-          className={`bg-surface placeholder:text-sourdine min-h-12 w-40 rounded-md border-2 px-3.5 font-mono text-lg font-semibold tracking-widest uppercase ${error ? "border-faute" : "border-encre"}`}
+          className={`bg-surface placeholder:text-sourdine min-h-12 w-40 rounded-xl border-2 px-3.5 font-mono text-lg font-semibold tracking-widest uppercase ${error ? "border-faute" : "border-encre"}`}
         />
         <button
           type="submit"
-          className="border-encre hover:bg-encre hover:text-piste min-h-12 rounded-md border-2 px-5 text-[15px] font-bold transition"
+          className="border-encre hover:bg-encre hover:text-piste min-h-12 rounded-xl border-2 px-5 text-[15px] font-bold transition"
         >
-          Entrer
+          {t.submit}
         </button>
       </div>
       {error && (
@@ -50,7 +46,7 @@ export function RoomCodeForm({ error }: Props) {
             <circle cx="12" cy="12" r="10" />
             <path d="M12 7v6M12 17h.01" />
           </svg>
-          {messages[error]}
+          {t[error]}
         </p>
       )}
     </form>
