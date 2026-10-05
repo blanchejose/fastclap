@@ -19,6 +19,7 @@
   --juste: #0b7a4b;
   --faute: #d92d2d;
   --focus: #2448ff;
+  --pied: #0d1240;
   color-scheme: light;
 }
 
@@ -36,6 +37,7 @@
     --juste: #3dd68c;
     --faute: #ff6b6b;
     --focus: #8fa3ff;
+    --pied: #070a2b;
     color-scheme: dark;
   }
 }
@@ -53,6 +55,7 @@
   --juste: #3dd68c;
   --faute: #ff6b6b;
   --focus: #8fa3ff;
+  --pied: #070a2b;
   color-scheme: dark;
 }
 
@@ -70,6 +73,7 @@
   --color-juste: var(--juste);
   --color-faute: var(--faute);
   --color-focus: var(--focus);
+  --color-pied: var(--pied);
   /* Texte sur le jaune : toujours la nuit, dans les deux modes. */
   --color-nuit: #0d1240;
 
