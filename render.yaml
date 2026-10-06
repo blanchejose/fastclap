@@ -1,5 +1,5 @@
 # Blueprint Render : https://render.com/docs/blueprint-spec
-# Crée le site web (HTTPS automatique) et la base PostgreSQL en une fois.
+# Crée le site web (HTTPS automatique). La base PostgreSQL est chez Neon.
 services:
   - type: web
     name: fastclap
@@ -13,10 +13,9 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # Adresse de la base Neon, à saisir dans le tableau de bord Render.
       - key: DATABASE_URL
-        fromDatabase:
-          name: fastclap-db
-          property: connectionString
+        sync: false
       - key: AUTH_SECRET
         generateValue: true
       - key: AUTH_TRUST_HOST
@@ -30,10 +29,3 @@ services:
         sync: false
       - key: AUTH_GITHUB_SECRET
         sync: false
-
-databases:
-  - name: fastclap-db
-    plan: free
-    region: ohio
-    databaseName: fastclap
-    user: fastclap
