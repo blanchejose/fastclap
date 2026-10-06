@@ -1,9 +1,23 @@
-# Matrice des exigences
+# Exigences
 
-Suivi de chaque exigence du cahier des charges : où elle est réalisée et comment
-elle est vérifiée. Mise à jour au checkpoint 1.
+Toutes les exigences du cahier des charges, avec leur statut au checkpoint 1 :
+où elles sont réalisées et comment elles sont vérifiées.
 
 Légende : ✅ fait · 🟡 en partie · ⏳ à faire (livraison finale)
+
+## Livrables du checkpoint 1
+
+| Livrable                                                    | Statut | Où                                                                |
+| ----------------------------------------------------------- | ------ | ----------------------------------------------------------------- |
+| Démarche créative : noms, logo, moodboard, palette, polices | ✅     | [`DEMARCHE-CREATIVE.md`](DEMARCHE-CREATIVE.md)                    |
+| Architecture : données, machine à états, ADR, bots          | ✅     | [`ARCHITECTURE.md`](ARCHITECTURE.md)                              |
+| Déploiement HTTPS                                           | ✅     | Railway ([`DEPLOIEMENT.md`](DEPLOIEMENT.md))                      |
+| Authentification                                            | ✅     | Discord, GitHub, pseudo (`src/auth.ts`)                           |
+| Base de données et migrations                               | ✅     | Neon, `prisma/migrations/`                                        |
+| Salle créée, rejointe par code, liste en temps réel         | ✅     | `src/app/salle/`, `src/lib/lobby.ts`, `server.ts`                 |
+| Sélecteurs de langue et de thème                            | ✅     | `src/components/LangToggle.tsx`, `src/components/ThemeToggle.tsx` |
+| Identité visuelle appliquée                                 | ✅     | `src/components/Logo.tsx`, `src/app/globals.css`, `src/fonts/`    |
+| Intégration continue et tests unitaires                     | ✅     | `.github/workflows/ci.yml`, `src/**/*.test.ts`                    |
 
 ## Authentification
 
@@ -25,25 +39,25 @@ Légende : ✅ fait · 🟡 en partie · ⏳ à faire (livraison finale)
 
 ## Salles
 
-| ID     | Exigence                                        | Statut | Où                                                   | Vérification                       |
-| ------ | ----------------------------------------------- | ------ | ---------------------------------------------------- | ---------------------------------- |
-| ROOM-1 | Publique, semi-publique (code), privée (lien)   | 🟡     | `src/app/salles/`, `src/app/salle/actions.ts`        | Publique et code : test navigateur |
-| ROOM-2 | Minimum 2 joueurs pour partir                   | ✅     | `src/lib/race/engine.ts` (`updateLobby`, `canStart`) | `engine.test.ts`                   |
-| ROOM-3 | Délai pour les retardataires + compte à rebours | ✅     | `engine.ts` (`WAITING`, `COUNTDOWN`)                 | `engine.test.ts`                   |
-| ROOM-4 | Copier-coller désactivé                         | ✅     | `src/components/RoomLive.tsx` (`onPaste`, `onDrop`)  | Revue du code                      |
-| ROOM-5 | L'organisateur retire un participant            | ✅     | `engine.ts` (`kick`), `server.ts` (`room:kick`)      | `engine.test.ts`                   |
-| ROOM-6 | Mode spectateur                                 | ⏳     | —                                                    | —                                  |
+| ID     | Exigence                                        | Statut | Où                                                           | Vérification                       |
+| ------ | ----------------------------------------------- | ------ | ------------------------------------------------------------ | ---------------------------------- |
+| ROOM-1 | Publique, semi-publique (code), privée (lien)   | 🟡     | `src/app/salles/`, `src/app/salle/actions.ts`                | Publique et code : test navigateur |
+| ROOM-2 | Minimum 2 joueurs pour partir                   | 🟡     | `src/lib/lobby.ts` (LOBBY → WAITING à 2 joueurs) ; départ ⏳ | `lobby.test.ts`                    |
+| ROOM-3 | Délai pour les retardataires + compte à rebours | ⏳     | Prévu dans la machine à états (`ARCHITECTURE.md`)            | —                                  |
+| ROOM-4 | Copier-coller désactivé                         | ⏳     | Avec la zone de frappe de la course                          | —                                  |
+| ROOM-5 | L'organisateur retire un participant            | ✅     | `src/lib/lobby.ts` (`kick`), `server.ts` (`room:kick`)       | `lobby.test.ts`, test navigateur   |
+| ROOM-6 | Mode spectateur                                 | ⏳     | —                                                            | —                                  |
 
 ## Course
 
-| ID     | Exigence                                         | Statut | Où                                                        | Vérification                      |
-| ------ | ------------------------------------------------ | ------ | --------------------------------------------------------- | --------------------------------- |
-| RACE-1 | Tous tapent en même temps, rang et WPM en direct | ✅     | `server.ts` (diffusion 10 fois/s), `RoomLive.tsx`         | Test navigateur à deux joueurs    |
-| RACE-2 | Progression gardée à la déconnexion              | ✅     | `engine.ts` (`leaveRace`, `joinRace`)                     | `engine.test.ts`                  |
-| RACE-3 | Abandon, classé dernier                          | ✅     | `engine.ts` (`abandon`, `ranking`)                        | `engine.test.ts`                  |
-| RACE-4 | Bonne lettre obligatoire pour avancer            | ✅     | `engine.ts` (`applyKey`), vérifié côté serveur            | `engine.test.ts`, test navigateur |
-| RACE-5 | Anti-triche : spam clavier pénalisé              | ✅     | `engine.ts` (20 touches/s maximum)                        | `engine.test.ts`                  |
-| RACE-6 | Podium, statistiques, relancer ou fermer         | 🟡     | `RoomLive.tsx` (podium, tableau), `engine.ts` (`restart`) | Relance : test ; fermer : ⏳      |
+| ID     | Exigence                                         | Statut | Où                                        | Vérification |
+| ------ | ------------------------------------------------ | ------ | ----------------------------------------- | ------------ |
+| RACE-1 | Tous tapent en même temps, rang et WPM en direct | ⏳     | Prototype sur la branche `feature/course` | —            |
+| RACE-2 | Progression gardée à la déconnexion              | ⏳     | Prototype sur la branche `feature/course` | —            |
+| RACE-3 | Abandon, classé dernier                          | ⏳     | Prototype sur la branche `feature/course` | —            |
+| RACE-4 | Bonne lettre obligatoire pour avancer            | ⏳     | Prototype sur la branche `feature/course` | —            |
+| RACE-5 | Anti-triche : spam clavier pénalisé              | ⏳     | Prototype sur la branche `feature/course` | —            |
+| RACE-6 | Podium, statistiques, relancer ou fermer         | ⏳     | Prototype sur la branche `feature/course` | —            |
 
 ## Bonus et bots
 
@@ -92,7 +106,7 @@ Légende : ✅ fait · 🟡 en partie · ⏳ à faire (livraison finale)
 
 - **CI** (`.github/workflows/ci.yml`) à chaque push : formatage Prettier, ESLint,
   TypeScript, tests Vitest, build de production.
-- **Tests unitaires** : 27 tests (moteur de course, code de salle, pseudo, jeton
+- **Tests unitaires** : 15 tests (salle d'attente, code de salle, pseudo, jeton
   temps réel).
 - **Accessibilité** : lien d'évitement, focus visible, cibles de 44 px minimum,
   erreurs liées aux champs, animations coupées si « Réduire les animations ».

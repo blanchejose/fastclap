@@ -11,7 +11,7 @@ Projet Web V (420-5U3-SO), Cégep de Sorel-Tracy.
 - ESLint + Prettier
 - PostgreSQL + Prisma 7
 - Auth.js (next-auth v5) : Discord, GitHub, pseudo seul, pseudo + mot de passe
-- Socket.IO pour les courses en temps réel (serveur `server.ts`)
+- Socket.IO pour le temps réel (serveur `server.ts`)
 - Vitest pour les tests unitaires
 - Français et anglais (`src/i18n/`)
 
@@ -64,23 +64,27 @@ d'interactivité (état, événements, `localStorage`, API du navigateur).
 - `src/components/ThemeToggle.tsx` : composant client (thème sombre/clair)
 - `src/app/salles/page.tsx` : composant serveur asynchrone qui lit la base avec Prisma
 
-## Courses en temps réel
+## Salle d'attente en temps réel
 
-`server.ts` démarre Next.js et Socket.IO sur le même port (voir l'ADR-001 de
-l'architecture).
+`server.ts` démarre Next.js et Socket.IO sur le même port (voir l'ADR temps réel
+dans [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)).
 
-- `src/lib/race/engine.ts` : la machine à états d'une course (LOBBY → WAITING →
-  COUNTDOWN → RUNNING → FINISHED), sans réseau, testée dans `engine.test.ts`
-- `server.ts` : reçoit chaque touche, la fait vérifier par le moteur et diffuse
-  l'état de la course 10 fois par seconde
+- `src/lib/lobby.ts` : qui est dans la salle (LOBBY → WAITING à 2 joueurs,
+  retrait par l'organisateur), sans réseau, testé dans `lobby.test.ts`
+- `server.ts` : diffuse la liste des joueurs à chaque arrivée, départ ou retrait
 - `src/components/RoomLive.tsx` : la salle en direct dans le navigateur
 - `src/lib/socket-token.ts` : jeton signé qui identifie le joueur auprès de Socket.IO
+
+La course elle-même (compte à rebours, frappe, podium) se développe sur la
+branche `feature/course`.
 
 Créer une salle : page `/salles`. La rejoindre : son code sur l'accueil.
 
 ## Documentation
 
-- [Matrice des exigences](docs/MATRICE.md)
+- [Démarche créative](docs/DEMARCHE-CREATIVE.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Exigences](docs/EXIGENCES.md)
 - [Guide de déploiement](docs/DEPLOIEMENT.md)
 
 ## Authentification
