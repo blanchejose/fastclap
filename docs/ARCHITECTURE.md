@@ -57,6 +57,7 @@ résultat final est gardé dans `RaceResult`. Le schéma complet est dans
 
 ```mermaid
 stateDiagram-v2
+    direction LR
     [*] --> LOBBY
     LOBBY --> WAITING : 2 joueurs ou plus
     WAITING --> LOBBY : moins de 2 joueurs
