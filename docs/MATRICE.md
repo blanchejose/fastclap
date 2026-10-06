@@ -82,11 +82,11 @@ Légende : ✅ fait · 🟡 en partie · ⏳ à faire (livraison finale)
 
 ## Technique
 
-| ID     | Exigence                                         | Statut | Où                                                      | Vérification                  |
-| ------ | ------------------------------------------------ | ------ | ------------------------------------------------------- | ----------------------------- |
-| TECH-1 | React, Next.js, TypeScript, Tailwind, PostgreSQL | ✅     | `package.json`, `prisma/schema.prisma`                  | CI (build)                    |
-| TECH-2 | HTTPS, dépôt Git public                          | ✅     | Render (`render.yaml`), github.com/blanchejose/fastclap | https://fastclap.onrender.com |
-| TECH-3 | Tests unitaires et documentation                 | 🟡     | `src/**/*.test.ts`, `docs/`                             | `npm test` dans la CI         |
+| ID     | Exigence                                         | Statut | Où                                                                            | Vérification                |
+| ------ | ------------------------------------------------ | ------ | ----------------------------------------------------------------------------- | --------------------------- |
+| TECH-1 | React, Next.js, TypeScript, Tailwind, PostgreSQL | ✅     | `package.json`, `prisma/schema.prisma`                                        | CI (build)                  |
+| TECH-2 | HTTPS, dépôt Git public                          | ✅     | Railway (`Dockerfile`, `railway.json`), Neon, github.com/blanchejose/fastclap | `/api/health` en production |
+| TECH-3 | Tests unitaires et documentation                 | 🟡     | `src/**/*.test.ts`, `docs/`                                                   | `npm test` dans la CI       |
 
 ## Qualité du code
 

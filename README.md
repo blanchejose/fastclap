@@ -17,7 +17,7 @@ Projet Web V (420-5U3-SO), Cégep de Sorel-Tracy.
 
 ## Production
 
-Hébergé sur Render (HTTPS), base PostgreSQL sur Neon. Voir le
+Hébergé sur Railway (Docker, HTTPS, toujours allumé), base PostgreSQL sur Neon. Voir le
 [guide de déploiement](docs/DEPLOIEMENT.md).
 
 ## Démarrer
