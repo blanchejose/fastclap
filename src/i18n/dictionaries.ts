@@ -30,7 +30,7 @@ export const fr = {
     code: "Entrer un code",
     rooms: "Toutes les salles",
     discover: "Découvrir",
-    credit: "Projet Web V · Cégep de Sorel-Tracy",
+    credit: "",
     source: "Code source",
   },
   levels: { BEGINNER: "Débutant", INTERMEDIATE: "Intermédiaire", PRO: "Pro" },
