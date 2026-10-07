@@ -2,7 +2,7 @@ import { randomInt } from "node:crypto";
 
 // Alphabet sans caractères ambigus : pas de 0/O, 1/I/L.
 export const ROOM_CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
-export const ROOM_CODE_LENGTH = 6;
+const ROOM_CODE_LENGTH = 6;
 
 export function generateRoomCode(): string {
   let code = "";
