@@ -1,6 +1,6 @@
 // Règles d'un nom d'utilisateur FastClap : 3 à 20 caractères,
 // lettres non accentuées, chiffres, tiret et tiret bas.
-export const USERNAME_PATTERN = /^[a-zA-Z0-9_-]{3,20}$/;
+const USERNAME_PATTERN = /^[a-zA-Z0-9_-]{3,20}$/;
 
 export function isValidUsername(value: string): boolean {
   return USERNAME_PATTERN.test(value);

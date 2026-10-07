@@ -152,7 +152,7 @@ export const fr = {
 
 export type Dictionary = typeof fr;
 
-export const en: Dictionary = {
+const en: Dictionary = {
   meta: {
     description:
       "Live keyboard typing races for 12 to 17 year olds. On your keyboards, get set… go!",
