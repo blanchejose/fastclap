@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 import { RoomLive } from "@/components/RoomLive";
 import { SiteHeader } from "@/components/SiteHeader";
 import { fmt } from "@/i18n/dictionaries";
-import { getDictionary } from "@/i18n/server";
+import { getDictionary, getLocale } from "@/i18n/server";
 import { prisma } from "@/lib/prisma";
 import { normalizeRoomCode } from "@/lib/room-code";
 import { createSocketToken } from "@/lib/socket-token";
@@ -22,7 +22,7 @@ export default async function RoomPage({ params }: PageProps<"/salle/[code]">) {
   const code = normalizeRoomCode(raw);
   if (!code) notFound();
 
-  const [room, session, t] = await Promise.all([
+  const [room, session, t, locale] = await Promise.all([
     prisma.room.findUnique({
       where: { code },
       select: {
@@ -35,6 +35,7 @@ export default async function RoomPage({ params }: PageProps<"/salle/[code]">) {
     }),
     auth(),
     getDictionary(),
+    getLocale(),
   ]);
   if (!room || room.status === "CLOSED") notFound();
 
@@ -65,7 +66,8 @@ export default async function RoomPage({ params }: PageProps<"/salle/[code]">) {
               { uid: session.user.id, name: session.user.username },
               process.env.AUTH_SECRET ?? "",
             )}
-            t={t.room}
+            locale={locale}
+            t={{ room: t.room, race: t.race, results: t.results }}
           />
         ) : (
           <div className="bg-surface flex flex-col items-start gap-4 rounded-3xl p-7">
