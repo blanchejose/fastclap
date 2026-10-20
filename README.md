@@ -64,19 +64,21 @@ d'interactivité (état, événements, `localStorage`, API du navigateur).
 - `src/components/ThemeToggle.tsx` : composant client (thème sombre/clair)
 - `src/app/salles/page.tsx` : composant serveur asynchrone qui lit la base avec Prisma
 
-## Salle d'attente en temps réel
+## Salles et courses en temps réel
 
 `server.ts` démarre Next.js et Socket.IO sur le même port (voir l'ADR temps réel
 dans [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)).
 
-- `src/lib/lobby.ts` : qui est dans la salle (LOBBY → WAITING à 2 joueurs,
-  retrait par l'organisateur), sans réseau, testé dans `lobby.test.ts`
-- `server.ts` : diffuse la liste des joueurs à chaque arrivée, départ ou retrait
-- `src/components/RoomLive.tsx` : la salle en direct dans le navigateur
+- `src/lib/race/engine.ts` : la salle et la machine à états de la course
+  (attente, décompte, course, résultats), sans réseau, testée dans `engine.test.ts`
+- `src/lib/race/typing.ts` : règles de frappe partagées par le navigateur et le serveur
+- `src/lib/race/bots.ts` : bots déterministes à graine, 5 niveaux
+- `src/lib/race/messages.ts` : schémas Zod des messages temps réel
+- `server.ts` : reçoit les touches par lots, fait avancer les salles 10 fois par
+  seconde et diffuse leur état
+- `src/components/RoomLive.tsx` et `src/components/race/` : la salle, la piste,
+  la zone de frappe et les résultats dans le navigateur
 - `src/lib/socket-token.ts` : jeton signé qui identifie le joueur auprès de Socket.IO
-
-La course elle-même (compte à rebours, frappe, podium) se développe sur la
-branche `feature/course`.
 
 Créer une salle : page `/salles`. La rejoindre : son code sur l'accueil.
 
