@@ -1,8 +1,8 @@
 name: CI
 
+# TECH-09 : à chaque push, sur toutes les branches.
 on:
   push:
-    branches: [main]
   pull_request:
 
 jobs:
