@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import type { Dictionary } from "@/i18n/dictionaries";
-import { BACKSPACE, type ErrorMode, type Typing } from "@/lib/race/typing";
+import { EMPTY_FIELD, eraseField, readField, type FieldState } from "@/lib/race/input";
+import type { ErrorMode, Typing } from "@/lib/race/typing";
 
 type Props = {
   text: string;
@@ -23,20 +24,27 @@ export function TypingZone({ text, typing, active, mode, onKey, t }: Props) {
     if (active) inputRef.current?.focus();
   }, [active]);
 
-  // Effacer passe par le clavier : le champ reste toujours vide.
+  const fieldRef = useRef<FieldState>(EMPTY_FIELD);
+
+  function send(field: HTMLInputElement, result: { keys: string[]; state: FieldState }) {
+    fieldRef.current = result.state;
+    field.value = result.state.value;
+    for (const key of result.keys) onKey(key);
+  }
+
+  // Effacer passe par le clavier, pour ne jamais vider le champ par erreur.
   function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "Backspace" || event.nativeEvent.isComposing) return;
     event.preventDefault();
-    onKey(BACKSPACE);
+    send(event.currentTarget, eraseField(fieldRef.current));
   }
 
   // Les caractères passent par l'événement « input » plutôt que par les
   // touches : il reçoit aussi les lettres composées (touches mortes ^ ¨,
-  // méthodes de saisie), qui n'ont pas toujours de touche à elles.
+  // bulle d'accents du Mac, méthodes de saisie), qui n'ont pas toujours de
+  // touche à elles.
   function takeInput(field: HTMLInputElement) {
-    const chars = field.value;
-    field.value = "";
-    for (const char of chars) onKey(char);
+    send(field, readField(fieldRef.current, field.value, text[typing.typed.length]));
   }
 
   function onInput(event: React.FormEvent<HTMLInputElement>) {
