@@ -1,0 +1,17 @@
+-- CreateEnum
+CREATE TYPE "TextKind" AS ENUM ('COHERENT', 'RANDOM');
+
+-- CreateEnum
+CREATE TYPE "ErrorMode" AS ENUM ('STRICT', 'FREE');
+
+-- AlterTable
+ALTER TABLE "Room" ADD COLUMN     "accents" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN     "bonuses" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN     "capitals" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN     "errorMode" "ErrorMode" NOT NULL DEFAULT 'STRICT',
+ADD COLUMN     "include" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "language" "Locale" NOT NULL DEFAULT 'FR',
+ADD COLUMN     "numbers" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "punctuation" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN     "textKind" "TextKind" NOT NULL DEFAULT 'COHERENT',
+ADD COLUMN     "wordCount" INTEGER NOT NULL DEFAULT 25;

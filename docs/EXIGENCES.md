@@ -31,6 +31,65 @@ de traçabilité finale reprendra tout avec les identifiants de l'énoncé.
 | TECH-09               | CI à chaque push                                                   | ✅     | `.github/workflows/ci.yml`                               | GitHub Actions                         |
 | I18N-02               | Langue du navigateur par défaut, choix gardé en cookie             | ✅     | `src/i18n/server.ts`                                     | Test navigateur                        |
 
+## Sprint 2 — configuration de la course
+
+| ID                 | Exigence                                                    | Statut | Où                                                                      | Vérification                         |
+| ------------------ | ----------------------------------------------------------- | ------ | ----------------------------------------------------------------------- | ------------------------------------ |
+| CONF-01            | Temps maximal : aucun, ou 30 s à 10 min                     | ✅     | `config.ts`, `ConfigPanel.tsx`, `engine.ts`                             | `messages.test.ts`, `engine.test.ts` |
+| CONF-02            | Langue du texte FR ou EN, indépendante de l'interface       | ✅     | `config.ts`, `room-store.ts` (`pickText`)                               | Test navigateur                      |
+| CONF-03            | Texte cohérent (corpus en base) ou aléatoire (dictionnaire) | ✅     | `src/lib/text/generate.ts`, `words-fr.ts`, `words-en.ts`                | `generate.test.ts`                   |
+| CONF-04            | Longueur en mots (10 à 100)                                 | ✅     | `generateRandomText`, `composeCoherent`                                 | `generate.test.ts`                   |
+| CONF-05            | Complexité facile, moyen, difficile, critères mesurables    | ✅     | `RANDOM_TIERS`, `classifyText` (voir les critères plus bas)             | `generate.test.ts`                   |
+| CONF-06            | Ponctuation, nombres, majuscules, accents (français)        | ✅     | `generateRandomText`, `adaptPassage`                                    | `generate.test.ts`                   |
+| CONF-07            | Caractères à inclure ou à exclure                           | ✅     | `wordPool`, `generateRandomText`                                        | `generate.test.ts`                   |
+| CONF-09            | Bonus de remontée activés ou non                            | 🟡     | Réglage enregistré ; les bonus eux-mêmes arrivent au point 3            | —                                    |
+| CONF-10            | Ajout et retrait de bots avec leur niveau                   | ✅     | `WaitingRoom.tsx`, `engine.ts`                                          | `engine.test.ts`                     |
+| CONF-11 · SALLE-05 | Visibilité et capacité (2 à 30)                             | 🟡     | Publique et sur code ✅ ; privée avec les liens d'invitation (SALLE-04) | `engine.test.ts`, `messages.test.ts` |
+| CONF-12            | Configuration visible en direct par tout le monde           | ✅     | `server.ts` (`room:config`), `ConfigPanel.tsx` (résumé)                 | Test navigateur                      |
+| SEC-01             | Configurer : réservé à l'hôte, vérifié côté serveur         | ✅     | `engine.ts` (`updateConfig`)                                            | `engine.test.ts`                     |
+
+La configuration est gardée en base (colonnes de `Room`, migration
+`20261030014543_room_config`) : elle survit à un redémarrage du serveur.
+
+### Critères de complexité (CONF-05)
+
+**Texte aléatoire.** Les dictionnaires sont classés du mot le plus fréquent au
+moins fréquent.
+
+| Complexité | Mots permis                                                                                     | Nombres (option) |
+| ---------- | ----------------------------------------------------------------------------------------------- | ---------------- |
+| Facile     | Les 150 mots les plus fréquents, de 5 lettres au plus                                           | 1 à 99           |
+| Moyen      | Tous les mots fréquents, de 8 lettres au plus                                                   | 1 à 999          |
+| Difficile  | Tous les mots fréquents et une liste de mots rares et longs ; ponctuation plus variée (! ? ; :) | 1 à 9999         |
+
+**Texte cohérent.** Chaque passage reçoit un score calculé par `textScore` :
+longueur moyenne des mots (en lettres) + 10 × proportion de caractères
+spéciaux (majuscules, chiffres, ponctuation, lettres accentuées) parmi les
+caractères non blancs. Facile : score < 5 ; moyen : 5 à 6 ; difficile : ≥ 6.
+Le seed recalcule ce classement à chaque déploiement.
+
+### Choix documentés pour la configuration
+
+- **Options en mode cohérent (CONF-06).** On ne peut pas ajouter de ponctuation
+  ou de nombres à un vrai passage. Une option désactivée retire donc ce qu'elle
+  concerne : ponctuation (sauf les apostrophes et les traits d'union dans les
+  mots), majuscules (tout en minuscules), accents (lettres sans accent, œ → oe).
+  Sans nombres, les passages qui n'en contiennent pas sont choisis en premier.
+- **Caractères à inclure ou à exclure (CONF-07).** Réglage du texte aléatoire
+  seulement : en mode cohérent, il est désactivé, pour ne pas abîmer les vrais
+  passages. Exclure : aucun mot ni signe ajouté ne contient ces caractères.
+  Inclure : seuls les mots qui contiennent au moins un de ces caractères sont
+  gardés. Si un filtre laisse moins de 5 mots, il est ignoré pour que la course
+  reste possible.
+- **Longueur en mode cohérent (CONF-04).** Les passages du niveau choisi sont
+  enchaînés (ceux pas encore courus d'abord) jusqu'à la longueur demandée, puis
+  le texte est coupé au bon nombre de mots. Si le niveau ne suffit pas, on
+  complète avec les passages des autres niveaux de la même langue.
+- **Quand changer la configuration.** Dans la salle d'attente seulement. Sur
+  l'écran des résultats, « Nouvelle course » ramène en salle d'attente, où l'hôte
+  modifie la configuration avant de relancer (COURSE-11).
+- **Capacité.** Elle ne peut pas descendre sous le nombre actuel de participants.
+
 ### Choix documentés (section 2.2 de l'énoncé)
 
 - **MPM (annexe A).** Un mot vaut 5 caractères, espaces compris. MPM net :

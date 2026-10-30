@@ -27,9 +27,7 @@ export default async function RoomPage({ params }: PageProps<"/salle/[code]">) {
       where: { code },
       select: {
         code: true,
-        visibility: true,
         status: true,
-        difficulty: true,
         organizer: { select: { username: true } },
       },
     }),
@@ -50,21 +48,6 @@ export default async function RoomPage({ params }: PageProps<"/salle/[code]">) {
           <h1 className="font-display text-5xl leading-[0.95] font-extrabold tracking-tight">
             {fmt(t.roomList.roomOf, { name: room.organizer.username })}
           </h1>
-          {/* Informations, pas des boutons : du texte simple, sans fond ni bordure. */}
-          <dl className="flex gap-6 text-sm">
-            <div>
-              <dt className="text-sourdine font-mono text-xs tracking-widest uppercase">
-                {t.room.infoVisibility}
-              </dt>
-              <dd className="font-bold">{t.visibility[room.visibility]}</dd>
-            </div>
-            <div>
-              <dt className="text-sourdine font-mono text-xs tracking-widest uppercase">
-                {t.room.infoLevel}
-              </dt>
-              <dd className="font-bold">{t.levels[room.difficulty]}</dd>
-            </div>
-          </dl>
         </div>
 
         {session ? (
@@ -76,7 +59,13 @@ export default async function RoomPage({ params }: PageProps<"/salle/[code]">) {
               process.env.AUTH_SECRET ?? "",
             )}
             locale={locale}
-            t={{ room: t.room, race: t.race, results: t.results }}
+            t={{
+              room: t.room,
+              race: t.race,
+              results: t.results,
+              config: t.config,
+              levels: t.levels,
+            }}
           />
         ) : (
           <div className="bg-surface flex flex-col items-start gap-4 rounded-3xl p-7">
