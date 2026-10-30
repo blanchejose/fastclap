@@ -25,6 +25,7 @@ const handle = app.getRequestHandler();
 // Salles ouvertes, en mémoire, par code.
 const rooms = new Map<string, engine.Room>();
 const difficulties = new Map<string, "BEGINNER" | "INTERMEDIATE" | "PRO">();
+const usedTexts = new Map<string, Set<string>>(); // textes déjà courus dans chaque salle
 
 type Data = {
   user: SocketIdentity;
@@ -32,6 +33,8 @@ type Data = {
   keyWindow: { second: number; count: number };
 };
 
+// Texte tiré au hasard dans le niveau de la salle : une salle passe par tous
+// les textes de son niveau avant d'en reprendre un.
 async function pickText(code: string): Promise<string> {
   const difficulty = difficulties.get(code) ?? "BEGINNER";
   const texts = await prisma.text.findMany({
@@ -39,9 +42,21 @@ async function pickText(code: string): Promise<string> {
     select: { content: true },
   });
   const pool = texts.length > 0 ? texts : await prisma.text.findMany({ select: { content: true } });
-  return pool.length > 0
-    ? pool[randomInt(pool.length)].content
-    : "Le vif renard brun saute par-dessus le chien paresseux.";
+  const used = usedTexts.get(code) ?? new Set<string>();
+  let choices = pool.filter((t) => !used.has(t.content));
+  if (choices.length === 0) {
+    // Nouveau tour : tous les textes, sauf celui qu'on vient de courir.
+    const last = [...used].at(-1);
+    used.clear();
+    choices = pool.length > 1 ? pool.filter((t) => t.content !== last) : pool;
+  }
+  const text =
+    choices.length > 0
+      ? choices[randomInt(choices.length)].content
+      : "Le vif renard brun saute par-dessus le chien paresseux.";
+  used.add(text);
+  usedTexts.set(code, used);
+  return text;
 }
 
 async function loadRoom(code: string): Promise<engine.Room | null> {
@@ -107,6 +122,7 @@ app.prepare().then(() => {
     io.in(room.code).socketsLeave(room.code);
     rooms.delete(room.code);
     difficulties.delete(room.code);
+    usedTexts.delete(room.code);
     await prisma.room.update({
       where: { code: room.code },
       data: { status: "CLOSED", closedAt: new Date() },

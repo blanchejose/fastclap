@@ -134,6 +134,12 @@ export const fr = {
     ready: "Tout le monde est prêt !",
     waitHost: "En attente du départ donné par l'hôte…",
     leave: "Quitter la salle",
+    close: "Fermer la salle",
+    confirmClose: "Fermer la salle pour tout le monde ? Personne ne pourra plus y entrer.",
+    confirmCloseYes: "Oui, fermer la salle",
+    confirmCloseNo: "Annuler",
+    infoVisibility: "Accès",
+    infoLevel: "Niveau du texte",
     kicked: "L'hôte t'a retiré de la salle.",
     closed: "Cette salle est fermée. Merci d'avoir couru !",
     errors: {
@@ -176,6 +182,9 @@ export const fr = {
   },
   results: {
     title: "Résultats",
+    podium: "Podium",
+    youWon: "Tu as gagné !",
+    yourRank: "Tu termines {rank} sur {total}.",
     rank: "Rang",
     player: "Participant",
     wpm: "MPM",
@@ -344,6 +353,12 @@ const en: Dictionary = {
     ready: "Everyone is ready!",
     waitHost: "Waiting for the host to start the race…",
     leave: "Leave the room",
+    close: "Close the room",
+    confirmClose: "Close the room for everyone? Nobody will be able to join it again.",
+    confirmCloseYes: "Yes, close the room",
+    confirmCloseNo: "Cancel",
+    infoVisibility: "Access",
+    infoLevel: "Text level",
     kicked: "The host removed you from the room.",
     closed: "This room is closed. Thanks for racing!",
     errors: {
@@ -386,6 +401,9 @@ const en: Dictionary = {
   },
   results: {
     title: "Results",
+    podium: "Podium",
+    youWon: "You won!",
+    yourRank: "You finished {rank} out of {total}.",
     rank: "Rank",
     player: "Racer",
     wpm: "WPM",
@@ -428,6 +446,13 @@ const en: Dictionary = {
 
 export type Locale = "fr" | "en";
 export const dictionaries: Record<Locale, Dictionary> = { fr, en };
+
+// Rang écrit comme un ordinal : « 2e », « 1re » ; « 2nd », « 3rd » (I18N-03).
+export function ordinal(n: number, locale: Locale): string {
+  if (locale === "fr") return n === 1 ? "1re" : `${n}e`;
+  const suffix = { one: "st", two: "nd", few: "rd" } as Record<string, string>;
+  return `${n}${suffix[new Intl.PluralRules("en", { type: "ordinal" }).select(n)] ?? "th"}`;
+}
 
 export function fmt(template: string, values: Record<string, string | number>) {
   return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ""));
