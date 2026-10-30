@@ -57,6 +57,66 @@ const texts: { content: string; language: Locale; difficulty: Difficulty }[] = [
   },
   {
     content:
+      "La Cigale, ayant chanté tout l'été, se trouva fort dépourvue quand la bise fut venue.",
+    language: "FR",
+    difficulty: "BEGINNER",
+  },
+  {
+    content:
+      "La raison du plus fort est toujours la meilleure : nous l'allons montrer tout à l'heure.",
+    language: "FR",
+    difficulty: "BEGINNER",
+  },
+  {
+    content:
+      "Demain, dès l'aube, à l'heure où blanchit la campagne, je partirai. Vois-tu, je sais que tu m'attends.",
+    language: "FR",
+    difficulty: "BEGINNER",
+  },
+  {
+    content:
+      "Souvent, pour s'amuser, les hommes d'équipage prennent des albatros, vastes oiseaux des mers, qui suivent, indolents compagnons de voyage, le navire glissant sur les gouffres amers.",
+    language: "FR",
+    difficulty: "INTERMEDIATE",
+  },
+  {
+    content:
+      "C'est un trou de verdure où chante une rivière, accrochant follement aux herbes des haillons d'argent ; où le soleil, de la montagne fière, luit : c'est un petit val qui mousse de rayons.",
+    language: "FR",
+    difficulty: "INTERMEDIATE",
+  },
+  {
+    content:
+      "Les sanglots longs des violons de l'automne blessent mon cœur d'une langueur monotone.",
+    language: "FR",
+    difficulty: "PRO",
+  },
+  {
+    content:
+      "Longtemps, je me suis couché de bonne heure. Parfois, à peine ma bougie éteinte, mes yeux se fermaient si vite que je n'avais pas le temps de me dire : « Je m'endors. »",
+    language: "FR",
+    difficulty: "PRO",
+  },
+  {
+    content:
+      "Once upon a time there were four little Rabbits, and their names were Flopsy, Mopsy, Cotton-tail, and Peter.",
+    language: "EN",
+    difficulty: "BEGINNER",
+  },
+  {
+    content:
+      "Emma Woodhouse, handsome, clever, and rich, with a comfortable home and happy disposition, seemed to unite some of the best blessings of existence.",
+    language: "EN",
+    difficulty: "INTERMEDIATE",
+  },
+  {
+    content:
+      "Once upon a midnight dreary, while I pondered, weak and weary, over many a quaint and curious volume of forgotten lore.",
+    language: "EN",
+    difficulty: "PRO",
+  },
+  {
+    content:
       "Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do.",
     language: "EN",
     difficulty: "BEGINNER",

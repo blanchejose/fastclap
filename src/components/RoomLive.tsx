@@ -7,6 +7,7 @@ import type { Dictionary, Locale } from "@/i18n/dictionaries";
 import { MAX_KEYS_PER_BATCH, type JoinResult, type RoomView } from "@/lib/race/engine";
 import { accuracy, netWpm } from "@/lib/race/stats";
 import { applyKey, correctChars, newTyping, progress, type Typing } from "@/lib/race/typing";
+import { ConfirmButton } from "./race/ConfirmButton";
 import { Countdown } from "./race/Countdown";
 import { Results } from "./race/Results";
 import { Track } from "./race/Track";
@@ -54,7 +55,6 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   const clockOffsetRef = useRef(0);
   const [error, setError] = useState<string | null>(null);
   const [kicked, setKicked] = useState(false);
-  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     const socket = io({ auth: { token } });
@@ -79,7 +79,6 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
     });
     socket.on("race:text", (next: RaceText) => {
       setRace(next);
-      setConfirming(false);
       resetTyping(newTyping());
     });
     socket.on("race:resync", (r: Resync) =>
@@ -176,12 +175,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
             status={myRacer?.status ?? null}
             spectating={!myRacer}
             canAbandon={racing}
-            confirming={confirming}
-            setConfirming={setConfirming}
-            onAbandon={() => {
-              send("race:abandon");
-              setConfirming(false);
-            }}
+            onAbandon={() => send("race:abandon")}
             t={t.race}
           />
         </>
@@ -196,7 +190,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
             t={{ ...t.results, statuses: t.race.status, you: t.room.you, bot: t.room.bot }}
           />
           {isHost ? (
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-6">
               <button
                 type="button"
                 onClick={() => send("room:lobby")}
@@ -204,13 +198,13 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
               >
                 {t.results.again}
               </button>
-              <button
-                type="button"
-                onClick={() => send("room:close")}
-                className="bg-surface min-h-14 rounded-2xl px-6 font-bold"
-              >
-                {t.results.close}
-              </button>
+              <ConfirmButton
+                label={t.results.close}
+                question={t.room.confirmClose}
+                yes={t.room.confirmCloseYes}
+                no={t.room.confirmCloseNo}
+                onConfirm={() => send("room:close")}
+              />
             </div>
           ) : (
             <p className="text-sourdine">{t.results.waitHost}</p>
@@ -288,16 +282,12 @@ function RaceStatus({
   status,
   spectating,
   canAbandon,
-  confirming,
-  setConfirming,
   onAbandon,
   t,
 }: {
   status: RoomView["racers"][number]["status"] | null;
   spectating: boolean;
   canAbandon: boolean;
-  confirming: boolean;
-  setConfirming: (value: boolean) => void;
   onAbandon: () => void;
   t: Dictionary["race"];
 }) {
@@ -306,39 +296,14 @@ function RaceStatus({
   if (status === "ABANDONED") return <p className="text-sourdine">{t.abandoned}</p>;
   if (!canAbandon) return null;
   // COURSE-07 : l'abandon demande une confirmation.
-  return confirming ? (
-    <div
-      role="alertdialog"
-      aria-labelledby="question-abandon"
-      className="flex flex-wrap items-center gap-3"
-    >
-      <p id="question-abandon" className="font-semibold">
-        {t.confirmAbandon}
-      </p>
-      <button
-        type="button"
-        onClick={onAbandon}
-        className="border-faute text-faute bg-surface min-h-11 rounded-xl border-2 px-4 font-bold"
-      >
-        {t.confirmYes}
-      </button>
-      <button
-        type="button"
-        autoFocus
-        onClick={() => setConfirming(false)}
-        className="bg-surface-2 min-h-11 rounded-xl px-4 font-bold"
-      >
-        {t.confirmNo}
-      </button>
-    </div>
-  ) : (
-    <button
-      type="button"
-      onClick={() => setConfirming(true)}
-      className="text-faute self-start font-bold underline underline-offset-4"
-    >
-      {t.abandon}
-    </button>
+  return (
+    <ConfirmButton
+      label={t.abandon}
+      question={t.confirmAbandon}
+      yes={t.confirmYes}
+      no={t.confirmNo}
+      onConfirm={onAbandon}
+    />
   );
 }
 

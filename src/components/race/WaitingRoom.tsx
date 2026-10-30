@@ -5,6 +5,7 @@ import { fmt, type Dictionary } from "@/i18n/dictionaries";
 import { BOT_LEVELS, type BotLevel } from "@/lib/race/bots";
 import type { Role, RoomView } from "@/lib/race/engine";
 import { Avatar } from "./Avatar";
+import { ConfirmButton } from "./ConfirmButton";
 
 type Props = {
   view: RoomView;
@@ -178,6 +179,15 @@ export function WaitingRoom({ view, meId, send, t }: Props) {
             <p id="etat-depart" className="text-sourdine text-sm" aria-live="polite">
               {view.startBlocker ? t.blockers[view.startBlocker] : t.ready}
             </p>
+            <div className="border-trait mt-3 border-t pt-4">
+              <ConfirmButton
+                label={t.close}
+                question={t.confirmClose}
+                yes={t.confirmCloseYes}
+                no={t.confirmCloseNo}
+                onConfirm={() => send("room:close")}
+              />
+            </div>
           </div>
         ) : (
           <p className="text-sourdine" aria-live="polite">

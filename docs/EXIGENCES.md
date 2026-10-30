@@ -8,26 +8,28 @@ de traçabilité finale reprendra tout avec les identifiants de l'énoncé.
 
 ## Sprint 1 — une course jouable
 
-| ID                    | Exigence                                                   | Statut | Où                                                       | Vérification                           |
-| --------------------- | ---------------------------------------------------------- | ------ | -------------------------------------------------------- | -------------------------------------- |
-| COURSE-01             | Machine à états documentée                                 | ✅     | `src/lib/race/engine.ts`, `ARCHITECTURE.md` (section 2)  | `engine.test.ts`                       |
-| COURSE-02             | ≥ 2 participants dont ≥ 1 humain ; bots oui, spect. non    | ✅     | `engine.ts` (`startBlocker`)                             | `engine.test.ts`                       |
-| COURSE-03             | Décompte 3-2-1 synchronisé, texte révélé au décompte       | ✅     | `engine.ts`, `server.ts` (`race:text`), `Countdown.tsx`  | `engine.test.ts`, test navigateur      |
-| COURSE-04             | Retour immédiat, MPM et précision en direct, coller bloqué | ✅     | `TypingZone.tsx`, `RoomLive.tsx`                         | Test navigateur                        |
-| COURSE-05 · PERF-03   | Piste en direct, interpolée, joueur local mis en évidence  | ✅     | `src/components/race/Track.tsx`                          | Test navigateur : 57 i/s à 30 coureurs |
-| COURSE-06 · PERF-02   | Serveur autoritaire, touches par lots (≤ 10/s)             | ✅     | `engine.ts` (`applyKeys`), `server.ts`, `RoomLive.tsx`   | `engine.test.ts`                       |
-| COURSE-07             | Abandon avec confirmation                                  | ✅     | `RoomLive.tsx` (`RaceStatus`), `engine.ts` (`abandon`)   | Test navigateur                        |
-| COURSE-08             | Reprise dans les 30 s, sinon abandon                       | ✅     | `engine.ts` (`disconnect`, `tick`), `server.ts` (resync) | `engine.test.ts`, test navigateur      |
-| COURSE-09 · COURSE-10 | Fin de course et classement à 3 niveaux                    | ✅     | `engine.ts` (`tick`, `ranking`)                          | `engine.test.ts`                       |
-| COURSE-11             | Relancer ou fermer depuis les résultats                    | ✅     | `engine.ts` (`backToLobby`, `close`), `RoomLive.tsx`     | `engine.test.ts`, test navigateur      |
-| BOT-01 à BOT-05       | 5 niveaux, vitesse variable, fautes, identifiés, graine    | ✅     | `src/lib/race/bots.ts`, `random.ts`                      | `bots.test.ts`                         |
-| CONF-08               | Correction obligatoire ou mode libre                       | 🟡     | `typing.ts` ; choix par l'hôte au sprint 2               | `typing.test.ts`                       |
-| SALLE-01              | L'hôte (et chacun) choisit de courir ou de regarder        | ✅     | `engine.ts` (`setRole`), `WaitingRoom.tsx`               | `engine.test.ts`                       |
-| SALLE-07 · SALLE-09   | Expulsion définitive ; entrée seulement hors course        | ✅     | `engine.ts` (`kick`, `join`)                             | `engine.test.ts`                       |
-| SALLE-08              | Transfert d'hôte au plus ancien humain, sinon fermeture    | ✅     | `engine.ts` (`transferHost`)                             | `engine.test.ts`                       |
-| TECH-07               | Messages temps réel validés par Zod                        | ✅     | `src/lib/race/messages.ts`, `server.ts`                  | `messages.test.ts`                     |
-| TECH-09               | CI à chaque push                                           | ✅     | `.github/workflows/ci.yml`                               | GitHub Actions                         |
-| I18N-02               | Langue du navigateur par défaut, choix gardé en cookie     | ✅     | `src/i18n/server.ts`                                     | Test navigateur                        |
+| ID                    | Exigence                                                           | Statut | Où                                                       | Vérification                           |
+| --------------------- | ------------------------------------------------------------------ | ------ | -------------------------------------------------------- | -------------------------------------- |
+| COURSE-01             | Machine à états documentée                                         | ✅     | `src/lib/race/engine.ts`, `ARCHITECTURE.md` (section 2)  | `engine.test.ts`                       |
+| COURSE-02             | ≥ 2 participants dont ≥ 1 humain ; bots oui, spect. non            | ✅     | `engine.ts` (`startBlocker`)                             | `engine.test.ts`                       |
+| COURSE-03             | Décompte 3-2-1 synchronisé, texte révélé au décompte               | ✅     | `engine.ts`, `server.ts` (`race:text`), `Countdown.tsx`  | `engine.test.ts`, test navigateur      |
+| COURSE-04             | Retour immédiat, MPM et précision en direct, coller bloqué         | ✅     | `TypingZone.tsx`, `RoomLive.tsx`                         | Test navigateur                        |
+| COURSE-05 · PERF-03   | Piste en direct, interpolée, joueur local mis en évidence          | ✅     | `src/components/race/Track.tsx`                          | Test navigateur : 57 i/s à 30 coureurs |
+| COURSE-06 · PERF-02   | Serveur autoritaire, touches par lots (≤ 10/s)                     | ✅     | `engine.ts` (`applyKeys`), `server.ts`, `RoomLive.tsx`   | `engine.test.ts`                       |
+| COURSE-07             | Abandon avec confirmation                                          | ✅     | `RoomLive.tsx` (`RaceStatus`), `engine.ts` (`abandon`)   | Test navigateur                        |
+| COURSE-08             | Reprise dans les 30 s, sinon abandon                               | ✅     | `engine.ts` (`disconnect`, `tick`), `server.ts` (resync) | `engine.test.ts`, test navigateur      |
+| COURSE-09 · COURSE-10 | Fin de course et classement à 3 niveaux                            | ✅     | `engine.ts` (`tick`, `ranking`)                          | `engine.test.ts`                       |
+| COURSE-11             | Relancer ou fermer depuis les résultats                            | ✅     | `engine.ts` (`backToLobby`, `close`), `RoomLive.tsx`     | `engine.test.ts`, test navigateur      |
+| BOT-01 à BOT-05       | 5 niveaux, vitesse variable, fautes, identifiés, graine            | ✅     | `src/lib/race/bots.ts`, `random.ts`                      | `bots.test.ts`                         |
+| CONF-08               | Correction obligatoire ou mode libre                               | 🟡     | `typing.ts` ; choix par l'hôte au sprint 2               | `typing.test.ts`                       |
+| SALLE-01              | L'hôte (et chacun) choisit de courir ou de regarder                | ✅     | `engine.ts` (`setRole`), `WaitingRoom.tsx`               | `engine.test.ts`                       |
+| SALLE-07 · SALLE-09   | Expulsion définitive ; entrée seulement hors course                | ✅     | `engine.ts` (`kick`, `join`)                             | `engine.test.ts`                       |
+| SALLE-08              | Transfert d'hôte au plus ancien humain, sinon fermeture            | ✅     | `engine.ts` (`transferHost`)                             | `engine.test.ts`                       |
+| RES-01                | Podium des 3 premiers, et « Tu as gagné » ou ton rang              | ✅     | `src/components/race/Results.tsx`                        | Test navigateur                        |
+| COURSE-11             | Fermer la salle aussi depuis la salle d'attente, avec confirmation | ✅     | `WaitingRoom.tsx`, `ConfirmButton.tsx`                   | Test navigateur                        |
+| TECH-07               | Messages temps réel validés par Zod                                | ✅     | `src/lib/race/messages.ts`, `server.ts`                  | `messages.test.ts`                     |
+| TECH-09               | CI à chaque push                                                   | ✅     | `.github/workflows/ci.yml`                               | GitHub Actions                         |
+| I18N-02               | Langue du navigateur par défaut, choix gardé en cookie             | ✅     | `src/i18n/server.ts`                                     | Test navigateur                        |
 
 ### Choix documentés (section 2.2 de l'énoncé)
 
@@ -48,6 +50,9 @@ de traçabilité finale reprendra tout avec les identifiants de l'énoncé.
 - **Absence.** Le délai de 30 s de COURSE-08 s'applique aussi en salle
   d'attente : une personne partie depuis 30 s est retirée de la salle, et si
   c'était l'hôte, le rôle passe au plus ancien humain connecté (SALLE-08).
+- **Choix du texte.** Le texte est tiré au hasard parmi ceux du niveau de la
+  salle. Une salle passe par tous les textes de son niveau avant d'en reprendre
+  un, et ne court jamais deux fois de suite le même texte.
 - **Rôle.** Chaque personne humaine (pas seulement l'hôte) choisit entre « Je
   cours » et « Je regarde » dans la salle d'attente.
 
