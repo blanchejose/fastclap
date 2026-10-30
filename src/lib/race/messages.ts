@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { ROOM_CODE_ALPHABET } from "../room-code";
 import { BOT_LEVELS } from "./bots";
+import { configPatchSchema } from "./config";
 import { MAX_KEYS_PER_BATCH } from "./engine";
 
 const roomCode = z.string().regex(new RegExp(`^[${ROOM_CODE_ALPHABET}]{6}$`));
@@ -14,6 +15,7 @@ export const clientMessages = {
   "room:leave": z.object({}),
   "room:lobby": z.object({}),
   "room:close": z.object({}),
+  "room:config": configPatchSchema,
   "bot:add": z.object({ level: z.enum(BOT_LEVELS) }),
   "bot:remove": z.object({ id: z.string().min(1).max(64) }),
   "race:start": z.object({}),

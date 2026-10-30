@@ -3,17 +3,10 @@
 // le serveur Socket.IO l'appelle et les tests Vitest le vérifient. Le temps
 // (`now`, en ms) est toujours passé en paramètre pour que tout soit prévisible.
 import { createBot, stepBot, type Bot, type BotLevel } from "./bots";
+import { applyPatch, DEFAULT_CONFIG, type Config, type ConfigPatch } from "./config";
 import { hashSeed } from "./random";
 import { accuracy, netWpm, rawWpm } from "./stats";
-import {
-  applyKey,
-  correctChars,
-  isComplete,
-  newTyping,
-  progress,
-  type ErrorMode,
-  type Typing,
-} from "./typing";
+import { applyKey, correctChars, isComplete, newTyping, progress, type Typing } from "./typing";
 
 export type Phase = "WAITING" | "COUNTDOWN" | "RUNNING" | "RESULTS" | "CLOSED";
 export type Role = "PLAYER" | "SPECTATOR";
@@ -25,13 +18,7 @@ export const MAX_KEYS_PER_BATCH = 30; // COURSE-06 : au-delà, c'est un saut de 
 export const MAX_KEYS_PER_SECOND = 25; // COURSE-06 : ≈ 300 MPM, au-delà de tout humain
 const SAMPLE_EVERY_MS = 1_000; // RES-05 : un point de la courbe de MPM par seconde
 
-export type Config = {
-  maxPlayers: number; // SALLE-05 : les spectateurs ne comptent pas
-  errorMode: ErrorMode; // CONF-08
-  timeLimitMs: number | null; // CONF-01 : null = aucune limite
-};
-
-export const DEFAULT_CONFIG: Config = { maxPlayers: 30, errorMode: "STRICT", timeLimitMs: null };
+export type { Config } from "./config";
 
 export type Member = {
   id: string;
@@ -79,13 +66,14 @@ export type JoinResult =
   { ok: true; rejoined: boolean } | { ok: false; reason: "closed" | "kicked" | "in_progress" };
 
 export type StartBlocker = "phase" | "not_enough" | "no_human";
+export type ConfigResult = "ok" | "forbidden" | "below_players";
 
-export function createRoom(code: string, hostId: string, config: Partial<Config> = {}): Room {
+export function createRoom(code: string, hostId: string, config: Config = DEFAULT_CONFIG): Room {
   return {
     code,
     hostId,
     phase: "WAITING",
-    config: { ...DEFAULT_CONFIG, ...config },
+    config,
     members: new Map(),
     kicked: new Set(),
     raceNo: 0,
@@ -174,6 +162,16 @@ export function setRole(room: Room, id: string, role: Role): boolean {
   if (role === "PLAYER" && players(room).length >= room.config.maxPlayers) return false;
   member.role = role;
   return true;
+}
+
+// CONF-01 à CONF-11 : l'hôte change la configuration entre deux courses
+// (SEC-01). La capacité ne descend pas sous le nombre de participants.
+export function updateConfig(room: Room, by: string, patch: ConfigPatch): ConfigResult {
+  if (by !== room.hostId || !isOpen(room)) return "forbidden";
+  if (patch.maxPlayers !== undefined && patch.maxPlayers < players(room).length)
+    return "below_players";
+  room.config = applyPatch(room.config, patch);
+  return "ok";
 }
 
 // CONF-10 : l'hôte ajoute un bot du niveau choisi.

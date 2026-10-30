@@ -45,6 +45,18 @@ enum TextLength {
   LONG
 }
 
+// CONF-03 : passages réels ou mots tirés d'un dictionnaire.
+enum TextKind {
+  COHERENT
+  RANDOM
+}
+
+// CONF-08
+enum ErrorMode {
+  STRICT
+  FREE
+}
+
 enum TextSource {
   API
   CORPUS
@@ -157,10 +169,21 @@ model Room {
   maxPlayers   Int        @default(30) // H-1
   lobbyWaitSec Int        @default(30) // H-2
   countdownSec Int        @default(5) // H-2
-  difficulty   Difficulty @default(BEGINNER)
+  difficulty   Difficulty @default(BEGINNER) // CONF-05 : complexité
   length       TextLength @default(MEDIUM)
-  blacklist    String     @default("") // TEXT-4
-  timeLimitSec Int?
+  blacklist    String     @default("") // CONF-07 : caractères à exclure
+  timeLimitSec Int? // CONF-01 : null = aucune limite
+  // Configuration de la course (CONF-02 à CONF-09), modifiable par l'hôte.
+  language     Locale     @default(FR)
+  textKind     TextKind   @default(COHERENT)
+  wordCount    Int        @default(25)
+  punctuation  Boolean    @default(true)
+  numbers      Boolean    @default(false)
+  capitals     Boolean    @default(true)
+  accents      Boolean    @default(true)
+  include      String     @default("")
+  errorMode    ErrorMode  @default(STRICT)
+  bonuses      Boolean    @default(true)
   createdAt    DateTime   @default(now())
   closedAt     DateTime?
 

@@ -20,4 +20,17 @@ describe("validation des messages temps réel (TECH-07)", () => {
     expect(parseMessage("bot:add", { level: "EXPERT" })).toEqual({ level: "EXPERT" });
     expect(parseMessage("bot:add", { level: "GOD" })).toBeNull();
   });
+
+  it("valide les changements de configuration (TECH-07)", () => {
+    expect(parseMessage("room:config", { wordCount: 40, exclude: "a b a" })).toEqual({
+      wordCount: 40,
+      exclude: "ab",
+    });
+    expect(parseMessage("room:config", { wordCount: 5 })).toBeNull(); // sous 10 mots
+    expect(parseMessage("room:config", { timeLimitSec: 20 })).toBeNull(); // sous 30 s
+    expect(parseMessage("room:config", { timeLimitSec: null })).toEqual({ timeLimitSec: null });
+    expect(parseMessage("room:config", { maxPlayers: 31 })).toBeNull();
+    expect(parseMessage("room:config", { visibility: "PRIVATE" })).toBeNull();
+    expect(parseMessage("room:config", { hack: true })).toBeNull(); // champ inconnu
+  });
 });

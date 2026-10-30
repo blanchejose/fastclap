@@ -10,6 +10,13 @@ import { Server, type Socket } from "socket.io";
 import { prisma } from "./src/lib/prisma";
 import * as engine from "./src/lib/race/engine";
 import { parseMessage, type ClientEvent, type ClientMessage } from "./src/lib/race/messages";
+import {
+  CONFIG_COLUMNS,
+  configFromRow,
+  configToRow,
+  forgetRoom,
+  pickText,
+} from "./src/lib/race/room-store";
 import { verifySocketToken, type SocketIdentity } from "./src/lib/socket-token";
 
 const port = Number(process.env.PORT ?? 3000);
@@ -24,8 +31,6 @@ const handle = app.getRequestHandler();
 
 // Salles ouvertes, en mémoire, par code.
 const rooms = new Map<string, engine.Room>();
-const difficulties = new Map<string, "BEGINNER" | "INTERMEDIATE" | "PRO">();
-const usedTexts = new Map<string, Set<string>>(); // textes déjà courus dans chaque salle
 
 type Data = {
   user: SocketIdentity;
@@ -33,55 +38,19 @@ type Data = {
   keyWindow: { second: number; count: number };
 };
 
-// Texte tiré au hasard dans le niveau de la salle : une salle passe par tous
-// les textes de son niveau avant d'en reprendre un.
-async function pickText(code: string): Promise<string> {
-  const difficulty = difficulties.get(code) ?? "BEGINNER";
-  const texts = await prisma.text.findMany({
-    where: { difficulty, language: "FR" },
-    select: { content: true },
-  });
-  const pool = texts.length > 0 ? texts : await prisma.text.findMany({ select: { content: true } });
-  const used = usedTexts.get(code) ?? new Set<string>();
-  let choices = pool.filter((t) => !used.has(t.content));
-  if (choices.length === 0) {
-    // Nouveau tour : tous les textes, sauf celui qu'on vient de courir.
-    const last = [...used].at(-1);
-    used.clear();
-    choices = pool.length > 1 ? pool.filter((t) => t.content !== last) : pool;
-  }
-  const text =
-    choices.length > 0
-      ? choices[randomInt(choices.length)].content
-      : "Le vif renard brun saute par-dessus le chien paresseux.";
-  used.add(text);
-  usedTexts.set(code, used);
-  return text;
-}
-
 async function loadRoom(code: string): Promise<engine.Room | null> {
   const existing = rooms.get(code);
   if (existing) return existing;
   const row = await prisma.room.findUnique({
     where: { code },
-    select: {
-      status: true,
-      organizerId: true,
-      maxPlayers: true,
-      timeLimitSec: true,
-      difficulty: true,
-    },
+    select: { status: true, organizerId: true, ...CONFIG_COLUMNS },
   });
   if (!row || row.status === "CLOSED") return null;
   // Un autre message a pu créer la salle pendant la lecture de la base.
   const raced = rooms.get(code);
   if (raced) return raced;
-  const room = engine.createRoom(code, row.organizerId, {
-    maxPlayers: row.maxPlayers,
-    timeLimitMs: row.timeLimitSec === null ? null : row.timeLimitSec * 1000,
-  });
+  const room = engine.createRoom(code, row.organizerId, configFromRow(row));
   rooms.set(code, room);
-  difficulties.set(code, row.difficulty);
   return room;
 }
 
@@ -121,8 +90,7 @@ app.prepare().then(() => {
     broadcast(room);
     io.in(room.code).socketsLeave(room.code);
     rooms.delete(room.code);
-    difficulties.delete(room.code);
-    usedTexts.delete(room.code);
+    forgetRoom(room.code);
     await prisma.room.update({
       where: { code: room.code },
       data: { status: "CLOSED", closedAt: new Date() },
@@ -186,6 +154,18 @@ app.prepare().then(() => {
       ack(result);
     });
 
+    // CONF-12 : l'hôte change la configuration ; tout le monde la voit aussitôt,
+    // et elle est gardée en base (la liste des salles l'affiche aussi).
+    on("room:config", async (patch, ack) => {
+      const room = roomOf();
+      if (!room) return ack({ ok: false, reason: "forbidden" });
+      const result = engine.updateConfig(room, uid, patch);
+      if (result !== "ok") return ack({ ok: false, reason: result });
+      broadcast(room);
+      ack({ ok: true });
+      await prisma.room.update({ where: { code: room.code }, data: configToRow(room.config) });
+    });
+
     on("room:role", ({ role }) => act((room) => engine.setRole(room, uid, role)));
     on("bot:add", ({ level }) => act((room, now) => engine.addBot(room, uid, level, now)));
     on("bot:remove", ({ id }) => act((room) => engine.removeBot(room, uid, id)));
@@ -213,7 +193,7 @@ app.prepare().then(() => {
     on("race:start", async () => {
       const room = roomOf();
       if (!room || room.hostId !== uid || engine.startBlocker(room) !== null) return;
-      const text = await pickText(room.code);
+      const text = await pickText(room.code, room.config);
       if (!engine.startRace(room, uid, text, randomInt(2 ** 31), Date.now())) return;
       io.to(room.code).emit("race:text", { raceNo: room.raceNo, text });
       broadcast(room);

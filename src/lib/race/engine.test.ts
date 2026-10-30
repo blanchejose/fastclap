@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_CONFIG, type Config } from "./config";
 import {
   abandon,
   addBot,
@@ -16,14 +17,15 @@ import {
   startBlocker,
   startRace,
   tick,
+  updateConfig,
   type Room,
 } from "./engine";
 
 const TEXT = "le chat dort";
 
 // Salle avec l'hôte « h » et un 2e joueur « b », prête à partir.
-function readyRoom(config = {}): Room {
-  const room = createRoom("K7X2QP", "h", config);
+function readyRoom(config: Partial<Config> = {}): Room {
+  const room = createRoom("K7X2QP", "h", { ...DEFAULT_CONFIG, ...config });
   join(room, { id: "h", name: "Hôte" }, "PLAYER", 0);
   join(room, { id: "b", name: "Béa" }, "PLAYER", 1);
   return room;
@@ -221,7 +223,7 @@ describe("serveur autoritaire (COURSE-06)", () => {
 
 describe("fin de course et classement (COURSE-09, COURSE-10)", () => {
   it("classe les arrivés, puis les temps écoulés, puis les abandons", () => {
-    const room = createRoom("K7X2QP", "a", { timeLimitMs: 30_000 });
+    const room = createRoom("K7X2QP", "a", { ...DEFAULT_CONFIG, timeLimitMs: 30_000 });
     for (const id of ["a", "b", "c", "d", "e"]) join(room, { id, name: id }, "PLAYER", 0);
     startRace(room, "a", TEXT, 1, 0);
     const go = COUNTDOWN_MS;
@@ -256,5 +258,37 @@ describe("fin de course et classement (COURSE-09, COURSE-10)", () => {
     const bot = snapshot(room, t).racers.find((r) => r.kind === "BOT");
     expect(bot?.status).toBe("FINISHED");
     expect(bot?.wpm).toBeGreaterThan(80);
+  });
+});
+
+describe("configuration (CONF-01 à CONF-12)", () => {
+  it("n'accepte les changements que de l'hôte (SEC-01)", () => {
+    const room = readyRoom();
+    expect(updateConfig(room, "b", { errorMode: "FREE" })).toBe("forbidden");
+    expect(updateConfig(room, "h", { errorMode: "FREE", timeLimitSec: 90 })).toBe("ok");
+    expect(room.config.errorMode).toBe("FREE");
+    expect(room.config.timeLimitMs).toBe(90_000);
+  });
+
+  it("ne change rien pendant le décompte ou la course", () => {
+    const room = readyRoom();
+    startRace(room, "h", TEXT, 1, 0);
+    expect(updateConfig(room, "h", { wordCount: 50 })).toBe("forbidden");
+  });
+
+  it("garde les réglages de texte non modifiés", () => {
+    const room = readyRoom();
+    updateConfig(room, "h", { language: "EN" });
+    updateConfig(room, "h", { kind: "RANDOM" });
+    expect(room.config.text.language).toBe("EN");
+    expect(room.config.text.kind).toBe("RANDOM");
+    expect(room.config.text.wordCount).toBe(DEFAULT_CONFIG.text.wordCount);
+  });
+
+  it("refuse une capacité plus petite que le nombre de participants (SALLE-05)", () => {
+    const room = readyRoom();
+    addBot(room, "h", "NOOB", 2);
+    expect(updateConfig(room, "h", { maxPlayers: 2 })).toBe("below_players");
+    expect(updateConfig(room, "h", { maxPlayers: 3 })).toBe("ok");
   });
 });

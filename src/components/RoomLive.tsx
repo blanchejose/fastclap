@@ -7,6 +7,7 @@ import type { Dictionary, Locale } from "@/i18n/dictionaries";
 import { MAX_KEYS_PER_BATCH, type JoinResult, type RoomView } from "@/lib/race/engine";
 import { accuracy, netWpm } from "@/lib/race/stats";
 import { applyKey, correctChars, newTyping, progress, type Typing } from "@/lib/race/typing";
+import { ConfigPanel } from "./race/ConfigPanel";
 import { ConfirmButton } from "./race/ConfirmButton";
 import { Countdown } from "./race/Countdown";
 import { Results } from "./race/Results";
@@ -19,7 +20,7 @@ type Props = {
   token: string;
   meId: string;
   locale: Locale;
-  t: Pick<Dictionary, "room" | "race" | "results">;
+  t: Pick<Dictionary, "room" | "race" | "results" | "config" | "levels">;
 };
 
 type JoinReply = JoinResult | { ok: false; reason: "invalid" };
@@ -141,7 +142,18 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      {view.phase === "WAITING" && <WaitingRoom view={view} meId={meId} send={send} t={t.room} />}
+      {view.phase === "WAITING" && (
+        <>
+          <WaitingRoom view={view} meId={meId} send={send} t={t.room} />
+          <ConfigPanel
+            config={view.config}
+            isHost={isHost}
+            update={(patch, reply) => socketRef.current?.emit("room:config", patch, reply)}
+            t={t.config}
+            levels={t.levels}
+          />
+        </>
+      )}
 
       {inRace && (
         <>
