@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { GuestForm } from "@/components/GuestForm";
@@ -7,8 +8,10 @@ import { RoomLive } from "@/components/RoomLive";
 import { SiteHeader } from "@/components/SiteHeader";
 import { fmt } from "@/i18n/dictionaries";
 import { getDictionary, getLocale } from "@/i18n/server";
+import { IP_HEADER } from "@/lib/client-ip";
 import { getGuest } from "@/lib/guest";
 import { prisma } from "@/lib/prisma";
+import { codeAttempts } from "@/lib/rate-limit";
 import { normalizeRoomCode } from "@/lib/room-code";
 import { createSocketToken } from "@/lib/socket-token";
 
@@ -22,8 +25,15 @@ export async function generateMetadata({ params }: PageProps<"/salle/[code]">): 
 export default async function RoomPage({ params, searchParams }: PageProps<"/salle/[code]">) {
   const { code: raw } = await params;
   const guestError = (await searchParams).invite === "pseudo";
+  const ip = (await headers()).get(IP_HEADER) ?? "inconnue";
+  // SALLE-10 : après 10 essais ratés en une minute, plus aucun code ne
+  // s'ouvre depuis cette adresse, pour ne rien révéler sur les codes valides.
+  if (codeAttempts.isBlocked(ip)) return <TooMany message={(await getDictionary()).code.trop} />;
   const code = normalizeRoomCode(raw);
-  if (!code) notFound();
+  if (!code) {
+    codeAttempts.record(ip);
+    notFound();
+  }
 
   const [room, session, guest, t, locale] = await Promise.all([
     prisma.room.findUnique({
@@ -40,7 +50,10 @@ export default async function RoomPage({ params, searchParams }: PageProps<"/sal
     getDictionary(),
     getLocale(),
   ]);
-  if (!room || room.status === "CLOSED") notFound();
+  if (!room || room.status === "CLOSED") {
+    codeAttempts.record(ip);
+    notFound();
+  }
 
   // Un compte connecté, sinon un invité avec son cookie (AUTH-02).
   const identity = session ? { uid: session.user.id, name: session.user.username } : guest;
@@ -83,6 +96,19 @@ export default async function RoomPage({ params, searchParams }: PageProps<"/sal
         <Link href="/salles" className="self-start font-bold underline underline-offset-4">
           {t.room.back}
         </Link>
+      </main>
+    </>
+  );
+}
+
+function TooMany({ message }: { message: string }) {
+  return (
+    <>
+      <SiteHeader />
+      <main id="contenu" className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 pt-10 pb-16">
+        <p role="alert" className="bg-surface rounded-3xl p-6 text-lg font-semibold">
+          {message}
+        </p>
       </main>
     </>
   );

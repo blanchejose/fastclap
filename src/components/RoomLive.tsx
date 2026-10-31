@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
-import type { Dictionary, Locale } from "@/i18n/dictionaries";
+import { fmt, type Dictionary, type Locale } from "@/i18n/dictionaries";
 import { MAX_KEYS_PER_BATCH, type JoinResult, type RoomView } from "@/lib/race/engine";
 import { accuracy, netWpm } from "@/lib/race/stats";
 import { applyKey, correctChars, newTyping, progress, type Typing } from "@/lib/race/typing";
@@ -24,7 +24,10 @@ type Props = {
   t: Pick<Dictionary, "room" | "race" | "results" | "config" | "levels" | "invite">;
 };
 
-type JoinReply = JoinResult | { ok: false; reason: "invalid" | "private" };
+type JoinReply =
+  | JoinResult
+  | { ok: false; reason: "invalid" | "private" | "too_many" }
+  | { ok: false; reason: "elsewhere"; otherCode: string };
 type RaceText = { raceNo: number; text: string };
 type Resync = { raceNo: number; typed: string; keystrokes: number; errors: number };
 
@@ -58,6 +61,9 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   const clockOffsetRef = useRef(0);
   const [error, setError] = useState<string | null>(null);
   const [kicked, setKicked] = useState(false);
+  const [moved, setMoved] = useState(false);
+  const [elsewhere, setElsewhere] = useState<string | null>(null);
+  const joinRef = useRef<(leaveOther: boolean) => void>(() => {});
 
   useEffect(() => {
     const socket = io({ auth: { token } });
@@ -68,13 +74,20 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
       setTyping({ ...next });
     };
 
+    // SALLE-06 : déjà dans une autre salle ? Le serveur refuse, et on propose
+    // de la quitter (leaveOther).
+    const join = (leaveOther: boolean) =>
+      socket.emit("room:join", { code, leaveOther }, (reply: JoinReply) => {
+        if (reply.ok) setElsewhere(null);
+        else if (reply.reason === "elsewhere") setElsewhere(reply.otherCode);
+        else setError(t.room.errors[reply.reason]);
+      });
+    joinRef.current = join;
     socket.on("connect", () => {
       setError(null);
       // Rejoint aussi après une reconnexion : le serveur renvoie alors le
       // texte et la progression gardée (COURSE-08).
-      socket.emit("room:join", { code }, (reply: JoinReply) => {
-        if (!reply.ok) setError(t.room.errors[reply.reason]);
-      });
+      join(false);
     });
     socket.on("room:state", (next: RoomView) => {
       setView(next);
@@ -88,6 +101,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
       resetTyping({ typed: r.typed, keystrokes: r.keystrokes, errors: r.errors, missed: {} }),
     );
     socket.on("room:kicked", () => setKicked(true));
+    socket.on("room:moved", () => setMoved(true));
     socket.on("invite:update", () => setInviteVersion((v) => v + 1));
     socket.on("connect_error", () => setError(t.room.errors.connection));
 
@@ -115,6 +129,27 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   );
 
   if (kicked) return <Notice>{t.room.kicked}</Notice>;
+  if (moved) return <Notice>{t.room.moved}</Notice>;
+  if (elsewhere) {
+    const other = `${elsewhere.slice(0, 3)}-${elsewhere.slice(3)}`;
+    return (
+      <div role="alert" className="bg-surface flex flex-col items-start gap-4 rounded-3xl p-6">
+        <p className="text-lg font-semibold">{fmt(t.room.elsewhere, { code: other })}</p>
+        <div className="flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            onClick={() => joinRef.current(true)}
+            className="bg-jaune text-nuit min-h-12 rounded-xl px-5 font-bold shadow-[0_4px_0_var(--orange)]"
+          >
+            {fmt(t.room.switchRoom, { code: other })}
+          </button>
+          <a href={`/salle/${elsewhere}`} className="font-bold underline underline-offset-4">
+            {fmt(t.room.backToRoom, { code: other })}
+          </a>
+        </div>
+      </div>
+    );
+  }
   if (error) return <Notice>{error}</Notice>;
   if (!view) return <p className="text-sourdine">…</p>;
   if (view.phase === "CLOSED") return <Notice>{t.room.closed}</Notice>;

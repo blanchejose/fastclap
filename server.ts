@@ -9,7 +9,9 @@ import next from "next";
 import { Server, type Socket } from "socket.io";
 import { clientIp, IP_HEADER } from "./src/lib/client-ip";
 import { createInvite, hasInviteAccess, listInvites, revokeInvites } from "./src/lib/invites";
+import { claimPresence, releasePresence, releaseRoom, resetPresences } from "./src/lib/presence";
 import { prisma } from "./src/lib/prisma";
+import { codeAttempts } from "./src/lib/rate-limit";
 import * as engine from "./src/lib/race/engine";
 import { parseMessage, type ClientEvent, type ClientMessage } from "./src/lib/race/messages";
 import {
@@ -57,7 +59,7 @@ async function loadRoom(code: string): Promise<engine.Room | null> {
   return room;
 }
 
-app.prepare().then(() => {
+app.prepare().then(async () => {
   const httpServer = createServer((req, res) => {
     // L'adresse IP calculée ici remplace toute valeur envoyée par le visiteur.
     req.headers[IP_HEADER] = clientIp(req.headers, req.socket.remoteAddress);
@@ -98,6 +100,7 @@ app.prepare().then(() => {
     io.in(room.code).socketsLeave(room.code);
     rooms.delete(room.code);
     forgetRoom(room.code);
+    await releaseRoom(room.code);
     await prisma.room.update({
       where: { code: room.code },
       data: { status: "CLOSED", closedAt: new Date() },
@@ -149,9 +152,29 @@ app.prepare().then(() => {
       }
     }
 
-    on("room:join", async ({ code }, ack) => {
+    // SALLE-06 : quitter la salle où l'on est, quand on choisit d'en rejoindre une autre.
+    async function leaveOtherRooms(code: string) {
+      for (const other of rooms.values()) {
+        if (other.code === code || !other.members.has(uid)) continue;
+        engine.removeMember(other, uid, Date.now());
+        for (const s of socketsOf(uid, other.code)) s.emit("room:moved");
+        detach(uid, other.code);
+        if (other.phase === "CLOSED") void closeRoom(other);
+        else broadcast(other);
+        await releasePresence([uid], other.code);
+      }
+    }
+
+    on("room:join", async ({ code, leaveOther }, ack) => {
+      // SALLE-10 : une personne déjà dans la salle revient toujours ; les
+      // autres sont bloquées après 10 codes ratés par minute.
+      if (codeAttempts.isBlocked(data.ip) && !rooms.get(code)?.members.has(uid))
+        return ack({ ok: false, reason: "too_many" });
       const room = await loadRoom(code);
-      if (!room) return ack({ ok: false, reason: "closed" });
+      if (!room) {
+        codeAttempts.record(data.ip);
+        return ack({ ok: false, reason: "closed" });
+      }
       // SALLE-03, SALLE-04 : le code seul ne suffit pas pour une salle privée.
       // L'hôte et les personnes déjà dans la salle (reconnexion) passent.
       const invited =
@@ -160,7 +183,22 @@ app.prepare().then(() => {
         room.members.has(uid) ||
         (await hasInviteAccess(code, uid, data.ip));
       if (!invited) return ack({ ok: false, reason: "private" });
+
+      // SALLE-06 : une seule salle à la fois, garanti par la base. Un deuxième
+      // onglet ou une reconnexion (déjà membre) ne crée rien de nouveau.
+      const newcomer = !room.members.has(uid);
+      if (newcomer) {
+        if (leaveOther) await leaveOtherRooms(code);
+        const presence = await claimPresence(
+          uid,
+          code,
+          (other) => rooms.get(other)?.members.has(uid) ?? false,
+        );
+        if (!presence.ok)
+          return ack({ ok: false, reason: "elsewhere", otherCode: presence.otherCode });
+      }
       const result = engine.join(room, { id: uid, name }, "PLAYER", Date.now());
+      if (!result.ok && newcomer) await releasePresence([uid], code);
       if (result.ok) {
         data.code = code;
         await socket.join(code);
@@ -210,6 +248,7 @@ app.prepare().then(() => {
         if (!engine.kick(room, uid, id, now)) return false;
         // SALLE-04 : son lien ne marche plus ; l'hôte voit le nouveau statut.
         void revokeInvites(room.code, id).then(() => io.to(room.code).emit("invite:update"));
+        void releasePresence([id], room.code);
         for (const s of socketsOf(id, room.code)) s.emit("room:kicked");
         detach(id, room.code);
         return true;
@@ -220,6 +259,7 @@ app.prepare().then(() => {
       act((room, now) => {
         engine.removeMember(room, uid, now);
         detach(uid, room.code);
+        void releasePresence([uid], room.code);
         return true;
       }),
     );
@@ -262,11 +302,15 @@ app.prepare().then(() => {
   setInterval(() => {
     const now = Date.now();
     for (const room of rooms.values()) {
-      const { changed } = engine.tick(room, now);
+      const { changed, removed } = engine.tick(room, now);
+      if (removed.length > 0) void releasePresence(removed, room.code);
       if (room.phase === "CLOSED") void closeRoom(room);
       else if (changed) broadcast(room);
     }
   }, TICK_MS);
+
+  // Les salles vivent en mémoire : au démarrage, toute présence est un reste.
+  await resetPresences();
 
   httpServer.listen(port, () => {
     console.log(
