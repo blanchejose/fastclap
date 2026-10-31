@@ -4,6 +4,7 @@ import { useState } from "react";
 import { fmt, type Dictionary } from "@/i18n/dictionaries";
 import { BOT_LEVELS, type BotLevel } from "@/lib/race/bots";
 import type { Role, RoomView } from "@/lib/race/engine";
+import { isGuestId } from "@/lib/guest-id";
 import { Avatar } from "./Avatar";
 import { ConfirmButton } from "./ConfirmButton";
 
@@ -52,6 +53,7 @@ export function WaitingRoom({ view, meId, send, t }: Props) {
                 {t.bot} · {t.botLevels[m.botLevel]}
               </span>
             )}
+            {isGuestId(m.id) && <span className="text-sourdine ml-2 text-sm">({t.guest})</span>}
             {m.id === view.hostId && (
               <span className="text-sourdine ml-2 text-sm">({t.organizer})</span>
             )}

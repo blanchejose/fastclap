@@ -2,19 +2,28 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { logout } from "@/app/connexion/actions";
 import { getDictionary } from "@/i18n/server";
+import { getGuest } from "@/lib/guest";
 
 // Composant serveur : lit la session côté serveur.
 export async function UserMenu() {
-  const [session, t] = await Promise.all([auth(), getDictionary()]);
+  const [session, guest, t] = await Promise.all([auth(), getGuest(), getDictionary()]);
 
   if (!session) {
     return (
-      <Link
-        href="/connexion"
-        className="bg-surface-2 hover:bg-trait flex min-h-11 items-center rounded-md px-4 text-[15px] font-bold transition"
-      >
-        {t.common.login}
-      </Link>
+      <div className="flex items-center gap-3 text-sm">
+        {/* AUTH-02 : l'invité voit son pseudo, et peut toujours se connecter. */}
+        {guest && (
+          <span className="font-mono font-semibold">
+            {guest.name} <span className="text-sourdine font-sans">({t.room.guest})</span>
+          </span>
+        )}
+        <Link
+          href="/connexion"
+          className="bg-surface-2 hover:bg-trait flex min-h-11 items-center rounded-md px-4 text-[15px] font-bold transition"
+        >
+          {t.common.login}
+        </Link>
+      </div>
     );
   }
 

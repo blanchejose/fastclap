@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
+import { GuestForm } from "@/components/GuestForm";
 import { RoomLive } from "@/components/RoomLive";
 import { SiteHeader } from "@/components/SiteHeader";
 import { fmt } from "@/i18n/dictionaries";
 import { getDictionary, getLocale } from "@/i18n/server";
+import { getGuest } from "@/lib/guest";
 import { prisma } from "@/lib/prisma";
 import { normalizeRoomCode } from "@/lib/room-code";
 import { createSocketToken } from "@/lib/socket-token";
@@ -17,12 +19,13 @@ export async function generateMetadata({ params }: PageProps<"/salle/[code]">): 
 
 // Composant serveur : lit la salle dans la base, vérifie la session, puis
 // donne au composant client un jeton signé pour le serveur temps réel.
-export default async function RoomPage({ params }: PageProps<"/salle/[code]">) {
+export default async function RoomPage({ params, searchParams }: PageProps<"/salle/[code]">) {
   const { code: raw } = await params;
+  const guestError = (await searchParams).invite === "pseudo";
   const code = normalizeRoomCode(raw);
   if (!code) notFound();
 
-  const [room, session, t, locale] = await Promise.all([
+  const [room, session, guest, t, locale] = await Promise.all([
     prisma.room.findUnique({
       where: { code },
       select: {
@@ -32,10 +35,14 @@ export default async function RoomPage({ params }: PageProps<"/salle/[code]">) {
       },
     }),
     auth(),
+    getGuest(),
     getDictionary(),
     getLocale(),
   ]);
   if (!room || room.status === "CLOSED") notFound();
+
+  // Un compte connecté, sinon un invité avec son cookie (AUTH-02).
+  const identity = session ? { uid: session.user.id, name: session.user.username } : guest;
 
   return (
     <>
@@ -50,14 +57,11 @@ export default async function RoomPage({ params }: PageProps<"/salle/[code]">) {
           </h1>
         </div>
 
-        {session ? (
+        {identity ? (
           <RoomLive
             code={room.code}
-            meId={session.user.id}
-            token={createSocketToken(
-              { uid: session.user.id, name: session.user.username },
-              process.env.AUTH_SECRET ?? "",
-            )}
+            meId={identity.uid}
+            token={createSocketToken(identity, process.env.AUTH_SECRET ?? "")}
             locale={locale}
             t={{
               room: t.room,
@@ -68,15 +72,7 @@ export default async function RoomPage({ params }: PageProps<"/salle/[code]">) {
             }}
           />
         ) : (
-          <div className="bg-surface flex flex-col items-start gap-4 rounded-3xl p-7">
-            <p className="text-lg">{t.room.loginToJoin}</p>
-            <Link
-              href={`/connexion?suite=/salle/${room.code}`}
-              className="bg-jaune font-display text-nuit inline-flex min-h-14 items-center rounded-2xl px-7 text-2xl font-extrabold shadow-[0_5px_0_var(--orange)]"
-            >
-              {t.common.login}
-            </Link>
-          </div>
+          <GuestForm code={room.code} error={guestError} t={t.guest} login={t.common.login} />
         )}
 
         <Link href="/salles" className="self-start font-bold underline underline-offset-4">

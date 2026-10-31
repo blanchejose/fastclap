@@ -138,7 +138,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
             myRacer.status === "RACING" ? netWpm(correctChars(typing, text), elapsed) : myRacer.wpm,
         }
       : null;
-  const trackT = { ...t.race, you: t.room.you, bot: t.room.bot };
+  const trackT = { ...t.race, you: t.room.you, bot: t.room.bot, guest: t.room.guest };
 
   return (
     <div className="flex flex-col gap-6">
