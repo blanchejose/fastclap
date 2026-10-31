@@ -21,6 +21,12 @@ const createSchema = z.object({
 const guestSchema = z.object({
   code: roomCode,
   name: z.string().trim().refine(isValidUsername), // AUTH-02 : 3 à 20 caractères
+  // Après le pseudo, retour au lien d'invitation s'il y en a un (SALLE-04).
+  suite: z
+    .string()
+    .regex(/^\/invitation\/[A-Za-z0-9_-]{43}$/)
+    .optional()
+    .catch(undefined),
 });
 
 // Server Action : rejoindre une salle avec son code (JOIN-01).
@@ -29,8 +35,13 @@ export async function joinByCode(formData: FormData) {
   if (!input.success) redirect("/?code=invalide#rejoindre");
   const { code } = input.data;
 
-  const room = await prisma.room.findUnique({ where: { code }, select: { status: true } });
+  const room = await prisma.room.findUnique({
+    where: { code },
+    select: { status: true, visibility: true },
+  });
   if (!room || room.status === "CLOSED") redirect("/?code=introuvable#rejoindre");
+  // SALLE-04 : le code seul ne suffit pas pour une salle privée.
+  if (room.visibility === "PRIVATE") redirect("/?code=prive#rejoindre");
 
   redirect(`/salle/${code}`);
 }
@@ -54,12 +65,15 @@ export async function joinAsGuest(formData: FormData) {
   const input = guestSchema.safeParse({
     code: formData.get("code") ?? "",
     name: formData.get("name") ?? "",
+    suite: formData.get("suite") ?? undefined,
   });
   if (!input.success) {
+    const suite = guestSchema.shape.suite.parse(formData.get("suite") ?? undefined);
     const code = roomCode.safeParse(formData.get("code") ?? "");
-    redirect(code.success ? `/salle/${code.data}?invite=pseudo` : "/");
+    const back = suite ?? (code.success ? `/salle/${code.data}` : null);
+    redirect(back ? `${back}?invite=pseudo` : "/");
   }
-  const { code, name } = input.data;
+  const { code, name, suite } = input.data;
 
   const previous = await getGuest();
   const token = createGuestToken(
@@ -73,5 +87,5 @@ export async function joinAsGuest(formData: FormData) {
     path: "/",
     maxAge: GUEST_TTL_MS / 1000,
   });
-  redirect(`/salle/${code}`);
+  redirect(suite ?? `/salle/${code}`);
 }

@@ -41,6 +41,7 @@ réveille en moins d'une seconde : aucun effet visible pour les joueurs.
    | `DATABASE_URL`                            | Chaîne de connexion Neon               |
    | `AUTH_SECRET`                             | Résultat de `openssl rand -base64 32`  |
    | `AUTH_TRUST_HOST`                         | `true` (Railway est derrière un proxy) |
+   | `TRUST_PROXY_HEADER`                      | `x-real-ip` (adresse IP des visiteurs) |
    | `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` | Application Discord (voir plus bas)    |
    | `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`   | OAuth App GitHub (voir plus bas)       |
 

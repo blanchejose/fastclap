@@ -16,6 +16,8 @@ export const clientMessages = {
   "room:lobby": z.object({}),
   "room:close": z.object({}),
   "room:config": configPatchSchema,
+  "invite:list": z.object({}),
+  "invite:create": z.object({}),
   "bot:add": z.object({ level: z.enum(BOT_LEVELS) }),
   "bot:remove": z.object({ id: z.string().min(1).max(64) }),
   "race:start": z.object({}),

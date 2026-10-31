@@ -75,9 +75,7 @@ const charList = z
 // Modification partielle envoyée par l'hôte : chaque champ est facultatif.
 export const configPatchSchema = z
   .object({
-    // PRIVATE arrivera avec les liens d'invitation (SALLE-04) : sans eux,
-    // personne ne pourrait plus entrer dans la salle.
-    visibility: z.enum(["PUBLIC", "SEMI_PUBLIC"]),
+    visibility: z.enum(VISIBILITIES),
     maxPlayers: z.number().int().min(LIMITS.maxPlayers.min).max(LIMITS.maxPlayers.max),
     errorMode: z.enum(["STRICT", "FREE"]),
     timeLimitSec: z

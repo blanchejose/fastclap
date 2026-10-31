@@ -7,6 +7,8 @@ import { randomInt } from "node:crypto";
 import { createServer } from "node:http";
 import next from "next";
 import { Server, type Socket } from "socket.io";
+import { clientIp, IP_HEADER } from "./src/lib/client-ip";
+import { createInvite, hasInviteAccess, listInvites, revokeInvites } from "./src/lib/invites";
 import { prisma } from "./src/lib/prisma";
 import * as engine from "./src/lib/race/engine";
 import { parseMessage, type ClientEvent, type ClientMessage } from "./src/lib/race/messages";
@@ -34,6 +36,7 @@ const rooms = new Map<string, engine.Room>();
 
 type Data = {
   user: SocketIdentity;
+  ip: string;
   code?: string;
   keyWindow: { second: number; count: number };
 };
@@ -55,7 +58,11 @@ async function loadRoom(code: string): Promise<engine.Room | null> {
 }
 
 app.prepare().then(() => {
-  const httpServer = createServer((req, res) => handle(req, res));
+  const httpServer = createServer((req, res) => {
+    // L'adresse IP calculée ici remplace toute valeur envoyée par le visiteur.
+    req.headers[IP_HEADER] = clientIp(req.headers, req.socket.remoteAddress);
+    return handle(req, res);
+  });
   // destroyUpgrade: false laisse passer le rechargement à chaud de Next.js en développement.
   const io = new Server(httpServer, { destroyUpgrade: false });
 
@@ -101,7 +108,8 @@ app.prepare().then(() => {
   io.use((socket, nextFn) => {
     const user = verifySocketToken(socket.handshake.auth?.token, secret);
     if (!user) return nextFn(new Error("unauthorized"));
-    socket.data = { user, keyWindow: { second: 0, count: 0 } } satisfies Data;
+    const ip = clientIp(socket.handshake.headers, socket.handshake.address);
+    socket.data = { user, ip, keyWindow: { second: 0, count: 0 } } satisfies Data;
     nextFn();
   });
 
@@ -144,12 +152,21 @@ app.prepare().then(() => {
     on("room:join", async ({ code }, ack) => {
       const room = await loadRoom(code);
       if (!room) return ack({ ok: false, reason: "closed" });
+      // SALLE-03, SALLE-04 : le code seul ne suffit pas pour une salle privée.
+      // L'hôte et les personnes déjà dans la salle (reconnexion) passent.
+      const invited =
+        room.config.visibility !== "PRIVATE" ||
+        room.hostId === uid ||
+        room.members.has(uid) ||
+        (await hasInviteAccess(code, uid, data.ip));
+      if (!invited) return ack({ ok: false, reason: "private" });
       const result = engine.join(room, { id: uid, name }, "PLAYER", Date.now());
       if (result.ok) {
         data.code = code;
         await socket.join(code);
         sendRace(socket, room, uid);
         broadcast(room);
+        io.to(code).emit("invite:update"); // l'hôte rafraîchit le statut des liens
       }
       ack(result);
     });
@@ -166,6 +183,21 @@ app.prepare().then(() => {
       await prisma.room.update({ where: { code: room.code }, data: configToRow(room.config) });
     });
 
+    // SALLE-04 : l'hôte génère des liens et voit leur statut (SEC-01).
+    on("invite:list", async (_, ack) => {
+      const room = roomOf();
+      if (!room || room.hostId !== uid) return ack({ ok: false, reason: "forbidden" });
+      ack({ ok: true, invites: await listInvites(room.code) });
+    });
+
+    on("invite:create", async (_, ack) => {
+      const room = roomOf();
+      if (!room || room.hostId !== uid || room.phase === "CLOSED")
+        return ack({ ok: false, reason: "forbidden" });
+      await createInvite(room.code);
+      ack({ ok: true, invites: await listInvites(room.code) });
+    });
+
     on("room:role", ({ role }) => act((room) => engine.setRole(room, uid, role)));
     on("bot:add", ({ level }) => act((room, now) => engine.addBot(room, uid, level, now)));
     on("bot:remove", ({ id }) => act((room) => engine.removeBot(room, uid, id)));
@@ -176,6 +208,8 @@ app.prepare().then(() => {
     on("room:kick", ({ id }) =>
       act((room, now) => {
         if (!engine.kick(room, uid, id, now)) return false;
+        // SALLE-04 : son lien ne marche plus ; l'hôte voit le nouveau statut.
+        void revokeInvites(room.code, id).then(() => io.to(room.code).emit("invite:update"));
         for (const s of socketsOf(id, room.code)) s.emit("room:kicked");
         detach(id, room.code);
         return true;

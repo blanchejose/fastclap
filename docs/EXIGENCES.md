@@ -33,20 +33,20 @@ de traçabilité finale reprendra tout avec les identifiants de l'énoncé.
 
 ## Sprint 2 — configuration de la course
 
-| ID                 | Exigence                                                    | Statut | Où                                                                      | Vérification                         |
-| ------------------ | ----------------------------------------------------------- | ------ | ----------------------------------------------------------------------- | ------------------------------------ |
-| CONF-01            | Temps maximal : aucun, ou 30 s à 10 min                     | ✅     | `config.ts`, `ConfigPanel.tsx`, `engine.ts`                             | `messages.test.ts`, `engine.test.ts` |
-| CONF-02            | Langue du texte FR ou EN, indépendante de l'interface       | ✅     | `config.ts`, `room-store.ts` (`pickText`)                               | Test navigateur                      |
-| CONF-03            | Texte cohérent (corpus en base) ou aléatoire (dictionnaire) | ✅     | `src/lib/text/generate.ts`, `words-fr.ts`, `words-en.ts`                | `generate.test.ts`                   |
-| CONF-04            | Longueur en mots (10 à 100)                                 | ✅     | `generateRandomText`, `composeCoherent`                                 | `generate.test.ts`                   |
-| CONF-05            | Complexité facile, moyen, difficile, critères mesurables    | ✅     | `RANDOM_TIERS`, `classifyText` (voir les critères plus bas)             | `generate.test.ts`                   |
-| CONF-06            | Ponctuation, nombres, majuscules, accents (français)        | ✅     | `generateRandomText`, `adaptPassage`                                    | `generate.test.ts`                   |
-| CONF-07            | Caractères à inclure ou à exclure                           | ✅     | `wordPool`, `generateRandomText`                                        | `generate.test.ts`                   |
-| CONF-09            | Bonus de remontée activés ou non                            | 🟡     | Réglage enregistré ; les bonus eux-mêmes arrivent au point 3            | —                                    |
-| CONF-10            | Ajout et retrait de bots avec leur niveau                   | ✅     | `WaitingRoom.tsx`, `engine.ts`                                          | `engine.test.ts`                     |
-| CONF-11 · SALLE-05 | Visibilité et capacité (2 à 30)                             | 🟡     | Publique et sur code ✅ ; privée avec les liens d'invitation (SALLE-04) | `engine.test.ts`, `messages.test.ts` |
-| CONF-12            | Configuration visible en direct par tout le monde           | ✅     | `server.ts` (`room:config`), `ConfigPanel.tsx` (résumé)                 | Test navigateur                      |
-| SEC-01             | Configurer : réservé à l'hôte, vérifié côté serveur         | ✅     | `engine.ts` (`updateConfig`)                                            | `engine.test.ts`                     |
+| ID                 | Exigence                                                     | Statut | Où                                                           | Vérification                         |
+| ------------------ | ------------------------------------------------------------ | ------ | ------------------------------------------------------------ | ------------------------------------ |
+| CONF-01            | Temps maximal : aucun, ou 30 s à 10 min                      | ✅     | `config.ts`, `ConfigPanel.tsx`, `engine.ts`                  | `messages.test.ts`, `engine.test.ts` |
+| CONF-02            | Langue du texte FR ou EN, indépendante de l'interface        | ✅     | `config.ts`, `room-store.ts` (`pickText`)                    | Test navigateur                      |
+| CONF-03            | Texte cohérent (corpus en base) ou aléatoire (dictionnaire)  | ✅     | `src/lib/text/generate.ts`, `words-fr.ts`, `words-en.ts`     | `generate.test.ts`                   |
+| CONF-04            | Longueur en mots (10 à 100)                                  | ✅     | `generateRandomText`, `composeCoherent`                      | `generate.test.ts`                   |
+| CONF-05            | Complexité facile, moyen, difficile, critères mesurables     | ✅     | `RANDOM_TIERS`, `classifyText` (voir les critères plus bas)  | `generate.test.ts`                   |
+| CONF-06            | Ponctuation, nombres, majuscules, accents (français)         | ✅     | `generateRandomText`, `adaptPassage`                         | `generate.test.ts`                   |
+| CONF-07            | Caractères à inclure ou à exclure                            | ✅     | `wordPool`, `generateRandomText`                             | `generate.test.ts`                   |
+| CONF-09            | Bonus de remontée activés ou non                             | 🟡     | Réglage enregistré ; les bonus eux-mêmes arrivent au point 3 | —                                    |
+| CONF-10            | Ajout et retrait de bots avec leur niveau                    | ✅     | `WaitingRoom.tsx`, `engine.ts`                               | `engine.test.ts`                     |
+| CONF-11 · SALLE-05 | Visibilité (publique, sur code, privée) et capacité (2 à 30) | ✅     | `config.ts`, `ConfigPanel.tsx`, `engine.ts`                  | `engine.test.ts`, `messages.test.ts` |
+| CONF-12            | Configuration visible en direct par tout le monde            | ✅     | `server.ts` (`room:config`), `ConfigPanel.tsx` (résumé)      | Test navigateur                      |
+| SEC-01             | Configurer : réservé à l'hôte, vérifié côté serveur          | ✅     | `engine.ts` (`updateConfig`)                                 | `engine.test.ts`                     |
 
 ### Invités
 
@@ -55,6 +55,15 @@ de traçabilité finale reprendra tout avec les identifiants de l'énoncé.
 | AUTH-02 | Pseudo de 3 à 20 caractères, session dans un cookie signé | ✅     | `src/app/salle/actions.ts` (`joinAsGuest`), `src/lib/guest-token.ts` | `guest-token.test.ts`, navigateur |
 | AUTH-03 | Pas de création de salle, pas d'historique, avatar généré | ✅     | `createRoom` (session exigée), `Avatar.tsx`                          | Test navigateur                   |
 | TECH-07 | Server Actions validées par Zod                           | ✅     | `src/app/salle/actions.ts`                                           | Revue du code                     |
+
+### Liens d'invitation et salle privée
+
+| ID       | Exigence                                                          | Statut | Où                                                     | Vérification                       |
+| -------- | ----------------------------------------------------------------- | ------ | ------------------------------------------------------ | ---------------------------------- |
+| SALLE-03 | Publique, sur code, privée (lien seulement)                       | ✅     | `joinByCode`, `server.ts` (`room:join`), page de salle | Test navigateur                    |
+| SALLE-04 | Un lien par invité, jeton ≥ 128 bits, liste et statut pour l'hôte | ✅     | `invite-rules.ts`, `invites.ts`, `InvitePanel.tsx`     | `invite-rules.test.ts`, navigateur |
+| SALLE-04 | Lié à l'IP au premier usage, réutilisable par la même personne    | ✅     | `decideClaim`, `claimInvite`, `/invitation/[token]`    | `invite-rules.test.ts`, navigateur |
+| SALLE-04 | Révoqué à l'expulsion, invalide à la fermeture de la salle        | ✅     | `revokeInvites`, `decideClaim`                         | `invite-rules.test.ts`, navigateur |
 
 La configuration est gardée en base (colonnes de `Room`, migration
 `20261030014543_room_config`) : elle survit à un redémarrage du serveur.
@@ -126,6 +135,23 @@ Le seed recalcule ce classement à chaque déploiement.
   pseudo garde le même identifiant. Le pseudo suit les mêmes règles qu'un nom
   d'utilisateur ; il n'a pas à être unique, et l'interface affiche « invité » à
   côté pour éviter la confusion avec un compte.
+- **Liens d'invitation (SALLE-04).** Le jeton fait 256 bits (32 octets
+  aléatoires en base64url). À la première ouverture, le lien est lié à la
+  personne (compte ou invité) et à son adresse IP. Ensuite, il ne marche que
+  pour cette personne depuis la même adresse : une autre adresse est refusée,
+  et une autre personne derrière la même adresse (même réseau d'école) aussi.
+  La liaison se fait par une mise à jour conditionnelle en base : deux personnes
+  qui ouvrent le lien en même temps ne peuvent pas l'obtenir toutes les deux.
+- **Adresse IP.** Derrière le proxy de Railway, l'adresse arrive dans un
+  en-tête. On ne le croit que si la variable `TRUST_PROXY_HEADER` le nomme
+  (`x-real-ip` sur Railway) ; sinon, c'est l'adresse de la connexion.
+  `server.ts` calcule l'adresse et remplace l'en-tête interne `x-fastclap-ip`,
+  pour qu'un visiteur ne puisse pas l'inventer.
+- **Salle privée.** Le serveur temps réel décide qui entre : l'hôte, les
+  personnes déjà dans la salle (reconnexion, ou salle devenue privée après leur
+  arrivée) et celles qui ont un lien valide. Sans lien, la page affiche un
+  message au lieu du formulaire d'invité, et le formulaire de code de l'accueil
+  explique que la salle est privée.
 - **Hôte et invités (SALLE-08).** « La personne humaine connectée » est
   comprise comme un utilisateur avec un compte : un invité ne peut pas créer de
   salle (AUTH-03), il ne devient donc jamais hôte. S'il ne reste que des

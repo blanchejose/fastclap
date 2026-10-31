@@ -195,14 +195,23 @@ model Room {
 }
 
 // Lien à usage unique pour une salle privée (AUTH-6).
+// SALLE-04 : un lien par invité, à usage unique. À sa première utilisation,
+// il est lié à l'adresse IP et à la personne qui l'a utilisé.
 model InviteLink {
-  id        String    @id @default(cuid())
-  roomId    String
-  token     String    @unique
-  expiresAt DateTime
-  usedAt    DateTime?
+  id         String    @id @default(cuid())
+  roomId     String
+  token      String    @unique // 256 bits aléatoires, en base64url
+  expiresAt  DateTime? // inutilisé : un lien vit autant que sa salle
+  usedAt     DateTime?
+  usedById   String? // utilisateur ou invité (« guest_… »)
+  usedByName String?
+  ip         String?
+  revokedAt  DateTime? // SALLE-07 : personne expulsée
+  createdAt  DateTime  @default(now())
 
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, usedById])
 }
 
 model Text {
