@@ -52,7 +52,7 @@ describe("machine à états (COURSE-01)", () => {
     expect(room.phase).toBe("RUNNING");
     abandon(room, "h", go + 10);
     abandon(room, "b", go + 20);
-    expect(tick(room, go + 100)).toEqual({ changed: true, ended: true });
+    expect(tick(room, go + 100)).toEqual({ changed: true, ended: true, removed: [] });
     expect(room.phase).toBe("RESULTS");
     expect(backToLobby(room, "h")).toBe(true);
     expect(room.phase).toBe("WAITING");
@@ -157,7 +157,7 @@ describe("déconnexion (COURSE-08) et hôte (SALLE-08)", () => {
     const room = readyRoom();
     const go = running(room);
     disconnect(room, "b", go);
-    tick(room, go + RECONNECT_GRACE_MS);
+    expect(tick(room, go + RECONNECT_GRACE_MS).removed).toEqual(["b"]);
     expect(room.racers.get("b")?.status).toBe("ABANDONED");
     expect(room.members.has("b")).toBe(false);
   });

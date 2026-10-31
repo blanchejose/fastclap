@@ -258,13 +258,20 @@ function finish(racer: Racer, at: number) {
 
 // Fait avancer tout ce qui dépend du temps. `changed` dit s'il faut diffuser
 // l'état ; `ended` signale la fin d'une course (pour l'enregistrer).
-export function tick(room: Room, now: number): { changed: boolean; ended: boolean } {
+// `removed` liste les personnes retirées (absentes depuis 30 s), pour que le
+// serveur libère leur présence (SALLE-06).
+export function tick(
+  room: Room,
+  now: number,
+): { changed: boolean; ended: boolean; removed: string[] } {
   let changed = false;
   let ended = false;
+  const removed: string[] = [];
 
   for (const m of [...room.members.values()]) {
     if (!m.connected && m.disconnectedAt !== null && now - m.disconnectedAt >= RECONNECT_GRACE_MS) {
       removeMember(room, m.id, now);
+      removed.push(m.id);
       changed = true;
     }
   }
@@ -309,7 +316,7 @@ export function tick(room: Room, now: number): { changed: boolean; ended: boolea
     changed = true;
   }
 
-  return { changed, ended };
+  return { changed, ended, removed };
 }
 
 export type KeysResult = "ok" | "rejected" | "ignored";

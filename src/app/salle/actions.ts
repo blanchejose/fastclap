@@ -1,12 +1,14 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { getGuest } from "@/lib/guest";
 import { createGuestToken, GUEST_COOKIE, GUEST_TTL_MS, newGuestId } from "@/lib/guest-token";
+import { IP_HEADER } from "@/lib/client-ip";
 import { prisma } from "@/lib/prisma";
+import { codeAttempts } from "@/lib/rate-limit";
 import { normalizeRoomCode } from "@/lib/room-code";
 import { createRoomFor, DIFFICULTIES } from "@/lib/rooms";
 import { isValidUsername } from "@/lib/username";
@@ -31,15 +33,25 @@ const guestSchema = z.object({
 
 // Server Action : rejoindre une salle avec son code (JOIN-01).
 export async function joinByCode(formData: FormData) {
+  // SALLE-10 : 10 essais ratés par minute et par adresse IP.
+  const ip = (await headers()).get(IP_HEADER) ?? "inconnue";
+  if (codeAttempts.isBlocked(ip)) redirect("/?code=trop#rejoindre");
+
   const input = joinSchema.safeParse({ code: formData.get("code") ?? "" });
-  if (!input.success) redirect("/?code=invalide#rejoindre");
+  if (!input.success) {
+    codeAttempts.record(ip);
+    redirect("/?code=invalide#rejoindre");
+  }
   const { code } = input.data;
 
   const room = await prisma.room.findUnique({
     where: { code },
     select: { status: true, visibility: true },
   });
-  if (!room || room.status === "CLOSED") redirect("/?code=introuvable#rejoindre");
+  if (!room || room.status === "CLOSED") {
+    codeAttempts.record(ip);
+    redirect("/?code=introuvable#rejoindre");
+  }
   // SALLE-04 : le code seul ne suffit pas pour une salle privée.
   if (room.visibility === "PRIVATE") redirect("/?code=prive#rejoindre");
 

@@ -65,6 +65,15 @@ de traçabilité finale reprendra tout avec les identifiants de l'énoncé.
 | SALLE-04 | Lié à l'IP au premier usage, réutilisable par la même personne    | ✅     | `decideClaim`, `claimInvite`, `/invitation/[token]`    | `invite-rules.test.ts`, navigateur |
 | SALLE-04 | Révoqué à l'expulsion, invalide à la fermeture de la salle        | ✅     | `revokeInvites`, `decideClaim`                         | `invite-rules.test.ts`, navigateur |
 
+### Une salle à la fois et limite d'essais
+
+| ID       | Exigence                                                    | Statut | Où                                                            | Vérification                              |
+| -------- | ----------------------------------------------------------- | ------ | ------------------------------------------------------------- | ----------------------------------------- |
+| SALLE-06 | Une seule salle à la fois, garanti par la base              | ✅     | Table `RoomPresence` (clé primaire `personId`), `presence.ts` | `presence.test.ts`, navigateur, essai SQL |
+| SALLE-06 | Proposer de quitter la salle actuelle                       | ✅     | `server.ts` (`leaveOther`), `RoomLive.tsx`                    | Test navigateur                           |
+| SALLE-06 | Un deuxième onglet sur la même salle ne crée pas de doublon | ✅     | `engine.ts` (`join`), `claimPresence`                         | `engine.test.ts`, navigateur              |
+| SALLE-10 | 10 essais de code ratés par minute et par adresse IP        | ✅     | `rate-limit.ts`, `joinByCode`, page de salle, `room:join`     | `rate-limit.test.ts`, navigateur          |
+
 La configuration est gardée en base (colonnes de `Room`, migration
 `20261030014543_room_config`) : elle survit à un redémarrage du serveur.
 
@@ -152,6 +161,23 @@ Le seed recalcule ce classement à chaque déploiement.
   arrivée) et celles qui ont un lien valide. Sans lien, la page affiche un
   message au lieu du formulaire d'invité, et le formulaire de code de l'accueil
   explique que la salle est privée.
+- **Une salle à la fois (SALLE-06).** La table `RoomPresence` a une ligne au
+  plus par personne (compte ou invité) : sa clé primaire est l'identifiant de
+  la personne, donc PostgreSQL refuse une deuxième ligne, même si deux onglets
+  essaient en même temps. Les spectateurs comptent aussi. La présence est
+  libérée quand la personne quitte, est expulsée, reste absente plus de 30 s
+  ou quand la salle ferme. Les salles vivant en mémoire, le serveur efface
+  toutes les présences à son démarrage. Si une présence pointe vers une salle
+  où la personne n'est plus (reste d'un arrêt brutal), elle est remplacée.
+- **Limite d'essais (SALLE-10).** On compte les essais **ratés** (code mal
+  formé, salle introuvable ou fermée) par adresse IP : sur le formulaire de
+  l'accueil, à l'adresse `/salle/CODE` et par le serveur temps réel. Après 10
+  essais en une minute, plus aucun code ne s'ouvre depuis cette adresse
+  jusqu'à la fin de la fenêtre glissante, même un bon code, pour ne rien
+  révéler. Une personne déjà dans une salle peut toujours s'y reconnecter. Le
+  compteur est en mémoire, partagé entre Next.js et Socket.IO par `globalThis`
+  (un seul serveur). Limite connue : toute une classe derrière la même adresse
+  partage le compteur.
 - **Hôte et invités (SALLE-08).** « La personne humaine connectée » est
   comprise comme un utilisateur avec un compte : un invité ne peut pas créer de
   salle (AUTH-03), il ne devient donc jamais hôte. S'il ne reste que des

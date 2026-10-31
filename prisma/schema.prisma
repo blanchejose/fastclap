@@ -187,14 +187,27 @@ model Room {
   createdAt    DateTime   @default(now())
   closedAt     DateTime?
 
-  organizer   User         @relation("RoomOrganizer", fields: [organizerId], references: [id])
+  organizer   User           @relation("RoomOrganizer", fields: [organizerId], references: [id])
   races       Race[]
   inviteLinks InviteLink[]
+  presences   RoomPresence[]
 
   @@index([visibility, status])
 }
 
 // Lien à usage unique pour une salle privée (AUTH-6).
+// SALLE-06 : une personne (compte ou invité) est dans une seule salle à la
+// fois. La clé primaire sur personId le garantit dans la base elle-même.
+model RoomPresence {
+  personId String   @id // id d'utilisateur, ou « guest_… » pour un invité
+  roomCode String
+  joinedAt DateTime @default(now())
+
+  room Room @relation(fields: [roomCode], references: [code], onDelete: Cascade)
+
+  @@index([roomCode])
+}
+
 // SALLE-04 : un lien par invité, à usage unique. À sa première utilisation,
 // il est lié à l'adresse IP et à la personne qui l'a utilisé.
 model InviteLink {
