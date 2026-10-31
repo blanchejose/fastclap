@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import type { Dictionary, Locale } from "@/i18n/dictionaries";
 import { MAX_KEYS_PER_BATCH, type JoinResult, type RoomView } from "@/lib/race/engine";
 import { accuracy, netWpm } from "@/lib/race/stats";
 import { applyKey, correctChars, newTyping, progress, type Typing } from "@/lib/race/typing";
 import { ConfigPanel } from "./race/ConfigPanel";
+import { InvitePanel, type InviteReply } from "./race/InvitePanel";
 import { ConfirmButton } from "./race/ConfirmButton";
 import { Countdown } from "./race/Countdown";
 import { Results } from "./race/Results";
@@ -20,10 +21,10 @@ type Props = {
   token: string;
   meId: string;
   locale: Locale;
-  t: Pick<Dictionary, "room" | "race" | "results" | "config" | "levels">;
+  t: Pick<Dictionary, "room" | "race" | "results" | "config" | "levels" | "invite">;
 };
 
-type JoinReply = JoinResult | { ok: false; reason: "invalid" };
+type JoinReply = JoinResult | { ok: false; reason: "invalid" | "private" };
 type RaceText = { raceNo: number; text: string };
 type Resync = { raceNo: number; typed: string; keystrokes: number; errors: number };
 
@@ -51,6 +52,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   const typingRef = useRef<Typing>(newTyping());
   const pendingRef = useRef<string[]>([]);
   const [view, setView] = useState<RoomView | null>(null);
+  const [inviteVersion, setInviteVersion] = useState(0);
   const [race, setRace] = useState<RaceText | null>(null);
   const [typing, setTyping] = useState<Typing>(newTyping);
   const clockOffsetRef = useRef(0);
@@ -86,6 +88,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
       resetTyping({ typed: r.typed, keystrokes: r.keystrokes, errors: r.errors, missed: {} }),
     );
     socket.on("room:kicked", () => setKicked(true));
+    socket.on("invite:update", () => setInviteVersion((v) => v + 1));
     socket.on("connect_error", () => setError(t.room.errors.connection));
 
     // Les touches partent par lots plutôt qu'une à une (PERF-02).
@@ -104,6 +107,12 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   const now = useServerClock(clockOffsetRef, inRace);
 
   const send = (event: string, payload: object = {}) => socketRef.current?.emit(event, payload);
+  // Stable : le panneau des liens redemande la liste seulement quand `version` change.
+  const requestInvites = useCallback(
+    (event: "invite:list" | "invite:create", reply: (r: InviteReply) => void) =>
+      socketRef.current?.emit(event, {}, reply),
+    [],
+  );
 
   if (kicked) return <Notice>{t.room.kicked}</Notice>;
   if (error) return <Notice>{error}</Notice>;
@@ -152,6 +161,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
             t={t.config}
             levels={t.levels}
           />
+          {isHost && <InvitePanel request={requestInvites} version={inviteVersion} t={t.invite} />}
         </>
       )}
 

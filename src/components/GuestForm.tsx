@@ -2,11 +2,18 @@ import Link from "next/link";
 import { joinAsGuest } from "@/app/salle/actions";
 import type { Dictionary } from "@/i18n/dictionaries";
 
-type Props = { code: string; error: boolean; t: Dictionary["guest"]; login: string };
+type Props = {
+  code: string;
+  error: boolean;
+  t: Dictionary["guest"];
+  login: string;
+  // Lien d'invitation à rouvrir après le choix du pseudo (SALLE-04).
+  next?: string;
+};
 
 // AUTH-02 : sans compte, on choisit un pseudo pour entrer dans la salle.
 // Composant serveur : le formulaire marche même sans JavaScript.
-export function GuestForm({ code, error, t, login }: Props) {
+export function GuestForm({ code, error, t, login, next }: Props) {
   return (
     <div className="flex flex-wrap gap-6">
       <section
@@ -19,6 +26,7 @@ export function GuestForm({ code, error, t, login }: Props) {
         <p className="text-sourdine">{t.lead}</p>
         <form action={joinAsGuest} className="flex flex-col gap-3">
           <input type="hidden" name="code" value={code} />
+          {next && <input type="hidden" name="suite" value={next} />}
           <label htmlFor="pseudo-invite" className="font-bold">
             {t.pseudo}
           </label>
@@ -52,7 +60,7 @@ export function GuestForm({ code, error, t, login }: Props) {
       <section className="bg-surface-2 flex min-w-0 flex-[1_1_280px] flex-col items-start gap-4 self-start rounded-3xl p-7">
         <p>{t.account}</p>
         <Link
-          href={`/connexion?suite=/salle/${code}`}
+          href={`/connexion?suite=${next ?? `/salle/${code}`}`}
           className="bg-surface inline-flex min-h-12 items-center rounded-xl px-5 font-bold"
         >
           {login}

@@ -1,7 +1,7 @@
 import { joinByCode } from "@/app/salle/actions";
 import type { Dictionary } from "@/i18n/dictionaries";
 
-type Props = { t: Dictionary["code"]; error?: "invalide" | "introuvable" };
+type Props = { t: Dictionary["code"]; error?: "invalide" | "introuvable" | "prive" };
 
 // Formulaire sans JavaScript : il appelle une Server Action (ROOM-1).
 export function RoomCodeForm({ t, error }: Props) {

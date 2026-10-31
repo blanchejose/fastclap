@@ -80,6 +80,7 @@ export const fr = {
     submit: "Entrer",
     invalide: "Un code a 6 caractères, par exemple K7X-2QP.",
     introuvable: "Aucune salle ouverte avec ce code. Vérifie avec ton ami.",
+    prive: "Cette salle est privée : demande un lien d'invitation à l'hôte.",
   },
   roomList: {
     empty:
@@ -147,10 +148,37 @@ export const fr = {
       closed: "Cette salle est fermée.",
       kicked: "Tu as été retiré de cette salle.",
       in_progress: "Une course est en cours : reviens quand elle sera terminée.",
+      private: "Cette salle est privée : il faut un lien d'invitation de l'hôte pour y entrer.",
       invalid: "Demande refusée par le serveur.",
       connection: "Connexion au serveur de course impossible. Recharge la page.",
     },
     back: "Retour aux salles",
+  },
+  invite: {
+    title: "Invitation",
+    to: "Tu es invité dans la salle de {name}.",
+    privateRoom:
+      "Cette salle est privée : on y entre seulement avec un lien d'invitation de l'hôte.",
+    errors: {
+      not_found: "Ce lien d'invitation n'existe pas. Vérifie qu'il est complet.",
+      closed: "Cette salle est fermée : le lien ne marche plus.",
+      revoked: "Ce lien a été révoqué par l'hôte.",
+      other_ip: "Ce lien a déjà été utilisé depuis un autre appareil ou un autre réseau.",
+      other_person: "Ce lien a déjà été utilisé par quelqu'un d'autre.",
+    },
+    panelTitle: "Liens d'invitation",
+    panelLead:
+      "Un lien par invité. Le premier qui l'ouvre le garde : il marche ensuite seulement pour lui, depuis le même réseau.",
+    create: "Générer un lien",
+    copy: "Copier",
+    copied: "Copié",
+    linkLabel: "Lien {n}",
+    empty: "Aucun lien pour l'instant.",
+    status: {
+      UNUSED: "Pas encore utilisé",
+      USED: "Utilisé par {name}",
+      REVOKED: "Révoqué ({name})",
+    },
   },
   guest: {
     title: "Jouer sans compte",
@@ -355,6 +383,7 @@ const en: Dictionary = {
     submit: "Enter",
     invalide: "A code has 6 characters, for example K7X-2QP.",
     introuvable: "No open room with this code. Check with your friend.",
+    prive: "This room is private: ask the host for an invitation link.",
   },
   roomList: {
     empty: "Nobody on the starting line yet. Create a room and invite your class with its code.",
@@ -421,10 +450,36 @@ const en: Dictionary = {
       closed: "This room is closed.",
       kicked: "You were removed from this room.",
       in_progress: "A race is under way: come back when it is over.",
+      private: "This room is private: you need an invitation link from the host to join.",
       invalid: "The server refused this request.",
       connection: "Can't reach the race server. Reload the page.",
     },
     back: "Back to rooms",
+  },
+  invite: {
+    title: "Invitation",
+    to: "You are invited to {name}'s room.",
+    privateRoom: "This room is private: you can only join with an invitation link from the host.",
+    errors: {
+      not_found: "This invitation link doesn't exist. Check that it is complete.",
+      closed: "This room is closed: the link no longer works.",
+      revoked: "The host revoked this link.",
+      other_ip: "This link was already used from another device or network.",
+      other_person: "This link was already used by someone else.",
+    },
+    panelTitle: "Invitation links",
+    panelLead:
+      "One link per guest. The first person to open it keeps it: it then only works for them, from the same network.",
+    create: "Create a link",
+    copy: "Copy",
+    copied: "Copied",
+    linkLabel: "Link {n}",
+    empty: "No links yet.",
+    status: {
+      UNUSED: "Not used yet",
+      USED: "Used by {name}",
+      REVOKED: "Revoked ({name})",
+    },
   },
   guest: {
     title: "Play without an account",

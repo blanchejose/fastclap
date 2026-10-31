@@ -31,6 +31,7 @@ export default async function RoomPage({ params, searchParams }: PageProps<"/sal
       select: {
         code: true,
         status: true,
+        visibility: true,
         organizer: { select: { username: true } },
       },
     }),
@@ -69,8 +70,12 @@ export default async function RoomPage({ params, searchParams }: PageProps<"/sal
               results: t.results,
               config: t.config,
               levels: t.levels,
+              invite: t.invite,
             }}
           />
+        ) : room.visibility === "PRIVATE" ? (
+          // SALLE-04 : sans lien d'invitation, pas de formulaire d'invité.
+          <p className="bg-surface rounded-3xl p-6 text-lg font-semibold">{t.invite.privateRoom}</p>
         ) : (
           <GuestForm code={room.code} error={guestError} t={t.guest} login={t.common.login} />
         )}

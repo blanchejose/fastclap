@@ -12,7 +12,8 @@ const tilts = ["-rotate-3", "rotate-2", "-rotate-1"];
 // clients de la page sont les boutons de thème et de langue.
 export default async function Home({ searchParams }: PageProps<"/">) {
   const [{ code }, t] = await Promise.all([searchParams, getDictionary()]);
-  const codeError = code === "invalide" || code === "introuvable" ? code : undefined;
+  const codeError =
+    code === "invalide" || code === "introuvable" || code === "prive" ? code : undefined;
 
   return (
     <>

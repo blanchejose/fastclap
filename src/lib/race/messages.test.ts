@@ -30,7 +30,10 @@ describe("validation des messages temps réel (TECH-07)", () => {
     expect(parseMessage("room:config", { timeLimitSec: 20 })).toBeNull(); // sous 30 s
     expect(parseMessage("room:config", { timeLimitSec: null })).toEqual({ timeLimitSec: null });
     expect(parseMessage("room:config", { maxPlayers: 31 })).toBeNull();
-    expect(parseMessage("room:config", { visibility: "PRIVATE" })).toBeNull();
+    expect(parseMessage("room:config", { visibility: "PRIVATE" })).toEqual({
+      visibility: "PRIVATE",
+    });
+    expect(parseMessage("room:config", { visibility: "SECRET" })).toBeNull();
     expect(parseMessage("room:config", { hack: true })).toBeNull(); // champ inconnu
   });
 });

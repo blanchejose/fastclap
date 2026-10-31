@@ -7,6 +7,7 @@ import {
   LANGUAGES,
   LIMITS,
   TEXT_KINDS,
+  VISIBILITIES,
   type Config,
   type ConfigPatch,
 } from "@/lib/race/config";
@@ -269,7 +270,7 @@ export function ConfigPanel({ config, isHost, update, t, levels }: Props) {
           <fieldset>
             <legend className={legendClass}>{t.visibility}</legend>
             <div className="flex flex-col gap-2">
-              {(["PUBLIC", "SEMI_PUBLIC"] as const).map((visibility) => (
+              {VISIBILITIES.map((visibility) => (
                 <label key={visibility} className={radioClass}>
                   <input
                     type="radio"
