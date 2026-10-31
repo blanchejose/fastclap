@@ -11,10 +11,13 @@ function sign(data: string, secret: string) {
   return createHmac("sha256", secret).update(data).digest("base64url");
 }
 
-export function createSocketToken(identity: SocketIdentity, secret: string, now = Date.now()) {
-  const data = Buffer.from(JSON.stringify({ ...identity, exp: now + TTL_MS })).toString(
-    "base64url",
-  );
+export function createSocketToken(
+  identity: SocketIdentity,
+  secret: string,
+  now = Date.now(),
+  ttlMs = TTL_MS,
+) {
+  const data = Buffer.from(JSON.stringify({ ...identity, exp: now + ttlMs })).toString("base64url");
   return `${data}.${sign(data, secret)}`;
 }
 

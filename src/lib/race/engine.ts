@@ -2,6 +2,7 @@
 // (docs/ARCHITECTURE.md, section 2). Code pur, sans réseau ni base de données :
 // le serveur Socket.IO l'appelle et les tests Vitest le vérifient. Le temps
 // (`now`, en ms) est toujours passé en paramètre pour que tout soit prévisible.
+import { isGuestId } from "../guest-id";
 import { createBot, stepBot, type Bot, type BotLevel } from "./bots";
 import { applyPatch, DEFAULT_CONFIG, type Config, type ConfigPatch } from "./config";
 import { hashSeed } from "./random";
@@ -146,10 +147,12 @@ export function removeMember(room: Room, id: string, now: number) {
   if (id === room.hostId) transferHost(room);
 }
 
-// SALLE-08 : l'hôte passe à l'humain connecté présent depuis le plus longtemps.
+// SALLE-08 : l'hôte passe à l'utilisateur connecté présent depuis le plus
+// longtemps. Un invité ne devient jamais hôte : il ne peut pas créer de salle
+// (AUTH-03). S'il ne reste que des invités, la salle est fermée.
 function transferHost(room: Room) {
   const next = [...room.members.values()]
-    .filter((m) => m.kind === "HUMAN" && m.connected)
+    .filter((m) => m.kind === "HUMAN" && m.connected && !isGuestId(m.id))
     .sort((a, b) => a.joinedAt - b.joinedAt)[0];
   if (next) room.hostId = next.id;
   else room.phase = "CLOSED";

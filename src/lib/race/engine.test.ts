@@ -171,6 +171,25 @@ describe("déconnexion (COURSE-08) et hôte (SALLE-08)", () => {
     expect(room.hostId).toBe("b");
   });
 
+  it("ne donne jamais le rôle d'hôte à un invité (AUTH-03)", () => {
+    const room = createRoom("K7X2QP", "h");
+    join(room, { id: "h", name: "Hôte" }, "PLAYER", 0);
+    join(room, { id: "guest_abc", name: "Invité" }, "PLAYER", 1);
+    join(room, { id: "u2", name: "Compte" }, "SPECTATOR", 2);
+    disconnect(room, "h", 10);
+    tick(room, 10 + RECONNECT_GRACE_MS);
+    expect(room.hostId).toBe("u2");
+  });
+
+  it("ferme la salle quand il ne reste que des invités", () => {
+    const room = createRoom("K7X2QP", "h");
+    join(room, { id: "h", name: "Hôte" }, "PLAYER", 0);
+    join(room, { id: "guest_abc", name: "Invité" }, "PLAYER", 1);
+    disconnect(room, "h", 10);
+    tick(room, 10 + RECONNECT_GRACE_MS);
+    expect(room.phase).toBe("CLOSED");
+  });
+
   it("ferme la salle quand il ne reste plus d'humain", () => {
     const room = createRoom("K7X2QP", "h");
     join(room, { id: "h", name: "Hôte" }, "PLAYER", 0);

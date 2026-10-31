@@ -1,4 +1,5 @@
 import type { Dictionary } from "@/i18n/dictionaries";
+import { isGuestId } from "@/lib/guest-id";
 import type { RacerView } from "@/lib/race/engine";
 import { Runner } from "../Logo";
 import { Avatar } from "./Avatar";
@@ -9,7 +10,7 @@ type Props = {
   // Progression et MPM du joueur local, calculés dans son navigateur : son
   // coureur bouge à chaque touche, sans attendre le serveur.
   local: { progress: number; wpm: number } | null;
-  t: Dictionary["race"] & { you: string; bot: string };
+  t: Dictionary["race"] & { you: string; bot: string; guest: string };
 };
 
 // La piste, élément signature de FastClap (COURSE-05) : un couloir par
@@ -54,6 +55,7 @@ export function Track({ racers, meId, local, t }: Props) {
                         {t.bot}
                       </span>
                     )}
+                    {isGuestId(racer.id) && <span className="text-sourdine">({t.guest})</span>}
                     {isMe && <span className="text-sourdine">({t.you})</span>}
                     {racer.status !== "RACING" && (
                       <span className="text-sourdine text-xs">· {t.status[racer.status]}</span>

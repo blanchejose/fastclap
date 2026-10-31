@@ -48,6 +48,14 @@ de traçabilité finale reprendra tout avec les identifiants de l'énoncé.
 | CONF-12            | Configuration visible en direct par tout le monde           | ✅     | `server.ts` (`room:config`), `ConfigPanel.tsx` (résumé)                 | Test navigateur                      |
 | SEC-01             | Configurer : réservé à l'hôte, vérifié côté serveur         | ✅     | `engine.ts` (`updateConfig`)                                            | `engine.test.ts`                     |
 
+### Invités
+
+| ID      | Exigence                                                  | Statut | Où                                                                   | Vérification                      |
+| ------- | --------------------------------------------------------- | ------ | -------------------------------------------------------------------- | --------------------------------- |
+| AUTH-02 | Pseudo de 3 à 20 caractères, session dans un cookie signé | ✅     | `src/app/salle/actions.ts` (`joinAsGuest`), `src/lib/guest-token.ts` | `guest-token.test.ts`, navigateur |
+| AUTH-03 | Pas de création de salle, pas d'historique, avatar généré | ✅     | `createRoom` (session exigée), `Avatar.tsx`                          | Test navigateur                   |
+| TECH-07 | Server Actions validées par Zod                           | ✅     | `src/app/salle/actions.ts`                                           | Revue du code                     |
+
 La configuration est gardée en base (colonnes de `Room`, migration
 `20261030014543_room_config`) : elle survit à un redémarrage du serveur.
 
@@ -112,6 +120,16 @@ Le seed recalcule ce classement à chaque déploiement.
 - **Choix du texte.** Le texte est tiré au hasard parmi ceux du niveau de la
   salle. Une salle passe par tous les textes de son niveau avant d'en reprendre
   un, et ne court jamais deux fois de suite le même texte.
+- **Invités (AUTH-02).** Le cookie `fastclap_invite` contient un identifiant
+  aléatoire (128 bits) et le pseudo, signés avec `AUTH_SECRET` (HMAC-SHA256) ;
+  il dure 30 jours, en `httpOnly` et `SameSite=Lax`. Un invité qui change de
+  pseudo garde le même identifiant. Le pseudo suit les mêmes règles qu'un nom
+  d'utilisateur ; il n'a pas à être unique, et l'interface affiche « invité » à
+  côté pour éviter la confusion avec un compte.
+- **Hôte et invités (SALLE-08).** « La personne humaine connectée » est
+  comprise comme un utilisateur avec un compte : un invité ne peut pas créer de
+  salle (AUTH-03), il ne devient donc jamais hôte. S'il ne reste que des
+  invités, la salle est fermée.
 - **Rôle.** Chaque personne humaine (pas seulement l'hôte) choisit entre « Je
   cours » et « Je regarde » dans la salle d'attente.
 
