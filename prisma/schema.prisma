@@ -108,19 +108,23 @@ enum ResultStatus {
 // ─── Utilisateurs et authentification (Auth.js) ──────────────
 
 model User {
-  id            String    @id @default(cuid())
-  username      String    @unique
+  id              String    @id @default(cuid())
+  username        String    @unique
   // Null pour les comptes OAuth et « username seul » (AUTH-3).
-  passwordHash  String?
+  passwordHash    String?
   // Champs attendus par l'adaptateur Prisma d'Auth.js.
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  locale        Locale    @default(FR)
-  theme         Theme     @default(DARK)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  name            String?
+  email           String?   @unique
+  emailVerified   DateTime?
+  image           String?
+  // AUTH-04 : photo téléversée, déjà redimensionnée (WebP 256 × 256). Gardée
+  // en base : le disque du serveur est effacé à chaque déploiement.
+  avatar          Bytes?
+  avatarUpdatedAt DateTime?
+  locale          Locale    @default(FR)
+  theme           Theme     @default(DARK)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   accounts     Account[]
   sessions     Session[]

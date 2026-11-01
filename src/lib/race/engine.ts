@@ -29,6 +29,7 @@ export type Member = {
   kind: "HUMAN" | "BOT";
   role: Role;
   botLevel: BotLevel | null;
+  avatar: string | null; // AUTH-04 : photo de profil, sinon avatar généré
   joinedAt: number;
   connected: boolean;
   disconnectedAt: number | null;
@@ -39,6 +40,7 @@ export type Racer = {
   name: string;
   kind: "HUMAN" | "BOT";
   botLevel: BotLevel | null;
+  avatar: string | null;
   text: string; // propre à chaque coureur : les bonus pourront l'allonger ou le raccourcir
   typing: Typing;
   status: RacerStatus;
@@ -107,7 +109,7 @@ export function players(room: Room): Member[] {
 
 export function join(
   room: Room,
-  person: { id: string; name: string },
+  person: { id: string; name: string; avatar?: string | null },
   role: Role,
   now: number,
 ): JoinResult {
@@ -130,6 +132,7 @@ export function join(
     kind: "HUMAN",
     role: full ? "SPECTATOR" : role,
     botLevel: null,
+    avatar: person.avatar ?? null,
     joinedAt: now,
     connected: true,
     disconnectedAt: null,
@@ -199,6 +202,7 @@ export function addBot(room: Room, by: string, level: BotLevel, now: number): bo
     kind: "BOT",
     role: "PLAYER",
     botLevel: level,
+    avatar: null,
     joinedAt: now,
     connected: true,
     disconnectedAt: null,
@@ -252,6 +256,7 @@ export function startRace(room: Room, by: string, text: string, seed: number, no
       name: m.name,
       kind: m.kind,
       botLevel: m.botLevel,
+      avatar: m.avatar,
       text,
       typing: newTyping(),
       status: "RACING",
@@ -446,6 +451,7 @@ export type RacerView = RacerStats & {
   name: string;
   kind: "HUMAN" | "BOT";
   botLevel: BotLevel | null;
+  avatar: string | null;
   status: RacerStatus;
   rank: number;
   lane: number; // couloir fixe sur la piste, dans l'ordre d'arrivée dans la salle
@@ -486,12 +492,13 @@ export function snapshot(room: Room, now: number): RoomView {
     startBlocker: startBlocker(room),
     members: [...room.members.values()]
       .sort((a, b) => a.joinedAt - b.joinedAt)
-      .map(({ id, name, kind, role, botLevel, connected }) => ({
+      .map(({ id, name, kind, role, botLevel, avatar, connected }) => ({
         id,
         name,
         kind,
         role,
         botLevel,
+        avatar,
         connected,
       })),
     racers: ranking(room).map((r, i) => ({
@@ -500,6 +507,7 @@ export function snapshot(room: Room, now: number): RoomView {
       name: r.name,
       kind: r.kind,
       botLevel: r.botLevel,
+      avatar: r.avatar,
       status: r.status,
       rank: i + 1,
       bonuses: r.bonuses,

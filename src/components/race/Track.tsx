@@ -50,7 +50,7 @@ export function Track({ racers, meId, local, t, effects, bonusNames }: Props) {
                 </span>
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <span className="flex min-w-0 items-center gap-2 text-sm">
-                    <Avatar name={racer.name} className="size-6" />
+                    <Avatar name={racer.name} src={racer.avatar} className="size-6" />
                     <span className={`truncate ${isMe ? "font-extrabold" : "font-semibold"}`}>
                       {racer.name}
                     </span>
