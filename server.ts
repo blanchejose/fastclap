@@ -302,7 +302,14 @@ app.prepare().then(async () => {
   setInterval(() => {
     const now = Date.now();
     for (const room of rooms.values()) {
-      const { changed, removed } = engine.tick(room, now);
+      const { changed, removed, bonuses } = engine.tick(room, now);
+      // BONUS-04 : un texte raccourci ou allongé part au joueur concerné.
+      for (const event of bonuses) {
+        const racer = room.racers.get(event.targetId);
+        if (!racer || event.type === "FOG") continue;
+        for (const s of socketsOf(event.targetId, room.code))
+          s.emit("race:mytext", { raceNo: room.raceNo, text: racer.text });
+      }
       if (removed.length > 0) void releasePresence(removed, room.code);
       if (room.phase === "CLOSED") void closeRoom(room);
       else if (changed) broadcast(room);

@@ -6,7 +6,12 @@ type Props = {
   racers: RacerView[];
   meId: string;
   locale: Locale;
-  t: Dictionary["results"] & { statuses: Dictionary["race"]["status"]; you: string; bot: string };
+  t: Dictionary["results"] & {
+    statuses: Dictionary["race"]["status"];
+    you: string;
+    bot: string;
+    bonusNames: Dictionary["bonus"]["names"];
+  };
 };
 
 // Marches du podium : la 1re au centre et la plus haute (RES-01).
@@ -63,7 +68,7 @@ export function Results({ racers, meId, locale, t }: Props) {
         ))}
       </ol>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[42rem] border-collapse text-left">
+        <table className="w-full min-w-[48rem] border-collapse text-left">
           <thead className="text-sourdine border-trait border-b-2 text-sm">
             <tr>
               <th scope="col" className="px-3 py-2">
@@ -90,6 +95,9 @@ export function Results({ racers, meId, locale, t }: Props) {
               <th scope="col" className="px-3 py-2">
                 {t.status}
               </th>
+              <th scope="col" className="px-3 py-2">
+                {t.bonuses}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -115,6 +123,9 @@ export function Results({ racers, meId, locale, t }: Props) {
                 <td className={cell}>{number.format(r.errors)}</td>
                 <td className={cell}>{seconds(r.timeMs)}</td>
                 <td className="px-3 py-2.5">{t.statuses[r.status]}</td>
+                <td className="px-3 py-2.5 text-sm">
+                  {r.bonuses.length > 0 ? r.bonuses.map((b) => t.bonusNames[b]).join(", ") : "—"}
+                </td>
               </tr>
             ))}
           </tbody>

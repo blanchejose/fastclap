@@ -3,9 +3,10 @@
 // le serveur Socket.IO l'appelle et les tests Vitest le vérifient. Le temps
 // (`now`, en ms) est toujours passé en paramètre pour que tout soit prévisible.
 import { isGuestId } from "../guest-id";
+import { applyBonuses, type BonusEvent, type BonusType } from "./bonus";
 import { createBot, stepBot, type Bot, type BotLevel } from "./bots";
 import { applyPatch, DEFAULT_CONFIG, type Config, type ConfigPatch } from "./config";
-import { hashSeed } from "./random";
+import { createRng, hashSeed, type Rng } from "./random";
 import { accuracy, netWpm, rawWpm } from "./stats";
 import { applyKey, correctChars, isComplete, newTyping, progress, type Typing } from "./typing";
 
@@ -18,6 +19,7 @@ export const RECONNECT_GRACE_MS = 30_000; // COURSE-08
 export const MAX_KEYS_PER_BATCH = 30; // COURSE-06 : au-delà, c'est un saut de progression
 export const MAX_KEYS_PER_SECOND = 25; // COURSE-06 : ≈ 300 MPM, au-delà de tout humain
 const SAMPLE_EVERY_MS = 1_000; // RES-05 : un point de la courbe de MPM par seconde
+export const BONUS_ANNOUNCE_MS = 4_000; // BONUS-03 : durée d'une annonce
 
 export type { Config } from "./config";
 
@@ -44,6 +46,8 @@ export type Racer = {
   samples: { t: number; wpm: number }[];
   bot: Bot | null;
   recentKeys: number[]; // horodatages des touches reçues (limite de vitesse)
+  bonuses: BonusType[]; // bonus reçus (BONUS-01 : 3 au plus), affichés aux résultats
+  fogUntil: number | null; // brouillard sur les prochains mots jusqu'à cet instant
 };
 
 export type Room = {
@@ -61,6 +65,9 @@ export type Room = {
   lastSampleAt: number;
   racers: Map<string, Racer>;
   botCount: number;
+  checkpoints: number; // points de contrôle déjà passés (BONUS-01)
+  bonusEvents: BonusEvent[];
+  bonusRng: Rng; // tirage des bonus, à partir de la graine de la course
 };
 
 export type JoinResult =
@@ -85,6 +92,9 @@ export function createRoom(code: string, hostId: string, config: Config = DEFAUL
     lastSampleAt: 0,
     racers: new Map(),
     botCount: 0,
+    checkpoints: 0,
+    bonusEvents: [],
+    bonusRng: createRng(0),
   };
 }
 
@@ -232,6 +242,9 @@ export function startRace(room: Room, by: string, text: string, seed: number, no
   room.endedAt = null;
   room.lastSampleAt = room.startAt;
   room.racers = new Map();
+  room.checkpoints = 0;
+  room.bonusEvents = [];
+  room.bonusRng = createRng(seed ^ 0x5bd1e995);
   for (const m of players(room)) {
     if (!m.connected) continue;
     room.racers.set(m.id, {
@@ -246,6 +259,8 @@ export function startRace(room: Room, by: string, text: string, seed: number, no
       samples: [],
       bot: m.botLevel ? createBot(m.botLevel, seed ^ hashSeed(m.id)) : null,
       recentKeys: [],
+      bonuses: [],
+      fogUntil: null,
     });
   }
   return true;
@@ -259,14 +274,15 @@ function finish(racer: Racer, at: number) {
 // Fait avancer tout ce qui dépend du temps. `changed` dit s'il faut diffuser
 // l'état ; `ended` signale la fin d'une course (pour l'enregistrer).
 // `removed` liste les personnes retirées (absentes depuis 30 s), pour que le
-// serveur libère leur présence (SALLE-06).
+// serveur libère leur présence (SALLE-06) ; `bonuses`, les bonus distribués.
 export function tick(
   room: Room,
   now: number,
-): { changed: boolean; ended: boolean; removed: string[] } {
+): { changed: boolean; ended: boolean; removed: string[]; bonuses: BonusEvent[] } {
   let changed = false;
   let ended = false;
   const removed: string[] = [];
+  let bonuses: BonusEvent[] = [];
 
   for (const m of [...room.members.values()]) {
     if (!m.connected && m.disconnectedAt !== null && now - m.disconnectedAt >= RECONNECT_GRACE_MS) {
@@ -288,6 +304,12 @@ export function tick(
       if (!racer.bot || racer.status !== "RACING") continue;
       stepBot(racer.bot, racer.typing, racer.text, room.config.errorMode, elapsed);
       if (isComplete(racer.typing, racer.text)) finish(racer, startAt + racer.bot.lastKeyAt);
+    }
+
+    // BONUS-01 : bonus aux points de contrôle, pour les humains comme pour les bots.
+    if (room.config.bonuses) {
+      bonuses = applyBonuses(room, now, room.bonusRng);
+      room.bonusEvents.push(...bonuses);
     }
 
     if (now - room.lastSampleAt >= SAMPLE_EVERY_MS) {
@@ -316,7 +338,7 @@ export function tick(
     changed = true;
   }
 
-  return { changed, ended, removed };
+  return { changed, ended, removed, bonuses };
 }
 
 export type KeysResult = "ok" | "rejected" | "ignored";
@@ -419,6 +441,8 @@ export type RacerView = RacerStats & {
   status: RacerStatus;
   rank: number;
   lane: number; // couloir fixe sur la piste, dans l'ordre d'arrivée dans la salle
+  bonuses: BonusType[]; // RES-02 : bonus reçus
+  fogUntil: number | null;
 };
 
 export type RoomView = {
@@ -433,6 +457,7 @@ export type RoomView = {
   startBlocker: StartBlocker | null;
   members: MemberView[];
   racers: RacerView[];
+  bonusEvents: BonusEvent[]; // BONUS-03 : les bonus des dernières secondes, à annoncer
 };
 
 // Ce que le serveur diffuse aux navigateurs (10 fois par seconde en course).
@@ -466,7 +491,10 @@ export function snapshot(room: Room, now: number): RoomView {
       botLevel: r.botLevel,
       status: r.status,
       rank: i + 1,
+      bonuses: r.bonuses,
+      fogUntil: r.fogUntil,
       ...statsOf(room, r, now),
     })),
+    bonusEvents: room.bonusEvents.filter((e) => now - e.at < BONUS_ANNOUNCE_MS),
   };
 }

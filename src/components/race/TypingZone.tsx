@@ -10,6 +10,7 @@ type Props = {
   typing: Typing;
   active: boolean;
   mode: ErrorMode;
+  fogged: boolean; // BONUS-02 : brouillard sur les prochains mots
   onKey: (key: string) => void;
   t: Dictionary["race"];
 };
@@ -17,7 +18,7 @@ type Props = {
 // Zone de frappe (COURSE-04) : retour immédiat lettre par lettre, coller
 // désactivé. Un champ invisible reçoit le clavier ; le texte affiché est
 // colorié selon ce qui a été tapé.
-export function TypingZone({ text, typing, active, mode, onKey, t }: Props) {
+export function TypingZone({ text, typing, active, mode, fogged, onKey, t }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -54,6 +55,10 @@ export function TypingZone({ text, typing, active, mode, onKey, t }: Props) {
 
   const block = (event: React.SyntheticEvent) => event.preventDefault();
   const cursor = typing.typed.length;
+  // Fin du brouillard : la fin du mot en cours, puis les trois mots suivants.
+  let fogEnd = cursor;
+  for (let words = 0; fogged && fogEnd < text.length && words < 4; fogEnd++)
+    if (text[fogEnd] === " " && fogEnd > cursor) words++;
 
   return (
     <section aria-labelledby="titre-texte" className="hidden flex-col gap-3 md:flex">
@@ -77,6 +82,7 @@ export function TypingZone({ text, typing, active, mode, onKey, t }: Props) {
                   : "text-faute bg-faute/15 underline decoration-wavy";
             else if (i === cursor && active)
               className = "bg-jaune/50 text-encre rounded-sm shadow-[inset_3px_0_0_var(--orange)]";
+            if (i > cursor && i < fogEnd) className += " blur-[3px] select-none";
             return (
               <span key={i} className={className}>
                 {char}
