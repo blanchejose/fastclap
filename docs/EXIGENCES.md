@@ -137,6 +137,23 @@ Le seed recalcule ce classement à chaque déploiement.
 | RES-04 | Indicateur de record personnel battu                 | ✅     | `record.ts` (`isNewRecord`), `results.ts`, `Results.tsx` | `record.test.ts`, navigateur      |
 | RES-05 | Résultats persistés, avec la série temporelle du MPM | ✅     | `record.ts`, `results.ts`, migration `race_results`      | `record.test.ts`, requête SQL     |
 
+### Choix documentés pour rejoindre une course
+
+- **Salles montrées (JOIN-02).** Les salles publiques ouvertes où au moins une
+  personne est connectée : une salle vide n'a personne pour lancer la course.
+  Les données (participants, état, configuration) viennent de la mémoire du
+  serveur temps réel, partagée avec Next.js par `globalThis` (un seul serveur).
+  Les participants comptent les bots, pas les spectateurs. Une salle en course
+  reste visible, avec son état, mais on n'y entre qu'aux résultats (SALLE-09).
+- **Mise à jour (JOIN-02).** Le navigateur redemande la liste toutes les 3 s à
+  `/api/salles`, avec les filtres de langue et de complexité (validés par Zod).
+- **Partie rapide (JOIN-03).** « La plus proche de sa capacité maximale » est
+  comprise comme la salle à qui il reste le **moins de places libres**, parmi
+  les salles publiques en attente ou aux résultats et pas pleines ; à égalité,
+  la plus ancienne. Sans salle libre : un utilisateur connecté voit le message
+  et un bouton pour créer une salle publique avec la configuration par défaut ;
+  un invité voit le message et un lien vers les salles.
+
 ### Choix documentés pour le profil
 
 - **Statistiques (AUTH-06).** Le meilleur MPM, le MPM moyen, la précision

@@ -12,6 +12,7 @@ import { createInvite, hasInviteAccess, listInvites, revokeInvites } from "./src
 import { claimPresence, releasePresence, releaseRoom, resetPresences } from "./src/lib/presence";
 import { prisma } from "./src/lib/prisma";
 import { codeAttempts } from "./src/lib/rate-limit";
+import { liveRooms } from "./src/lib/race/registry";
 import { saveRace } from "./src/lib/results";
 import * as engine from "./src/lib/race/engine";
 import { parseMessage, type ClientEvent, type ClientMessage } from "./src/lib/race/messages";
@@ -35,7 +36,7 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 
 // Salles ouvertes, en mémoire, par code.
-const rooms = new Map<string, engine.Room>();
+const rooms = liveRooms; // partagé avec l'explorateur (registry.ts)
 
 type Data = {
   user: SocketIdentity;
@@ -49,13 +50,18 @@ async function loadRoom(code: string): Promise<engine.Room | null> {
   if (existing) return existing;
   const row = await prisma.room.findUnique({
     where: { code },
-    select: { status: true, organizerId: true, ...CONFIG_COLUMNS },
+    select: { status: true, organizerId: true, createdAt: true, ...CONFIG_COLUMNS },
   });
   if (!row || row.status === "CLOSED") return null;
   // Un autre message a pu créer la salle pendant la lecture de la base.
   const raced = rooms.get(code);
   if (raced) return raced;
-  const room = engine.createRoom(code, row.organizerId, configFromRow(row));
+  const room = engine.createRoom(
+    code,
+    row.organizerId,
+    configFromRow(row),
+    row.createdAt.getTime(),
+  );
   rooms.set(code, room);
   return room;
 }

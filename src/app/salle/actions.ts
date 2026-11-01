@@ -71,6 +71,14 @@ export async function createRoom(formData: FormData) {
   redirect(`/salle/${code}`);
 }
 
+// JOIN-03 : aucune salle libre ; l'utilisateur connecté crée une salle
+// publique avec la configuration par défaut, dont il devient l'hôte.
+export async function createQuickRoom() {
+  const session = await auth();
+  if (!session) redirect("/connexion?suite=/go");
+  redirect(`/salle/${await createRoomFor(session.user.id, "PUBLIC", "BEGINNER")}`);
+}
+
 // AUTH-02 : l'invité choisit un pseudo, gardé dans un cookie signé. S'il avait
 // déjà une session d'invité, il garde le même identifiant.
 export async function joinAsGuest(formData: FormData) {

@@ -28,7 +28,7 @@ export const fr = {
     tagline:
       "Des courses de frappe en direct, entre amis ou en classe. Chaque lettre juste te rapproche de la ligne d'arrivée.",
     play: "Jouer",
-    go: "Rejoindre une course",
+    go: "Faire une course",
     code: "Entrer un code",
     rooms: "Toutes les salles",
     discover: "Découvrir",
@@ -42,7 +42,7 @@ export const fr = {
     title: "À vos claviers, prêts…",
     titleGo: "go !",
     lead: "Tout le monde tape le même texte, en même temps. Chaque lettre juste te fait avancer. Le premier à franchir la ligne gagne.",
-    cta: "Go ! Rejoindre une course",
+    cta: "Go ! Faire une course",
     noAccount: "Pas de compte obligatoire : choisis un pseudo et c'est parti.",
     roomsTitle: "Sur la ligne de départ",
     allRooms: "Voir toutes les salles",
@@ -90,6 +90,36 @@ export const fr = {
       "Personne sur la ligne de départ pour l'instant. Crée une salle et invite ta classe avec son code.",
     roomOf: "Salle de {name}",
     upTo: "Jusqu'à {n} joueurs",
+  },
+  quick: {
+    metaTitle: "Faire une course",
+    title: "Faire une course",
+    none: "Aucune salle publique n'est libre pour l'instant.",
+    offer:
+      "Crée une salle publique avec la configuration par défaut : tu en seras l'hôte, et d'autres pourront te rejoindre.",
+    create: "Créer une salle publique",
+    guest:
+      "Reviens dans un instant, ou demande le code d'une salle à un ami. Pour créer ta propre salle, il faut un compte.",
+    allRooms: "Voir toutes les salles",
+  },
+  explorer: {
+    filters: "Filtres des salles",
+    language: "Langue du texte",
+    complexity: "Complexité",
+    all: "Toutes",
+    live: "Mise à jour automatique",
+    empty:
+      "Personne sur la ligne de départ pour l'instant. Crée une salle et invite ta classe avec son code.",
+    noMatch: "Aucune salle publique ne correspond à ces filtres pour l'instant.",
+    roomOf: "Salle de {name}",
+    players: "{n}/{max} participants",
+    states: {
+      WAITING: "En attente",
+      COUNTDOWN: "Départ imminent",
+      RUNNING: "En course",
+      RESULTS: "Résultats",
+    },
+    waitResults: "Course en cours : tu pourras entrer à l'écran des résultats.",
   },
   rooms: {
     title: "Salles ouvertes",
@@ -435,7 +465,7 @@ const en: Dictionary = {
     tagline:
       "Live typing races with friends or in class. Every correct letter brings you closer to the finish line.",
     play: "Play",
-    go: "Join a race",
+    go: "Quick race",
     code: "Enter a code",
     rooms: "All rooms",
     discover: "Discover",
@@ -449,7 +479,7 @@ const en: Dictionary = {
     title: "On your keyboards, get set…",
     titleGo: "go!",
     lead: "Everyone types the same text at the same time. Every correct letter moves you forward. First across the line wins.",
-    cta: "Go! Join a race",
+    cta: "Go! Quick race",
     noAccount: "No account needed: pick a username and you're off.",
     roomsTitle: "On the starting line",
     allRooms: "See all rooms",
@@ -490,6 +520,35 @@ const en: Dictionary = {
     empty: "Nobody on the starting line yet. Create a room and invite your class with its code.",
     roomOf: "{name}'s room",
     upTo: "Up to {n} players",
+  },
+  quick: {
+    metaTitle: "Quick race",
+    title: "Quick race",
+    none: "No public room is free right now.",
+    offer:
+      "Create a public room with the default settings: you will be its host, and others can join you.",
+    create: "Create a public room",
+    guest:
+      "Come back in a moment, or ask a friend for a room code. You need an account to create your own room.",
+    allRooms: "See all rooms",
+  },
+  explorer: {
+    filters: "Room filters",
+    language: "Text language",
+    complexity: "Complexity",
+    all: "All",
+    live: "Updates automatically",
+    empty: "Nobody on the starting line yet. Create a room and invite your class with its code.",
+    noMatch: "No public room matches these filters right now.",
+    roomOf: "{name}'s room",
+    players: "{n}/{max} racers",
+    states: {
+      WAITING: "Waiting",
+      COUNTDOWN: "Starting",
+      RUNNING: "Racing",
+      RESULTS: "Results",
+    },
+    waitResults: "Race under way: you can join on the results screen.",
   },
   rooms: {
     title: "Open rooms",
