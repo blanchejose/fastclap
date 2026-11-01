@@ -34,7 +34,7 @@ export default async function RoomsPage() {
         </div>
 
         <Suspense fallback={<p className="text-sourdine">{t.common.loadingRooms}</p>}>
-          <RoomList limit={30} />
+          <RoomList limit={50} filters />
         </Suspense>
 
         <section

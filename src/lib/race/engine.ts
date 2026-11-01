@@ -54,6 +54,7 @@ export type Racer = {
 
 export type Room = {
   code: string;
+  createdAt: number; // JOIN-03 : à égalité, la plus ancienne salle l'emporte
   hostId: string;
   phase: Phase;
   config: Config;
@@ -78,9 +79,15 @@ export type JoinResult =
 export type StartBlocker = "phase" | "not_enough" | "no_human";
 export type ConfigResult = "ok" | "forbidden" | "below_players";
 
-export function createRoom(code: string, hostId: string, config: Config = DEFAULT_CONFIG): Room {
+export function createRoom(
+  code: string,
+  hostId: string,
+  config: Config = DEFAULT_CONFIG,
+  createdAt = 0,
+): Room {
   return {
     code,
+    createdAt,
     hostId,
     phase: "WAITING",
     config,
