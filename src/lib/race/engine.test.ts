@@ -52,7 +52,7 @@ describe("machine à états (COURSE-01)", () => {
     expect(room.phase).toBe("RUNNING");
     abandon(room, "h", go + 10);
     abandon(room, "b", go + 20);
-    expect(tick(room, go + 100)).toEqual({ changed: true, ended: true, removed: [] });
+    expect(tick(room, go + 100)).toEqual({ changed: true, ended: true, removed: [], bonuses: [] });
     expect(room.phase).toBe("RESULTS");
     expect(backToLobby(room, "h")).toBe(true);
     expect(room.phase).toBe("WAITING");

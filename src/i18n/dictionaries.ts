@@ -269,6 +269,20 @@ export const fr = {
       ABANDONED: "Abandon",
     },
   },
+  bonus: {
+    names: { SHORTEN: "−3 mots", EXTEND: "+3 mots", FOG: "Brouillard" },
+    feed: {
+      SHORTEN: "{name} reçoit un bonus : 3 mots en moins !",
+      EXTEND: "{name} envoie 3 mots de plus à {target} !",
+      FOG: "{name} envoie le brouillard sur {target} !",
+    },
+    forMe: {
+      SHORTEN: "Bonus : 3 mots en moins pour toi !",
+      EXTEND: "Malus : 3 mots de plus pour toi !",
+      FOG: "Brouillard ! Tes prochains mots sont flous quelques secondes.",
+    },
+    feedLabel: "Annonces des bonus",
+  },
   results: {
     title: "Résultats",
     podium: "Podium",
@@ -282,6 +296,7 @@ export const fr = {
     errors: "Fautes",
     time: "Temps",
     status: "Statut",
+    bonuses: "Bonus reçus",
     again: "Nouvelle course",
     close: "Fermer la salle",
     waitHost: "L'hôte peut relancer une course ou fermer la salle.",
@@ -576,6 +591,20 @@ const en: Dictionary = {
       ABANDONED: "Gave up",
     },
   },
+  bonus: {
+    names: { SHORTEN: "−3 words", EXTEND: "+3 words", FOG: "Fog" },
+    feed: {
+      SHORTEN: "{name} gets a bonus: 3 fewer words!",
+      EXTEND: "{name} sends 3 extra words to {target}!",
+      FOG: "{name} sends fog on {target}!",
+    },
+    forMe: {
+      SHORTEN: "Bonus: 3 fewer words for you!",
+      EXTEND: "Penalty: 3 extra words for you!",
+      FOG: "Fog! Your next words are blurry for a few seconds.",
+    },
+    feedLabel: "Bonus announcements",
+  },
   results: {
     title: "Results",
     podium: "Podium",
@@ -589,6 +618,7 @@ const en: Dictionary = {
     errors: "Mistakes",
     time: "Time",
     status: "Status",
+    bonuses: "Bonuses received",
     again: "New race",
     close: "Close the room",
     waitHost: "The host can start a new race or close the room.",

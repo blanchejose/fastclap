@@ -74,6 +74,17 @@ de traçabilité finale reprendra tout avec les identifiants de l'énoncé.
 | SALLE-06 | Un deuxième onglet sur la même salle ne crée pas de doublon | ✅     | `engine.ts` (`join`), `claimPresence`                         | `engine.test.ts`, navigateur              |
 | SALLE-10 | 10 essais de code ratés par minute et par adresse IP        | ✅     | `rate-limit.ts`, `joinByCode`, page de salle, `room:join`     | `rate-limit.test.ts`, navigateur          |
 
+### Bonus de remontée
+
+| ID       | Exigence                                                        | Statut | Où                                                          | Vérification                |
+| -------- | --------------------------------------------------------------- | ------ | ----------------------------------------------------------- | --------------------------- |
+| BONUS-01 | Bonus au joueur en retard aux points de contrôle, 3 au plus     | ✅     | `src/lib/race/bonus.ts` (`applyBonuses`, `behindRacers`)    | `bonus.test.ts`             |
+| BONUS-02 | −3 mots (aide), +3 mots et brouillard (ralentissent le meneur)  | ✅     | `bonus.ts`, `TypingZone.tsx` (brouillard)                   | `bonus.test.ts`, navigateur |
+| BONUS-03 | Annonce sur la piste et chez le joueur ciblé                    | ✅     | `BonusFeed.tsx`, `Track.tsx`                                | Test navigateur             |
+| BONUS-04 | Progression et MPM cohérents avec un texte allongé ou raccourci | ✅     | Texte propre à chaque coureur (`Racer.text`), `race:mytext` | `bonus.test.ts`             |
+| BOT-04   | Les bots reçoivent et subissent les bonus comme les humains     | ✅     | `applyBonuses` traite tous les coureurs                     | `bonus.test.ts`             |
+| RES-02   | Colonne « bonus reçus » dans les résultats                      | ✅     | `Results.tsx`                                               | Test navigateur             |
+
 La configuration est gardée en base (colonnes de `Room`, migration
 `20261030014543_room_config`) : elle survit à un redémarrage du serveur.
 
@@ -178,6 +189,27 @@ Le seed recalcule ce classement à chaque déploiement.
   compteur est en mémoire, partagé entre Next.js et Socket.IO par `globalThis`
   (un seul serveur). Limite connue : toute une classe derrière la même adresse
   partage le compteur.
+- **Règle des bonus (BONUS-01).** La progression d'un coureur est la part de
+  **son** texte déjà tapée. Le meneur est le coureur le plus avancé, arrivés
+  compris. Les points de contrôle sont atteints quand il passe 25 %, 50 % et
+  75 % ; chacun ne compte qu'une fois par course (s'il en passe deux d'un coup,
+  les deux sont distribués). À chaque point, est « en retard » tout coureur
+  encore en course, autre que le meneur, qui est soit le moins avancé, soit à
+  25 points de pourcentage ou plus derrière le meneur. Chacun reçoit un bonus,
+  tant qu'il en a reçu moins de 3 dans la course.
+- **Types de bonus (BONUS-02).** Le type est tiré au hasard, avec une graine
+  propre à la course (testable). −3 mots : les 3 derniers mots du texte du
+  joueur en retard disparaissent, sans jamais toucher à ce qu'il a déjà tapé ;
+  s'il avait déjà tapé tout le reste, il arrive. +3 mots : 3 mots tirés du texte
+  de la course sont ajoutés au texte du meneur. Brouillard : la fin du mot en
+  cours et les 3 mots suivants du meneur sont flous pendant 5 s. Le meneur ne
+  subit qu'un +3 mots et un brouillard par point de contrôle (sinon, à 30
+  joueurs, il en recevrait des dizaines) : un tirage en trop devient −3 mots.
+  Si le meneur est déjà arrivé, seuls des −3 mots sont distribués.
+- **Cohérence (BONUS-04).** Chaque coureur a son propre texte dans le moteur.
+  Le serveur rejoue les touches sur ce texte, calcule la progression sur sa
+  longueur et le MPM sur les caractères justes tapés ; il envoie le nouveau
+  texte au joueur concerné (`race:mytext`) sans toucher à sa frappe.
 - **Hôte et invités (SALLE-08).** « La personne humaine connectée » est
   comprise comme un utilisateur avec un compte : un invité ne peut pas créer de
   salle (AUTH-03), il ne devient donc jamais hôte. S'il ne reste que des

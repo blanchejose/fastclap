@@ -84,6 +84,7 @@ export default async function RoomPage({ params, searchParams }: PageProps<"/sal
               config: t.config,
               levels: t.levels,
               invite: t.invite,
+              bonus: t.bonus,
             }}
           />
         ) : room.visibility === "PRIVATE" ? (

@@ -7,6 +7,7 @@ import { fmt, type Dictionary, type Locale } from "@/i18n/dictionaries";
 import { MAX_KEYS_PER_BATCH, type JoinResult, type RoomView } from "@/lib/race/engine";
 import { accuracy, netWpm } from "@/lib/race/stats";
 import { applyKey, correctChars, newTyping, progress, type Typing } from "@/lib/race/typing";
+import { BonusFeed } from "./race/BonusFeed";
 import { ConfigPanel } from "./race/ConfigPanel";
 import { InvitePanel, type InviteReply } from "./race/InvitePanel";
 import { ConfirmButton } from "./race/ConfirmButton";
@@ -21,7 +22,7 @@ type Props = {
   token: string;
   meId: string;
   locale: Locale;
-  t: Pick<Dictionary, "room" | "race" | "results" | "config" | "levels" | "invite">;
+  t: Pick<Dictionary, "room" | "race" | "results" | "config" | "levels" | "invite" | "bonus">;
 };
 
 type JoinReply =
@@ -93,6 +94,10 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
       setView(next);
       clockOffsetRef.current = next.serverNow - Date.now();
     });
+    // BONUS-04 : mon texte a été raccourci ou allongé ; ce qui est tapé reste.
+    socket.on("race:mytext", (next: RaceText) =>
+      setRace((current) => (current && current.raceNo === next.raceNo ? next : current)),
+    );
     socket.on("race:text", (next: RaceText) => {
       setRace(next);
       resetTyping(newTyping());
@@ -205,6 +210,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
           {view.phase === "COUNTDOWN" && view.startAt !== null && now > 0 && (
             <Countdown msLeft={view.startAt - now} t={t.race} />
           )}
+          <BonusFeed events={view.bonusEvents} meId={meId} t={t.bonus} />
           <RaceHeader
             phase={view.phase}
             elapsed={elapsed}
@@ -221,13 +227,21 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
                 typing={typing}
                 active={racing}
                 mode={view.config.errorMode}
+                fogged={myRacer.fogUntil !== null && now > 0 && now < myRacer.fogUntil}
                 onKey={onKey}
                 t={t.race}
               />
               <p className="bg-surface rounded-2xl p-4 md:hidden">{t.race.mobile}</p>
             </>
           )}
-          <Track racers={view.racers} meId={meId} local={local} t={trackT} />
+          <Track
+            racers={view.racers}
+            meId={meId}
+            local={local}
+            t={trackT}
+            effects={Object.fromEntries(view.bonusEvents.map((e) => [e.targetId, e.type]))}
+            bonusNames={t.bonus.names}
+          />
           <RaceStatus
             status={myRacer?.status ?? null}
             spectating={!myRacer}
@@ -244,7 +258,13 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
             racers={view.racers}
             meId={meId}
             locale={locale}
-            t={{ ...t.results, statuses: t.race.status, you: t.room.you, bot: t.room.bot }}
+            t={{
+              ...t.results,
+              statuses: t.race.status,
+              you: t.room.you,
+              bot: t.room.bot,
+              bonusNames: t.bonus.names,
+            }}
           />
           {isHost ? (
             <div className="flex flex-wrap items-center gap-6">
