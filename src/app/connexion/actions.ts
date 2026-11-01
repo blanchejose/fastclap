@@ -2,6 +2,7 @@
 
 import { AuthError, CredentialsSignin } from "next-auth";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { signIn, signOut } from "@/auth";
 
 // Server Actions : ces fonctions tournent sur le serveur et sont appelées
@@ -11,10 +12,19 @@ function errorCode(error: AuthError): string {
   return error instanceof CredentialsSignin ? error.code : error.type;
 }
 
-// Page où revenir après la connexion (seulement un chemin interne au site).
+// Entrées validées par Zod (TECH-07). Les règles du pseudo et du mot de passe
+// sont vérifiées dans src/auth.ts, qui renvoie un message précis.
+const nextSchema = z
+  .string()
+  .max(200)
+  .regex(/^\/(?!\/)/) // seulement un chemin interne au site
+  .catch("/");
+const providerSchema = z.enum(["discord", "github"]);
+const field = z.string().max(200).catch("");
+
+// Page où revenir après la connexion.
 function safeNext(formData: FormData): string {
-  const next = String(formData.get("suite") ?? "");
-  return next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  return nextSchema.parse(formData.get("suite") ?? "/");
 }
 
 async function trySignIn(provider: string, formData: FormData, data: Record<string, string> = {}) {
@@ -31,19 +41,19 @@ async function trySignIn(provider: string, formData: FormData, data: Record<stri
 }
 
 export async function signInWithOAuth(formData: FormData) {
-  const provider = String(formData.get("provider"));
-  if (provider !== "discord" && provider !== "github") redirect("/connexion");
-  await trySignIn(provider, formData);
+  const provider = providerSchema.safeParse(formData.get("provider"));
+  if (!provider.success) redirect("/connexion");
+  await trySignIn(provider.data, formData);
 }
 
 export async function signInWithUsername(formData: FormData) {
-  await trySignIn("username", formData, { username: String(formData.get("username") ?? "") });
+  await trySignIn("username", formData, { username: field.parse(formData.get("username")) });
 }
 
 export async function signInWithPassword(formData: FormData) {
   await trySignIn("password", formData, {
-    username: String(formData.get("username") ?? ""),
-    password: String(formData.get("password") ?? ""),
+    username: field.parse(formData.get("username")),
+    password: field.parse(formData.get("password")),
   });
 }
 

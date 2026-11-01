@@ -116,17 +116,18 @@ Créer une salle : page `/salles`. La rejoindre : son code sur l'accueil.
 
 - [Démarche créative](docs/DEMARCHE-CREATIVE.md)
 - [Architecture](docs/ARCHITECTURE.md)
-- [Exigences](docs/EXIGENCES.md)
+- [Matrice de traçabilité](docs/MATRICE.md) : chaque exigence, où et comment elle est vérifiée
+- [Exigences](docs/EXIGENCES.md) : les choix faits quand l'énoncé est ambigu
 - [Guide de déploiement](docs/DEPLOIEMENT.md)
 
 ## Authentification
 
 Page `/connexion`, dans l'ordre demandé par le cahier des charges :
 
-1. Discord (AUTH-1) et GitHub (AUTH-2) : boutons actifs seulement si les clés
+1. Discord et GitHub (AUTH-01) : boutons actifs seulement si les clés
    `AUTH_DISCORD_*` / `AUTH_GITHUB_*` sont dans `.env`
-2. Pseudo seul, sans mot de passe (AUTH-3) : un pseudo déjà pris est refusé
-3. Pseudo + mot de passe (AUTH-4), replié en bas de page : crée le compte si le
+2. Pseudo seul, sans mot de passe : un pseudo déjà pris est refusé
+3. Pseudo + mot de passe (AUTH-01, utilisé par les tests de bout en bout), replié en bas de page : crée le compte si le
    pseudo est libre, sinon vérifie le mot de passe (bcrypt)
 
 Fichiers : `src/auth.ts` (configuration), `src/app/connexion/` (page et Server

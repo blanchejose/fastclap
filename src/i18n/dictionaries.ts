@@ -1,4 +1,4 @@
-// Textes de l'interface en français et en anglais (UI-1 : bascule FR/EN partout).
+// Textes de l'interface en français et en anglais (I18N-01).
 // Les marques {n}, {name}… sont remplacées avec la fonction fmt().
 
 export const fr = {
