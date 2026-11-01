@@ -198,7 +198,12 @@ app.prepare().then(async () => {
         if (!presence.ok)
           return ack({ ok: false, reason: "elsewhere", otherCode: presence.otherCode });
       }
-      const result = engine.join(room, { id: uid, name }, "PLAYER", Date.now());
+      const result = engine.join(
+        room,
+        { id: uid, name, avatar: data.user.avatar ?? null },
+        "PLAYER",
+        Date.now(),
+      );
       if (!result.ok && newcomer) await releasePresence([uid], code);
       if (result.ok) {
         data.code = code;

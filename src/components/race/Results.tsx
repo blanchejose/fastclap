@@ -60,7 +60,7 @@ export function Results({ racers, meId, records, locale, t }: Props) {
             key={r.id}
             className={`flex w-28 flex-col items-center gap-2 sm:w-36 ${steps[i].order}`}
           >
-            <Avatar name={r.name} className="size-10" />
+            <Avatar name={r.name} src={r.avatar} className="size-10" />
             <span className="max-w-full truncate text-center font-semibold">
               {r.name}
               {r.id === meId && <span className="text-sourdine"> ({t.you})</span>}
@@ -118,7 +118,7 @@ export function Results({ racers, meId, records, locale, t }: Props) {
                 <td className="font-display px-3 py-2.5 text-xl font-extrabold">{r.rank}</td>
                 <th scope="row" className="px-3 py-2.5 font-semibold">
                   <span className="flex items-center gap-2">
-                    <Avatar name={r.name} className="size-6" />
+                    <Avatar name={r.name} src={r.avatar} className="size-6" />
                     {r.name}
                     {r.kind === "BOT" && (
                       <span className="text-sourdine font-mono text-xs">{t.bot}</span>

@@ -45,7 +45,7 @@ export function WaitingRoom({ view, meId, send, t }: Props) {
     <ul className="flex flex-col gap-2" aria-live="polite">
       {members.map((m) => (
         <li key={m.id} className="bg-surface-2 flex items-center gap-3 rounded-2xl px-4 py-2">
-          <Avatar name={m.name} />
+          <Avatar name={m.name} src={m.avatar} />
           <span className="flex-1 font-semibold">
             {m.name}
             {m.kind === "BOT" && m.botLevel && (

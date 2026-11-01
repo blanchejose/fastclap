@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { BonusType } from "./race/bonus";
 import { BONUS_TYPES } from "./race/bonus";
 import type { RacerView } from "./race/engine";
+import { avatarUrl } from "./avatar-url";
 import { prisma } from "./prisma";
 
 export const HISTORY_PAGE_SIZE = 10;
@@ -66,6 +67,7 @@ export type StoredParticipant = {
   id: string;
   userId: string | null;
   name: string;
+  avatar: string | null;
   botLevel: RacerView["botLevel"] | "PRO";
   result: {
     rank: number;
@@ -92,6 +94,7 @@ export function toRacerViews(participants: StoredParticipant[]): RacerView[] {
       id: p.id,
       name: p.name,
       kind: p.botLevel ? "BOT" : "HUMAN",
+      avatar: p.avatar,
       botLevel: p.botLevel === "PRO" ? "EXPERT" : p.botLevel,
       status: p.result.status,
       rank: p.result.rank,
@@ -124,6 +127,7 @@ export async function getRaceForUser(raceId: string, userId: string) {
           userId: true,
           name: true,
           botLevel: true,
+          user: { select: { avatarUpdatedAt: true } },
           result: {
             select: {
               rank: true,
@@ -152,7 +156,12 @@ export async function getRaceForUser(raceId: string, userId: string) {
     content: race.content,
     roomCode: race.room.code,
     meId: me.id,
-    racers: toRacerViews(race.participants),
+    racers: toRacerViews(
+      race.participants.map(({ user, ...p }) => ({
+        ...p,
+        avatar: p.userId ? avatarUrl(p.userId, user?.avatarUpdatedAt ?? null) : null,
+      })),
+    ),
     records: race.participants.filter((p) => p.result?.isRecord).map((p) => p.id),
   };
 }

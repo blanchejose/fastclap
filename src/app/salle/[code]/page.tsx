@@ -9,6 +9,8 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { fmt } from "@/i18n/dictionaries";
 import { getDictionary, getLocale } from "@/i18n/server";
 import { IP_HEADER } from "@/lib/client-ip";
+import { avatarUrl } from "@/lib/avatar-url";
+import { displayNameOf } from "@/lib/display-name";
 import { getGuest } from "@/lib/guest";
 import { prisma } from "@/lib/prisma";
 import { codeAttempts } from "@/lib/rate-limit";
@@ -55,8 +57,22 @@ export default async function RoomPage({ params, searchParams }: PageProps<"/sal
     notFound();
   }
 
-  // Un compte connecté, sinon un invité avec son cookie (AUTH-02).
-  const identity = session ? { uid: session.user.id, name: session.user.username } : guest;
+  // Un compte connecté, avec son pseudonyme et sa photo (AUTH-04, AUTH-05),
+  // sinon un invité avec son cookie (AUTH-02).
+  const account = session
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { username: true, name: true, avatarUpdatedAt: true },
+      })
+    : null;
+  const identity =
+    session && account
+      ? {
+          uid: session.user.id,
+          name: displayNameOf(account),
+          avatar: avatarUrl(session.user.id, account.avatarUpdatedAt),
+        }
+      : guest;
 
   return (
     <>

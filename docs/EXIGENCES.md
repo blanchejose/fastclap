@@ -137,6 +137,28 @@ Le seed recalcule ce classement à chaque déploiement.
 | RES-04 | Indicateur de record personnel battu                 | ✅     | `record.ts` (`isNewRecord`), `results.ts`, `Results.tsx` | `record.test.ts`, navigateur      |
 | RES-05 | Résultats persistés, avec la série temporelle du MPM | ✅     | `record.ts`, `results.ts`, migration `race_results`      | `record.test.ts`, requête SQL     |
 
+### Choix documentés pour le profil
+
+- **Statistiques (AUTH-06).** Le meilleur MPM, le MPM moyen, la précision
+  moyenne et la courbe de progression comptent les courses **terminées** (un
+  abandon à 0 MPM ne dit rien de la vitesse). Le nombre de courses compte aussi
+  les abandons. Une victoire est une 1re place à l'arrivée. La courbe montre les
+  50 dernières courses terminées.
+- **Pseudonyme (AUTH-05).** Il est gardé à part (`User.name`) : le nom
+  d'utilisateur qui sert à se connecter ne change pas, sinon un compte avec mot
+  de passe perdrait son identifiant. 3 à 20 caractères : lettres (accents
+  compris), chiffres, espaces, apostrophe, tiret et tiret bas ; il n'a pas à
+  être unique. Il s'affiche dans le menu, la salle et les résultats des courses
+  suivantes (une course passée garde le nom du moment).
+- **Photo (AUTH-04, SEC-02).** Le serveur vérifie la taille (2 Mo au plus) et
+  le **vrai type** dans les premiers octets du fichier (signatures JPEG, PNG,
+  WebP) ; le nom du fichier et le type annoncé par le navigateur sont ignorés.
+  L'image est ensuite recadrée en carré de 256 px, convertie en WebP sans
+  métadonnées (`sharp`), et gardée en base : le disque du serveur Railway est
+  effacé à chaque déploiement, et un service d'images externe ajouterait un
+  compte et un coût (TECH-08). Le navigateur vérifie aussi la taille avant
+  l'envoi, pour éviter de téléverser une grosse image pour rien.
+
 ### Choix documentés pour les résultats
 
 - **Historique (HIST-01, HIST-02).** 10 courses par page, de la plus récente à

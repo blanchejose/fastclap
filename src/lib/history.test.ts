@@ -19,6 +19,7 @@ const participant = (patch: Partial<StoredParticipant>, rank: number): StoredPar
   id: `p${rank}`,
   userId: null,
   name: `P${rank}`,
+  avatar: null,
   botLevel: null,
   result: {
     rank,
