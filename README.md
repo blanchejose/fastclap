@@ -36,6 +36,35 @@ Ouvre http://localhost:3000. Pages utiles :
 - `/salles` : liste des salles publiques (lue dans la base)
 - `/api/health` : vérifie que l'application et la base répondent
 
+## Comptes de démonstration
+
+Le seed (`npm run db:seed`) crée trois comptes avec un historique de 12
+courses, pour voir tout de suite l'historique, les graphiques et le profil
+(TECH-04). Connexion par mot de passe sur `/connexion` (« J'ai un mot de
+passe ») :
+
+| Nom d'utilisateur | Mot de passe    |
+| ----------------- | --------------- |
+| `demo_lea`        | `fastclap-demo` |
+| `demo_max`        | `fastclap-demo` |
+| `demo_zoe`        | `fastclap-demo` |
+
+Ce sont des comptes de démonstration sans droit particulier ; le mot de passe
+est volontairement public.
+
+## Tests de bout en bout
+
+```bash
+npm run test:e2e    # lance le serveur s'il ne tourne pas, puis les scénarios
+```
+
+Les scénarios (`e2e/`) se connectent par nom d'utilisateur et mot de passe
+(TEST-03), jamais par OAuth. Ils couvrent une course complète contre un bot,
+le coller bloqué, une invitée, une salle privée avec lien d'invitation,
+l'explorateur, la partie rapide, l'historique et le profil du compte de
+démonstration, et le changement de langue. La CI les exécute sur le build de
+production avec une vraie base PostgreSQL.
+
 ## Scripts
 
 | Script                 | Rôle                                            |
@@ -48,6 +77,7 @@ Ouvre http://localhost:3000. Pages utiles :
 | `npm run format:check` | Vérifie le formatage sans modifier (utilisé CI) |
 | `npm run typecheck`    | Vérification TypeScript                         |
 | `npm test`             | Tests unitaires (Vitest)                        |
+| `npm run test:e2e`     | Tests de bout en bout (Playwright, TEST-02)     |
 | `npm run db:migrate`   | Crée ou met à jour les tables (développement)   |
 | `npm run db:deploy`    | Applique les migrations en production           |
 | `npm run db:seed`      | Ajoute les données de départ                    |
@@ -86,17 +116,18 @@ Créer une salle : page `/salles`. La rejoindre : son code sur l'accueil.
 
 - [Démarche créative](docs/DEMARCHE-CREATIVE.md)
 - [Architecture](docs/ARCHITECTURE.md)
-- [Exigences](docs/EXIGENCES.md)
+- [Matrice de traçabilité](docs/MATRICE.md) : chaque exigence, où et comment elle est vérifiée
+- [Exigences](docs/EXIGENCES.md) : les choix faits quand l'énoncé est ambigu
 - [Guide de déploiement](docs/DEPLOIEMENT.md)
 
 ## Authentification
 
 Page `/connexion`, dans l'ordre demandé par le cahier des charges :
 
-1. Discord (AUTH-1) et GitHub (AUTH-2) : boutons actifs seulement si les clés
+1. Discord et GitHub (AUTH-01) : boutons actifs seulement si les clés
    `AUTH_DISCORD_*` / `AUTH_GITHUB_*` sont dans `.env`
-2. Pseudo seul, sans mot de passe (AUTH-3) : un pseudo déjà pris est refusé
-3. Pseudo + mot de passe (AUTH-4), replié en bas de page : crée le compte si le
+2. Pseudo seul, sans mot de passe : un pseudo déjà pris est refusé
+3. Pseudo + mot de passe (AUTH-01, utilisé par les tests de bout en bout), replié en bas de page : crée le compte si le
    pseudo est libre, sinon vérifie le mot de passe (bcrypt)
 
 Fichiers : `src/auth.ts` (configuration), `src/app/connexion/` (page et Server

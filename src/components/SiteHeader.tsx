@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { auth } from "@/auth";
 import { getDictionary, getLocale } from "@/i18n/server";
 import { LangToggle } from "./LangToggle";
 import { LogoMark, Wordmark } from "./Logo";
@@ -7,7 +8,7 @@ import { UserMenu } from "./UserMenu";
 
 // En-tête commun à toutes les pages (composant serveur).
 export async function SiteHeader() {
-  const [locale, t] = await Promise.all([getLocale(), getDictionary()]);
+  const [locale, t, session] = await Promise.all([getLocale(), getDictionary(), auth()]);
 
   return (
     <header className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 pt-5">
@@ -19,6 +20,12 @@ export async function SiteHeader() {
         <Link href="/salles" className="underline-offset-4 hover:underline">
           {t.common.rooms}
         </Link>
+        {/* HIST-01 : l'historique, pour les utilisateurs connectés. */}
+        {session && (
+          <Link href="/historique" className="underline-offset-4 hover:underline">
+            {t.common.history}
+          </Link>
+        )}
         <Link href="/#comment" className="underline-offset-4 hover:underline">
           {t.common.how}
         </Link>

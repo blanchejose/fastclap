@@ -1,4 +1,6 @@
 import type { Dictionary } from "@/i18n/dictionaries";
+import { isGuestId } from "@/lib/guest-id";
+import type { BonusType } from "@/lib/race/bonus";
 import type { RacerView } from "@/lib/race/engine";
 import { Runner } from "../Logo";
 import { Avatar } from "./Avatar";
@@ -9,7 +11,10 @@ type Props = {
   // Progression et MPM du joueur local, calculés dans son navigateur : son
   // coureur bouge à chaque touche, sans attendre le serveur.
   local: { progress: number; wpm: number } | null;
-  t: Dictionary["race"] & { you: string; bot: string };
+  t: Dictionary["race"] & { you: string; bot: string; guest: string };
+  // BONUS-03 : effet de bonus en cours sur chaque coureur (id → type).
+  effects: Record<string, BonusType>;
+  bonusNames: Dictionary["bonus"]["names"];
 };
 
 // La piste, élément signature de FastClap (COURSE-05) : un couloir par
@@ -17,7 +22,7 @@ type Props = {
 // envoie les positions 10 fois par seconde ; la transition CSS de 150 ms
 // interpole entre deux positions pour un mouvement fluide. Chaque coureur
 // garde son couloir : seul le rang affiché change quand il double.
-export function Track({ racers, meId, local, t }: Props) {
+export function Track({ racers, meId, local, t, effects, bonusNames }: Props) {
   return (
     <section
       aria-labelledby="titre-piste"
@@ -45,7 +50,7 @@ export function Track({ racers, meId, local, t }: Props) {
                 </span>
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <span className="flex min-w-0 items-center gap-2 text-sm">
-                    <Avatar name={racer.name} className="size-6" />
+                    <Avatar name={racer.name} src={racer.avatar} className="size-6" />
                     <span className={`truncate ${isMe ? "font-extrabold" : "font-semibold"}`}>
                       {racer.name}
                     </span>
@@ -54,7 +59,19 @@ export function Track({ racers, meId, local, t }: Props) {
                         {t.bot}
                       </span>
                     )}
+                    {isGuestId(racer.id) && <span className="text-sourdine">({t.guest})</span>}
                     {isMe && <span className="text-sourdine">({t.you})</span>}
+                    {effects[racer.id] && (
+                      <span
+                        className={`rounded-full px-2 font-mono text-[11px] font-bold ${
+                          effects[racer.id] === "SHORTEN"
+                            ? "bg-jaune text-nuit"
+                            : "bg-encre text-piste"
+                        }`}
+                      >
+                        {bonusNames[effects[racer.id]]}
+                      </span>
+                    )}
                     {racer.status !== "RACING" && (
                       <span className="text-sourdine text-xs">· {t.status[racer.status]}</span>
                     )}

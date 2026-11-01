@@ -12,7 +12,10 @@ const tilts = ["-rotate-3", "rotate-2", "-rotate-1"];
 // clients de la page sont les boutons de thème et de langue.
 export default async function Home({ searchParams }: PageProps<"/">) {
   const [{ code }, t] = await Promise.all([searchParams, getDictionary()]);
-  const codeError = code === "invalide" || code === "introuvable" ? code : undefined;
+  const codeError =
+    code === "invalide" || code === "introuvable" || code === "prive" || code === "trop"
+      ? code
+      : undefined;
 
   return (
     <>
@@ -29,7 +32,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </h1>
             <p className="text-sourdine max-w-[34em] text-lg leading-relaxed">{t.home.lead}</p>
             <div>
-              {/* HOME-2 : le bouton mène directement à la prochaine course disponible. */}
+              {/* JOIN-03 : « Faire une course » mène à la salle la plus proche de sa capacité. */}
               <Link
                 href="/go"
                 className="bg-jaune font-display text-nuit inline-flex items-center gap-3 rounded-2xl px-8 py-5 text-2xl font-extrabold shadow-[0_6px_0_var(--orange)] transition hover:-translate-y-0.5 hover:shadow-[0_8px_0_var(--orange)] active:translate-y-1 active:shadow-[0_2px_0_var(--orange)]"
@@ -98,7 +101,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             >
               {t.home.bibsTitle}
             </h2>
-            <p className="text-[17px] leading-relaxed text-white/90">{t.home.bibsText}</p>
+            <p className="text-[17px] leading-relaxed text-white">{t.home.bibsText}</p>
           </div>
           <ul className="flex flex-[1_1_420px] flex-wrap justify-center gap-4">
             {t.home.bibs.map((d, i) => (

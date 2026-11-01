@@ -3,17 +3,22 @@
 import { z } from "zod";
 import { ROOM_CODE_ALPHABET } from "../room-code";
 import { BOT_LEVELS } from "./bots";
+import { configPatchSchema } from "./config";
 import { MAX_KEYS_PER_BATCH } from "./engine";
 
 const roomCode = z.string().regex(new RegExp(`^[${ROOM_CODE_ALPHABET}]{6}$`));
 
 export const clientMessages = {
-  "room:join": z.object({ code: roomCode }),
+  // leaveOther : quitter la salle actuelle pour entrer dans celle-ci (SALLE-06).
+  "room:join": z.object({ code: roomCode, leaveOther: z.boolean().optional() }),
   "room:role": z.object({ role: z.enum(["PLAYER", "SPECTATOR"]) }),
   "room:kick": z.object({ id: z.string().min(1).max(64) }),
   "room:leave": z.object({}),
   "room:lobby": z.object({}),
   "room:close": z.object({}),
+  "room:config": configPatchSchema,
+  "invite:list": z.object({}),
+  "invite:create": z.object({}),
   "bot:add": z.object({ level: z.enum(BOT_LEVELS) }),
   "bot:remove": z.object({ id: z.string().min(1).max(64) }),
   "race:start": z.object({}),

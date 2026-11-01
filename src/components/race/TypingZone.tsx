@@ -2,13 +2,15 @@
 
 import { useEffect, useRef } from "react";
 import type { Dictionary } from "@/i18n/dictionaries";
-import { BACKSPACE, type ErrorMode, type Typing } from "@/lib/race/typing";
+import { EMPTY_FIELD, eraseField, readField, type FieldState } from "@/lib/race/input";
+import type { ErrorMode, Typing } from "@/lib/race/typing";
 
 type Props = {
   text: string;
   typing: Typing;
   active: boolean;
   mode: ErrorMode;
+  fogged: boolean; // BONUS-02 : brouillard sur les prochains mots
   onKey: (key: string) => void;
   t: Dictionary["race"];
 };
@@ -16,27 +18,34 @@ type Props = {
 // Zone de frappe (COURSE-04) : retour immédiat lettre par lettre, coller
 // désactivé. Un champ invisible reçoit le clavier ; le texte affiché est
 // colorié selon ce qui a été tapé.
-export function TypingZone({ text, typing, active, mode, onKey, t }: Props) {
+export function TypingZone({ text, typing, active, mode, fogged, onKey, t }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (active) inputRef.current?.focus();
   }, [active]);
 
-  // Effacer passe par le clavier : le champ reste toujours vide.
+  const fieldRef = useRef<FieldState>(EMPTY_FIELD);
+
+  function send(field: HTMLInputElement, result: { keys: string[]; state: FieldState }) {
+    fieldRef.current = result.state;
+    field.value = result.state.value;
+    for (const key of result.keys) onKey(key);
+  }
+
+  // Effacer passe par le clavier, pour ne jamais vider le champ par erreur.
   function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "Backspace" || event.nativeEvent.isComposing) return;
     event.preventDefault();
-    onKey(BACKSPACE);
+    send(event.currentTarget, eraseField(fieldRef.current));
   }
 
   // Les caractères passent par l'événement « input » plutôt que par les
   // touches : il reçoit aussi les lettres composées (touches mortes ^ ¨,
-  // méthodes de saisie), qui n'ont pas toujours de touche à elles.
+  // bulle d'accents du Mac, méthodes de saisie), qui n'ont pas toujours de
+  // touche à elles.
   function takeInput(field: HTMLInputElement) {
-    const chars = field.value;
-    field.value = "";
-    for (const char of chars) onKey(char);
+    send(field, readField(fieldRef.current, field.value, text[typing.typed.length]));
   }
 
   function onInput(event: React.FormEvent<HTMLInputElement>) {
@@ -46,6 +55,10 @@ export function TypingZone({ text, typing, active, mode, onKey, t }: Props) {
 
   const block = (event: React.SyntheticEvent) => event.preventDefault();
   const cursor = typing.typed.length;
+  // Fin du brouillard : la fin du mot en cours, puis les trois mots suivants.
+  let fogEnd = cursor;
+  for (let words = 0; fogged && fogEnd < text.length && words < 4; fogEnd++)
+    if (text[fogEnd] === " " && fogEnd > cursor) words++;
 
   return (
     <section aria-labelledby="titre-texte" className="hidden flex-col gap-3 md:flex">
@@ -64,11 +77,10 @@ export function TypingZone({ text, typing, active, mode, onKey, t }: Props) {
             let className = "text-sourdine";
             if (i < cursor)
               className =
-                typing.typed[i] === char
-                  ? "text-juste"
-                  : "text-faute bg-faute/15 underline decoration-wavy";
+                typing.typed[i] === char ? "text-juste" : "text-faute underline decoration-wavy"; // couleur + soulignement
             else if (i === cursor && active)
               className = "bg-jaune/50 text-encre rounded-sm shadow-[inset_3px_0_0_var(--orange)]";
+            if (i > cursor && i < fogEnd) className += " blur-[3px] select-none";
             return (
               <span key={i} className={className}>
                 {char}

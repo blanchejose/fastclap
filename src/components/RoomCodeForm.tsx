@@ -1,9 +1,9 @@
 import { joinByCode } from "@/app/salle/actions";
 import type { Dictionary } from "@/i18n/dictionaries";
 
-type Props = { t: Dictionary["code"]; error?: "invalide" | "introuvable" };
+type Props = { t: Dictionary["code"]; error?: "invalide" | "introuvable" | "prive" | "trop" };
 
-// Formulaire sans JavaScript : il appelle une Server Action (ROOM-1).
+// Formulaire sans JavaScript : il appelle une Server Action (JOIN-01).
 export function RoomCodeForm({ t, error }: Props) {
   return (
     <form id="rejoindre" action={joinByCode} className="flex flex-col gap-2">

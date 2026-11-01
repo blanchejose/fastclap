@@ -3,10 +3,15 @@ import { compare, hash } from "bcryptjs";
 import NextAuth, { CredentialsSignin } from "next-auth";
 import type { Adapter } from "next-auth/adapters";
 import Credentials from "next-auth/providers/credentials";
+import { z } from "zod";
 import Discord from "next-auth/providers/discord";
 import GitHub from "next-auth/providers/github";
 import { prisma } from "@/lib/prisma";
 import { isValidUsername, usernameBaseFrom } from "@/lib/username";
+
+// Identifiants reçus du formulaire, validés par Zod (TECH-07).
+const usernameSchema = z.string().trim().refine(isValidUsername);
+const passwordSchema = z.string().max(72);
 
 class UsernameTaken extends CredentialsSignin {
   code = "username_taken";
@@ -48,8 +53,8 @@ const adapter: Adapter = {
 // Les fournisseurs OAuth ne sont activés que si leurs clés existent,
 // pour que le site démarre aussi en développement sans clés.
 const oauthProviders = [
-  process.env.AUTH_DISCORD_ID ? Discord : null, // AUTH-1
-  process.env.AUTH_GITHUB_ID ? GitHub : null, // AUTH-2
+  process.env.AUTH_DISCORD_ID ? Discord : null, // AUTH-01
+  process.env.AUTH_GITHUB_ID ? GitHub : null, // AUTH-01
 ].filter((provider) => provider !== null);
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -61,14 +66,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     ...oauthProviders,
 
-    // AUTH-3 : création de compte avec un username seulement.
+    // Connexion rapide : création de compte avec un username seulement.
     Credentials({
       id: "username",
       name: "Nom d'utilisateur",
       credentials: { username: {} },
       async authorize(credentials) {
-        const username = String(credentials?.username ?? "").trim();
-        if (!isValidUsername(username)) throw new InvalidUsername();
+        const input = usernameSchema.safeParse(credentials?.username);
+        if (!input.success) throw new InvalidUsername();
+        const username = input.data;
 
         const existing = await prisma.user.findUnique({ where: { username } });
         // Un nom déjà pris ne donne jamais accès au compte de quelqu'un d'autre.
@@ -79,26 +85,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
 
-    // AUTH-4 : username + mot de passe (affiché en dernier sur la page).
+    // AUTH-01, TEST-03 : username + mot de passe (affiché en dernier sur la page).
     // Si le nom est libre, le compte est créé avec ce mot de passe.
     Credentials({
       id: "password",
       name: "Mot de passe",
       credentials: { username: {}, password: {} },
       async authorize(credentials) {
-        const username = String(credentials?.username ?? "").trim();
-        const password = String(credentials?.password ?? "");
-        if (!isValidUsername(username)) throw new InvalidUsername();
+        const input = usernameSchema.safeParse(credentials?.username);
+        if (!input.success) throw new InvalidUsername();
+        const username = input.data;
+        // bcrypt ne lit que 72 octets : un mot de passe plus long est refusé.
+        const password = passwordSchema.safeParse(credentials?.password);
+        if (!password.success) throw new WeakPassword();
 
         const user = await prisma.user.findUnique({ where: { username } });
         if (!user) {
-          if (password.length < 8) throw new WeakPassword();
+          if (password.data.length < 8) throw new WeakPassword();
           const created = await prisma.user.create({
-            data: { username, name: username, passwordHash: await hash(password, 10) },
+            data: { username, name: username, passwordHash: await hash(password.data, 10) },
           });
           return { id: created.id, name: created.username };
         }
-        if (!user.passwordHash || !(await compare(password, user.passwordHash))) {
+        if (!user.passwordHash || !(await compare(password.data, user.passwordHash))) {
           throw new WrongPassword();
         }
         return { id: user.id, name: user.username };
