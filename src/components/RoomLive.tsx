@@ -22,13 +22,17 @@ type Props = {
   token: string;
   meId: string;
   locale: Locale;
-  t: Pick<Dictionary, "room" | "race" | "results" | "config" | "levels" | "invite" | "bonus">;
+  t: Pick<
+    Dictionary,
+    "room" | "race" | "results" | "config" | "levels" | "invite" | "bonus" | "charts"
+  >;
 };
 
 type JoinReply =
   | JoinResult
   | { ok: false; reason: "invalid" | "private" | "too_many" }
   | { ok: false; reason: "elsewhere"; otherCode: string };
+type Saved = { raceNo: number; raceId: string; records: string[] };
 type RaceText = { raceNo: number; text: string };
 type Resync = { raceNo: number; typed: string; keystrokes: number; errors: number };
 
@@ -57,6 +61,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   const pendingRef = useRef<string[]>([]);
   const [view, setView] = useState<RoomView | null>(null);
   const [inviteVersion, setInviteVersion] = useState(0);
+  const [saved, setSaved] = useState<Saved | null>(null);
   const [race, setRace] = useState<RaceText | null>(null);
   const [typing, setTyping] = useState<Typing>(newTyping);
   const clockOffsetRef = useRef(0);
@@ -95,6 +100,8 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
       clockOffsetRef.current = next.serverNow - Date.now();
     });
     // BONUS-04 : mon texte a été raccourci ou allongé ; ce qui est tapé reste.
+    // RES-04, RES-05 : la course est enregistrée ; voici les records battus.
+    socket.on("race:saved", (next: Saved) => setSaved(next));
     socket.on("race:mytext", (next: RaceText) =>
       setRace((current) => (current && current.raceNo === next.raceNo ? next : current)),
     );
@@ -257,6 +264,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
           <Results
             racers={view.racers}
             meId={meId}
+            records={saved?.raceNo === view.raceNo ? saved.records : []}
             locale={locale}
             t={{
               ...t.results,
@@ -264,6 +272,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
               you: t.room.you,
               bot: t.room.bot,
               bonusNames: t.bonus.names,
+              charts: t.charts,
             }}
           />
           {isHost ? (

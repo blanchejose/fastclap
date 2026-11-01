@@ -432,6 +432,14 @@ export function statsOf(room: Room, racer: Racer, now: number): RacerStats {
   };
 }
 
+// RES-03 : courbe du MPM d'un coureur, avec un dernier point au moment où il
+// s'est arrêté (arrivée, abandon ou fin du temps).
+export function seriesOf(room: Room, racer: Racer, now: number): { t: number; wpm: number }[] {
+  const { timeMs, wpm } = statsOf(room, racer, now);
+  const last = racer.samples.at(-1);
+  return last && last.t >= timeMs ? racer.samples : [...racer.samples, { t: timeMs, wpm }];
+}
+
 export type MemberView = Omit<Member, "disconnectedAt" | "joinedAt">;
 export type RacerView = RacerStats & {
   id: string;
@@ -443,6 +451,9 @@ export type RacerView = RacerStats & {
   lane: number; // couloir fixe sur la piste, dans l'ordre d'arrivée dans la salle
   bonuses: BonusType[]; // RES-02 : bonus reçus
   fogUntil: number | null;
+  // RES-03 : seulement sur l'écran des résultats (vides pendant la course).
+  samples: { t: number; wpm: number }[];
+  missed: Record<string, number>;
 };
 
 export type RoomView = {
@@ -493,6 +504,8 @@ export function snapshot(room: Room, now: number): RoomView {
       rank: i + 1,
       bonuses: r.bonuses,
       fogUntil: r.fogUntil,
+      samples: room.phase === "RESULTS" ? seriesOf(room, r, now) : [],
+      missed: room.phase === "RESULTS" ? r.typing.missed : {},
       ...statsOf(room, r, now),
     })),
     bonusEvents: room.bonusEvents.filter((e) => now - e.at < BONUS_ANNOUNCE_MS),

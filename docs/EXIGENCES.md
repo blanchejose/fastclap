@@ -127,6 +127,39 @@ Le seed recalcule ce classement à chaque déploiement.
   modifie la configuration avant de relancer (COURSE-11).
 - **Capacité.** Elle ne peut pas descendre sous le nombre actuel de participants.
 
+## Sprint 3 — résultats et statistiques
+
+| ID     | Exigence                                             | Statut | Où                                                       | Vérification                      |
+| ------ | ---------------------------------------------------- | ------ | -------------------------------------------------------- | --------------------------------- |
+| RES-01 | Podium des 3 premiers                                | ✅     | `Results.tsx`                                            | Test navigateur                   |
+| RES-02 | Tableau complet, avec les bonus reçus                | ✅     | `Results.tsx`                                            | Test navigateur                   |
+| RES-03 | Courbe du MPM de tous ; clavier en carte de chaleur  | ✅     | `WpmChart.tsx`, `KeyHeatmap.tsx`                         | Test navigateur (clair et sombre) |
+| RES-04 | Indicateur de record personnel battu                 | ✅     | `record.ts` (`isNewRecord`), `results.ts`, `Results.tsx` | `record.test.ts`, navigateur      |
+| RES-05 | Résultats persistés, avec la série temporelle du MPM | ✅     | `record.ts`, `results.ts`, migration `race_results`      | `record.test.ts`, requête SQL     |
+
+### Choix documentés pour les résultats
+
+- **Ce qui est gardé (RES-05).** À la fin de chaque course, une seule écriture
+  en base (jamais pendant la frappe) : la course (texte, langue, heures) et
+  chaque participant, avec son classement, MPM, MPM brut, précision, fautes,
+  temps, statut, bonus reçus, courbe du MPM (un point par seconde, plus un point
+  final) et fautes par touche attendue. Les invités et les bots sont gardés
+  aussi, pour réafficher le tableau complet (HIST-02), mais le résultat n'est
+  lié à un compte (donc à un historique) que pour un utilisateur connecté.
+- **Record personnel (RES-04).** Un MPM plus haut que le meilleur MPM des
+  courses précédentes que la personne a **terminées**. La première course
+  terminée est un record. Un abandon ou un temps écoulé n'en est jamais un.
+- **Graphiques (RES-03).** Une couleur par coureur, attribuée par couloir (la
+  couleur suit la personne, jamais son rang) ; palette catégorielle de 8
+  couleurs vérifiée par le script de validation dans les deux thèmes (contraste,
+  séparation pour le daltonisme). Au-delà de 8 coureurs, les suivants sont
+  gris. Le joueur local a un trait plus épais. Légende, étiquettes en bout de
+  ligne (4 coureurs ou moins), infobulle au survol et tableau des données
+  (lisible au clavier et au lecteur d'écran). Clavier QWERTY (claviers
+  canadiens) en une seule teinte du clair au foncé, avec le nombre de fautes
+  écrit sur chaque touche ; les caractères absents du clavier (accents,
+  guillemets) ont leur propre rangée.
+
 ### Choix documentés (section 2.2 de l'énoncé)
 
 - **MPM (annexe A).** Un mot vaut 5 caractères, espaces compris. MPM net :

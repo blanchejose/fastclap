@@ -88,11 +88,21 @@ enum ParticipantStatus {
   KICKED
 }
 
+// BOT-01 : cinq niveaux. PRO vient du checkpoint 1 et n'est plus utilisé.
 enum BotLevel {
+  NOOB
   BEGINNER
   INTERMEDIATE
   PRO
+  EXPERT
   IMPOSSIBLE
+}
+
+// COURSE-10 : arrivé, arrêté par le temps maximal, ou abandon.
+enum ResultStatus {
+  FINISHED
+  TIME_UP
+  ABANDONED
 }
 
 // ─── Utilisateurs et authentification (Auth.js) ──────────────
@@ -242,17 +252,21 @@ model Text {
 }
 
 // Une salle enchaîne plusieurs courses (relance, RACE-6).
+// RES-05 : une course terminée, avec son texte (un texte aléatoire n'est pas
+// dans la table Text), pour réafficher ses résultats (HIST-02).
 model Race {
   id        String    @id @default(cuid())
   roomId    String
-  textId    String
+  textId    String?
+  content   String    @default("") @db.Text
+  language  Locale    @default(FR)
   state     RaceState @default(LOBBY)
   startAt   DateTime?
   endedAt   DateTime?
   createdAt DateTime  @default(now())
 
   room         Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  text         Text          @relation(fields: [textId], references: [id])
+  text         Text?         @relation(fields: [textId], references: [id])
   participants Participant[]
 
   @@index([roomId, state])
@@ -264,6 +278,7 @@ model Participant {
   raceId    String
   userId    String?
   guestName String?
+  name      String            @default("") // nom affiché pendant la course
   botLevel  BotLevel?
   role      ParticipantRole   @default(PLAYER)
   status    ParticipantStatus @default(WAITING)
@@ -278,16 +293,27 @@ model Participant {
 
   @@unique([raceId, userId])
   @@index([raceId])
+  @@index([userId])
 }
 
+// RES-02, RES-05 : tout ce qu'il faut pour réafficher le tableau et les
+// graphiques d'une course.
 model RaceResult {
-  id            String   @id @default(cuid())
-  participantId String   @unique
+  id            String       @id @default(cuid())
+  participantId String       @unique
   rank          Int
   wpm           Float
+  rawWpm        Float        @default(0)
   accuracy      Float
+  errors        Int          @default(0)
+  progress      Float        @default(0)
   durationMs    Int
-  createdAt     DateTime @default(now())
+  status        ResultStatus @default(FINISHED)
+  bonuses       String[]     @default([])
+  samples       Json         @default("[]") // RES-03 : MPM chaque seconde
+  missed        Json         @default("{}") // RES-03 : fautes par touche attendue
+  isRecord      Boolean      @default(false) // RES-04
+  createdAt     DateTime     @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 }

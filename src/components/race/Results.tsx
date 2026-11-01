@@ -1,16 +1,20 @@
 import { fmt, ordinal, type Dictionary, type Locale } from "@/i18n/dictionaries";
 import type { RacerView } from "@/lib/race/engine";
 import { Avatar } from "./Avatar";
+import { KeyHeatmap } from "./KeyHeatmap";
+import { WpmChart } from "./WpmChart";
 
 type Props = {
   racers: RacerView[];
   meId: string;
+  records: string[]; // RES-04 : coureurs qui ont battu leur record personnel
   locale: Locale;
   t: Dictionary["results"] & {
     statuses: Dictionary["race"]["status"];
     you: string;
     bot: string;
     bonusNames: Dictionary["bonus"]["names"];
+    charts: Dictionary["charts"];
   };
 };
 
@@ -23,7 +27,7 @@ const steps = [
 
 // Podium (RES-01), puis tableau complet (RES-02), dans l'ordre du classement
 // final (COURSE-10).
-export function Results({ racers, meId, locale, t }: Props) {
+export function Results({ racers, meId, records, locale, t }: Props) {
   const number = new Intl.NumberFormat(locale === "fr" ? "fr-CA" : "en-CA", {
     maximumFractionDigits: 1,
   });
@@ -43,6 +47,11 @@ export function Results({ racers, meId, locale, t }: Props) {
           {me.rank === 1 && me.status === "FINISHED"
             ? t.youWon
             : fmt(t.yourRank, { rank: ordinal(me.rank, locale), total: racers.length })}
+        </p>
+      )}
+      {me && records.includes(me.id) && (
+        <p className="bg-jaune text-nuit font-display self-start rounded-2xl px-4 py-2 text-xl font-extrabold">
+          {fmt(t.newRecord, { wpm: number.format(me.wpm) })}
         </p>
       )}
       <ol aria-label={t.podium} className="flex items-end justify-center gap-3 pt-4">
@@ -115,6 +124,11 @@ export function Results({ racers, meId, locale, t }: Props) {
                       <span className="text-sourdine font-mono text-xs">{t.bot}</span>
                     )}
                     {r.id === meId && <span className="text-sourdine text-sm">({t.you})</span>}
+                    {records.includes(r.id) && (
+                      <span className="bg-jaune text-nuit rounded px-1.5 font-mono text-xs font-bold">
+                        {t.recordBadge}
+                      </span>
+                    )}
                   </span>
                 </th>
                 <td className={cell}>{number.format(r.wpm)}</td>
@@ -130,6 +144,21 @@ export function Results({ racers, meId, locale, t }: Props) {
             ))}
           </tbody>
         </table>
+      </div>
+      {/* RES-03 : les deux graphiques, côte à côte sur grand écran. */}
+      <div className="grid gap-8 pt-4 lg:grid-cols-2">
+        <WpmChart
+          series={racers.map((r) => ({
+            id: r.id,
+            name: r.name,
+            lane: r.lane,
+            isMe: r.id === meId,
+            samples: r.samples,
+          }))}
+          locale={locale}
+          t={t.charts}
+        />
+        {me && <KeyHeatmap missed={me.missed} locale={locale} t={t.charts} />}
       </div>
     </section>
   );

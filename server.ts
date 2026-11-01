@@ -12,6 +12,7 @@ import { createInvite, hasInviteAccess, listInvites, revokeInvites } from "./src
 import { claimPresence, releasePresence, releaseRoom, resetPresences } from "./src/lib/presence";
 import { prisma } from "./src/lib/prisma";
 import { codeAttempts } from "./src/lib/rate-limit";
+import { saveRace } from "./src/lib/results";
 import * as engine from "./src/lib/race/engine";
 import { parseMessage, type ClientEvent, type ClientMessage } from "./src/lib/race/messages";
 import {
@@ -302,7 +303,17 @@ app.prepare().then(async () => {
   setInterval(() => {
     const now = Date.now();
     for (const room of rooms.values()) {
-      const { changed, removed, bonuses } = engine.tick(room, now);
+      const { changed, removed, bonuses, ended } = engine.tick(room, now);
+      // RES-05 : une seule écriture en base, à la fin de la course. Les
+      // records (RES-04) sont annoncés quand elle est faite.
+      if (ended) {
+        const raceNo = room.raceNo;
+        saveRace(room, now)
+          .then(({ raceId, records }) =>
+            io.to(room.code).emit("race:saved", { raceNo, raceId, records }),
+          )
+          .catch((error: unknown) => console.error("Résultats non enregistrés :", error));
+      }
       // BONUS-04 : un texte raccourci ou allongé part au joueur concerné.
       for (const event of bonuses) {
         const racer = room.racers.get(event.targetId);
