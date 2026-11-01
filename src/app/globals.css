@@ -16,8 +16,9 @@
   --orange: #ff7a45;
   --orange-texte: #c2410c;
   --jaune: #ffd23f;
-  --juste: #0b7a4b;
-  --faute: #d92d2d;
+  /* A11Y-01 : ≥ 4,5:1 sur toutes les surfaces claires, zone de frappe comprise. */
+  --juste: #0a7046;
+  --faute: #c42222;
   --focus: #2448ff;
   --pied: #0d1240;
   /* Graphiques (RES-03) : palette catégorielle validée (8 couleurs, ordre

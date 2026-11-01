@@ -77,9 +77,7 @@ export function TypingZone({ text, typing, active, mode, fogged, onKey, t }: Pro
             let className = "text-sourdine";
             if (i < cursor)
               className =
-                typing.typed[i] === char
-                  ? "text-juste"
-                  : "text-faute bg-faute/15 underline decoration-wavy";
+                typing.typed[i] === char ? "text-juste" : "text-faute underline decoration-wavy"; // couleur + soulignement
             else if (i === cursor && active)
               className = "bg-jaune/50 text-encre rounded-sm shadow-[inset_3px_0_0_var(--orange)]";
             if (i > cursor && i < fogEnd) className += " blur-[3px] select-none";

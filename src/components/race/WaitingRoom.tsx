@@ -86,13 +86,13 @@ export function WaitingRoom({ view, meId, send, t }: Props) {
   return (
     <div className="flex flex-wrap gap-6">
       <section className="bg-bleu flex min-w-0 flex-[1_1_320px] flex-col gap-4 self-start rounded-3xl p-7 text-white">
-        <span className="font-mono text-xs font-semibold tracking-widest text-white/80 uppercase">
+        <span className="font-mono text-xs font-semibold tracking-widest text-white uppercase">
           {t.code}
         </span>
         <span className="font-mono text-6xl font-semibold tracking-widest">
           {formatCode(view.code)}
         </span>
-        <p className="text-white/90">{t.share}</p>
+        <p className="text-white">{t.share}</p>
         <button
           type="button"
           onClick={copyCode}

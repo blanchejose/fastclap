@@ -91,6 +91,15 @@ export const fr = {
     roomOf: "Salle de {name}",
     upTo: "Jusqu'à {n} joueurs",
   },
+  errors: {
+    notFoundTitle: "Hors piste !",
+    notFoundText:
+      "Cette page n'existe pas, ou cette salle est fermée. Retourne sur la ligne de départ.",
+    errorTitle: "Faux départ…",
+    errorText: "Quelque chose s'est mal passé de notre côté. Réessaie dans un instant.",
+    retry: "Réessayer",
+    home: "Retour à l'accueil",
+  },
   quick: {
     metaTitle: "Faire une course",
     title: "Faire une course",
@@ -520,6 +529,15 @@ const en: Dictionary = {
     empty: "Nobody on the starting line yet. Create a room and invite your class with its code.",
     roomOf: "{name}'s room",
     upTo: "Up to {n} players",
+  },
+  errors: {
+    notFoundTitle: "Off track!",
+    notFoundText:
+      "This page doesn't exist, or this room is closed. Head back to the starting line.",
+    errorTitle: "False start…",
+    errorText: "Something went wrong on our side. Try again in a moment.",
+    retry: "Try again",
+    home: "Back to home",
   },
   quick: {
     metaTitle: "Quick race",

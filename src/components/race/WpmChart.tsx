@@ -76,7 +76,7 @@ export function WpmChart({ series, locale, t }: Props) {
     hoverT === null ? [] : visible.map((s) => ({ s, wpm: valueAt(s.samples, hoverT) }));
 
   return (
-    <figure className="flex flex-col gap-3">
+    <figure className="flex min-w-0 flex-col gap-3">
       <figcaption id={titleId} className="font-display text-2xl font-extrabold">
         {t.wpmTitle}
       </figcaption>
