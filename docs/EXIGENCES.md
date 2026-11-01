@@ -139,6 +139,13 @@ Le seed recalcule ce classement à chaque déploiement.
 
 ### Choix documentés pour les résultats
 
+- **Historique (HIST-01, HIST-02).** 10 courses par page, de la plus récente à
+  la plus ancienne ; un numéro de page invalide revient à la page 1 ou à la
+  dernière. Les abandons y figurent aussi. La page d'une course n'est ouverte
+  qu'aux utilisateurs qui l'ont courue (les autres reçoivent une page
+  introuvable) ; elle réaffiche le même écran que la fin de course, graphiques
+  compris, à partir de la base.
+
 - **Ce qui est gardé (RES-05).** À la fin de chaque course, une seule écriture
   en base (jamais pendant la frappe) : la course (texte, langue, heures) et
   chaque participant, avec son classement, MPM, MPM brut, précision, fautes,
