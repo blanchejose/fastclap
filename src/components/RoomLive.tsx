@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { fmt, type Dictionary, type Locale } from "@/i18n/dictionaries";
+import { isGuestId } from "@/lib/guest-id";
 import { MAX_KEYS_PER_BATCH, type JoinResult, type RoomView } from "@/lib/race/engine";
 import { accuracy, netWpm } from "@/lib/race/stats";
 import { applyKey, correctChars, newTyping, progress, type Typing } from "@/lib/race/typing";
@@ -24,7 +26,7 @@ type Props = {
   locale: Locale;
   t: Pick<
     Dictionary,
-    "room" | "race" | "results" | "config" | "levels" | "invite" | "bonus" | "charts"
+    "room" | "race" | "results" | "config" | "levels" | "invite" | "bonus" | "charts" | "history"
   >;
 };
 
@@ -275,6 +277,15 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
               charts: t.charts,
             }}
           />
+          {/* HIST-02 : la course est dans l'historique des utilisateurs connectés. */}
+          {saved?.raceNo === view.raceNo && myRacer && !isGuestId(meId) && (
+            <Link
+              href={`/course/${saved.raceId}`}
+              className="self-start font-bold underline underline-offset-4"
+            >
+              {t.history.view}
+            </Link>
+          )}
           {isHost ? (
             <div className="flex flex-wrap items-center gap-6">
               <button
