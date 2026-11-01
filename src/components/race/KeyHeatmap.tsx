@@ -33,7 +33,7 @@ export function KeyHeatmap({ missed, locale, t }: Props) {
         key={char}
         aria-label={fmt(t.keyMisses, { key: label(char), n: number.format(n) })}
         className={`flex h-10 flex-col items-center justify-center rounded-md font-mono text-sm leading-none ${
-          wide ? "w-56" : "w-8"
+          wide ? "w-40 sm:w-56" : "w-6 sm:w-8"
         } ${level === 0 ? "bg-surface-2 text-sourdine" : ""}`}
         style={
           level > 0
@@ -57,7 +57,7 @@ export function KeyHeatmap({ missed, locale, t }: Props) {
   };
 
   return (
-    <figure className="flex flex-col gap-3">
+    <figure className="flex min-w-0 flex-col gap-3">
       <figcaption className="font-display text-2xl font-extrabold">{t.keysTitle}</figcaption>
       {max === 0 ? (
         <p className="text-sourdine">{t.noMisses}</p>
@@ -69,7 +69,7 @@ export function KeyHeatmap({ missed, locale, t }: Props) {
               {top.map(([key, n]) => `${label(key)} (${number.format(n)})`).join(", ")}
             </strong>
           </p>
-          <div className="flex flex-col items-center gap-1 overflow-x-auto">
+          <div className="flex flex-col items-center-safe gap-1 overflow-x-auto pb-1">
             {ROWS.map((row, i) => (
               <ul key={row} className="flex gap-1" style={{ paddingLeft: `${i * 0.75}rem` }}>
                 {[...row].map((char) => renderKey(char))}

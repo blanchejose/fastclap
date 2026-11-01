@@ -146,7 +146,7 @@ export function Results({ racers, meId, records, locale, t }: Props) {
         </table>
       </div>
       {/* RES-03 : les deux graphiques, côte à côte sur grand écran. */}
-      <div className="grid gap-8 pt-4 lg:grid-cols-2">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 pt-4 lg:grid-cols-[repeat(2,minmax(0,1fr))]">
         <WpmChart
           series={racers.map((r) => ({
             id: r.id,

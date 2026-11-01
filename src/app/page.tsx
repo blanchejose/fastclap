@@ -101,7 +101,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             >
               {t.home.bibsTitle}
             </h2>
-            <p className="text-[17px] leading-relaxed text-white/90">{t.home.bibsText}</p>
+            <p className="text-[17px] leading-relaxed text-white">{t.home.bibsText}</p>
           </div>
           <ul className="flex flex-[1_1_420px] flex-wrap justify-center gap-4">
             {t.home.bibs.map((d, i) => (
