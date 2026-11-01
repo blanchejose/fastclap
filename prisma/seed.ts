@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Locale, PrismaClient } from "../src/generated/prisma/client";
 import { classifyText } from "../src/lib/text/generate";
+import { seedDemo } from "./seed-demo";
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -136,6 +137,9 @@ async function main() {
     }
   }
   console.log(`${added} textes ajoutés, ${texts.length - added} mis à jour.`);
+
+  // TECH-04 : comptes et historique de démonstration (une seule fois).
+  await seedDemo(prisma);
 }
 
 main()
