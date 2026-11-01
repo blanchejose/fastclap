@@ -97,7 +97,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
           <h2 className="font-display text-4xl font-extrabold tracking-tight">{t.login.heading}</h2>
           {otherError && <ErrorText id="erreur-generale">{message}</ErrorText>}
 
-          {/* AUTH-1 et AUTH-2 : les connexions recommandées, en premier */}
+          {/* AUTH-01 : Discord et GitHub, les connexions recommandées, en premier */}
           <div className="flex flex-col gap-2.5">
             {oauth.map((provider) => (
               <form key={provider.id} action={signInWithOAuth}>
@@ -128,7 +128,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
             <span className="bg-trait h-[1.5px] flex-1" />
           </div>
 
-          {/* AUTH-3 : un pseudo suffit */}
+          {/* Connexion rapide : un pseudo suffit */}
           <form action={signInWithUsername} className="flex flex-col gap-2">
             {nextField}
             <label htmlFor="pseudo" className="text-base font-bold">
@@ -159,7 +159,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
             </button>
           </form>
 
-          {/* AUTH-4 : disponible, mais visuellement déprécié (en dernier, replié) */}
+          {/* AUTH-01 : mot de passe, disponible mais visuellement déprécié (en dernier, replié) */}
           <details open={passwordError} className="text-sourdine text-[15px]">
             <summary className="flex min-h-11 cursor-pointer items-center">
               {t.login.hasPassword}

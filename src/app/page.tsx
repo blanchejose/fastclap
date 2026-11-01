@@ -32,7 +32,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </h1>
             <p className="text-sourdine max-w-[34em] text-lg leading-relaxed">{t.home.lead}</p>
             <div>
-              {/* HOME-2 : le bouton mène directement à la prochaine course disponible. */}
+              {/* JOIN-03 : « Faire une course » mène à la salle la plus proche de sa capacité. */}
               <Link
                 href="/go"
                 className="bg-jaune font-display text-nuit inline-flex items-center gap-3 rounded-2xl px-8 py-5 text-2xl font-extrabold shadow-[0_6px_0_var(--orange)] transition hover:-translate-y-0.5 hover:shadow-[0_8px_0_var(--orange)] active:translate-y-1 active:shadow-[0_2px_0_var(--orange)]"

@@ -110,7 +110,7 @@ enum ResultStatus {
 model User {
   id              String    @id @default(cuid())
   username        String    @unique
-  // Null pour les comptes OAuth et « username seul » (AUTH-3).
+  // Null pour les comptes OAuth et « username seul ».
   passwordHash    String?
   // Champs attendus par l'adaptateur Prisma d'Auth.js.
   name            String?
@@ -180,9 +180,9 @@ model Room {
   visibility   Visibility @default(PUBLIC)
   status       RoomStatus @default(OPEN)
   organizerId  String
-  maxPlayers   Int        @default(30) // H-1
-  lobbyWaitSec Int        @default(30) // H-2
-  countdownSec Int        @default(5) // H-2
+  maxPlayers   Int        @default(30) // SALLE-05
+  lobbyWaitSec Int        @default(30) // inutilisé (checkpoint 1)
+  countdownSec Int        @default(5) // inutilisé : décompte fixe de 3 s (COURSE-03)
   difficulty   Difficulty @default(BEGINNER) // CONF-05 : complexité
   length       TextLength @default(MEDIUM)
   blacklist    String     @default("") // CONF-07 : caractères à exclure
@@ -209,7 +209,7 @@ model Room {
   @@index([visibility, status])
 }
 
-// Lien à usage unique pour une salle privée (AUTH-6).
+// Lien à usage unique pour une salle privée (SALLE-04).
 // SALLE-06 : une personne (compte ou invité) est dans une seule salle à la
 // fois. La clé primaire sur personId le garantit dans la base elle-même.
 model RoomPresence {
@@ -255,7 +255,7 @@ model Text {
   @@index([language, difficulty])
 }
 
-// Une salle enchaîne plusieurs courses (relance, RACE-6).
+// Une salle enchaîne plusieurs courses (relance, COURSE-11).
 // RES-05 : une course terminée, avec son texte (un texte aléatoire n'est pas
 // dans la table Text), pour réafficher ses résultats (HIST-02).
 model Race {
@@ -286,7 +286,7 @@ model Participant {
   botLevel  BotLevel?
   role      ParticipantRole   @default(PLAYER)
   status    ParticipantStatus @default(WAITING)
-  // Progression copiée depuis la mémoire du serveur (RACE-2).
+  // Progression copiée depuis la mémoire du serveur.
   position  Int               @default(0)
   errors    Int               @default(0)
   joinedAt  DateTime          @default(now())
@@ -324,7 +324,7 @@ model RaceResult {
 
 // ─── Statistiques et progression ─────────────────────────────
 
-// Compteur agrégé par touche, pour la heatmap (STATS-2).
+// Compteur agrégé par touche, inutilisé : les fautes par touche sont gardées par course (RES-03).
 model KeyStat {
   userId String
   key    String @db.VarChar(4)

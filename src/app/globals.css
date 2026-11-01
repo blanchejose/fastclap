@@ -3,7 +3,7 @@
 /*
  * Identité FastClap : la piste bleue, la barre d'espace jaune (le bouton de
  * départ) et l'orange des traînées de vitesse. Mode clair par défaut, mode
- * sombre selon l'appareil ou la bascule (UI-1).
+ * sombre selon l'appareil ou la bascule (DES-05).
  */
 :root {
   --piste: #f5f7ff;
