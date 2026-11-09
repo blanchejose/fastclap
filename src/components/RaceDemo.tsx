@@ -54,7 +54,9 @@ export function RaceDemo({ t }: { t: Dictionary["demo"] }) {
                 </span>
               </div>
             </div>
-            <span className="text-right font-mono text-sm font-semibold">{lane.wpm} WPM</span>
+            <span className="text-right font-mono text-sm font-semibold">
+              {lane.wpm} {t.unit}
+            </span>
           </li>
         ))}
       </ol>
