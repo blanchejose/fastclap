@@ -4,44 +4,58 @@ Courses de frappe au clavier en temps réel pour les élèves de 12 à 17 ans.
 À vos claviers, prêts… go !
 Projet Web V (420-5U3-SO), Cégep de Sorel-Tracy.
 
-## Stack
+**Production : https://fastclap-production.up.railway.app**
 
-- Next.js (App Router : composants serveur et composants clients)
-- React, TypeScript, Tailwind CSS v4 (thème FastClap dans `src/app/globals.css`)
-- ESLint + Prettier
-- PostgreSQL + Prisma 7
-- Auth.js (next-auth v5) : Discord, GitHub, pseudo seul, pseudo + mot de passe
-- Socket.IO pour le temps réel (serveur `server.ts`)
-- Vitest pour les tests unitaires
-- Français et anglais (`src/i18n/`)
+Les joueurs se retrouvent dans une salle identifiée par un code de 6
+caractères et tapent le même texte. Chacun voit la progression des autres en
+direct sur la piste. Des bots de cinq niveaux complètent la salle, et des
+bonus de remontée gardent la course serrée jusqu'à la fin. Après la course :
+podium, tableau complet, courbe du MPM de chacun et clavier des touches
+manquées. Tout est gardé dans l'historique et le profil.
 
-## Production
+## Captures d'écran
 
-Hébergé sur Railway (Docker, HTTPS, toujours allumé), base PostgreSQL sur Neon. Voir le
-[guide de déploiement](docs/DEPLOIEMENT.md).
+| Accueil                                      | Salle d'attente et configuration                           |
+| -------------------------------------------- | ---------------------------------------------------------- |
+| ![Accueil](docs/images/captures/accueil.png) | ![Salle d'attente](docs/images/captures/salle-attente.png) |
+| **Course (bonus « brouillard » en cours)**   | **Résultats**                                              |
+| ![Course](docs/images/captures/course.png)   | ![Résultats](docs/images/captures/resultats.png)           |
+| **Profil et progression**                    | **Historique (thème sombre)**                              |
+| ![Profil](docs/images/captures/profil.png)   | ![Historique](docs/images/captures/historique-sombre.png)  |
 
-## Démarrer
+## Technologies
+
+- **Next.js 16** (App Router) et **React 19**, en **TypeScript** strict
+- **Tailwind CSS 4** (thème FastClap dans `src/app/globals.css`)
+- **Socket.IO** pour le temps réel, dans le même serveur que Next.js (`server.ts`)
+- **PostgreSQL** avec **Prisma 7** (migrations versionnées dans `prisma/migrations/`)
+- **Auth.js v5** : Discord, GitHub, pseudo seul, pseudo et mot de passe (bcrypt)
+- **Zod** pour valider toutes les entrées du serveur
+- **sharp** pour redimensionner les photos de profil
+- **Vitest** (tests unitaires), **Playwright** et **axe** (tests de bout en bout et accessibilité)
+- **GitHub Actions** (CI), **Docker**, **Railway** (serveur) et **Neon** (base PostgreSQL, forfait gratuit)
+
+## Installation locale
+
+Il faut Node.js 22 et Docker.
 
 ```bash
 npm install
-cp .env.example .env        # puis adapte DATABASE_URL si besoin
-docker compose up -d        # lance PostgreSQL en local
+cp .env.example .env        # puis remplis AUTH_SECRET (voir plus bas)
+npx auth secret             # génère AUTH_SECRET dans .env.local, à recopier dans .env
+docker compose up -d        # lance PostgreSQL 16 en local (docker-compose.yml)
 npm run db:migrate          # crée les tables
-npm run db:seed             # ajoute les textes de départ
-npm run dev
+npm run db:seed             # textes, comptes de démonstration et historique
+npm run dev                 # http://localhost:3000
 ```
 
-Ouvre http://localhost:3000. Pages utiles :
-
-- `/salles` : liste des salles publiques (lue dans la base)
-- `/api/health` : vérifie que l'application et la base répondent
+Pour tester comme en production : `npm run build` puis `npm start`.
 
 ## Comptes de démonstration
 
-Le seed (`npm run db:seed`) crée trois comptes avec un historique de 12
-courses, pour voir tout de suite l'historique, les graphiques et le profil
-(TECH-04). Connexion par mot de passe sur `/connexion` (« J'ai un mot de
-passe ») :
+Le seed crée trois comptes avec un historique de 12 courses, pour voir tout
+de suite l'historique, les graphiques et le profil. Ils marchent aussi en
+production. Connexion sur `/connexion`, section « J'ai un mot de passe » :
 
 | Nom d'utilisateur | Mot de passe    |
 | ----------------- | --------------- |
@@ -49,95 +63,90 @@ passe ») :
 | `demo_max`        | `fastclap-demo` |
 | `demo_zoe`        | `fastclap-demo` |
 
-Ce sont des comptes de démonstration sans droit particulier ; le mot de passe
-est volontairement public.
+Ce sont des comptes sans droit particulier ; le mot de passe est
+volontairement public.
 
-## Tests de bout en bout
+**Pour essayer une course seul :** connecte-toi, va dans « Salles », crée une
+salle, ajoute un bot, puis « Go ! Lancer la course ». Pour jouer à deux, ouvre
+une fenêtre privée et entre le code de la salle sur l'accueil.
+
+## Variables d'environnement
+
+Toutes sont documentées dans [`.env.example`](.env.example). Aucun secret
+n'est commité (`.env` est ignoré par Git).
+
+| Variable                                 | Obligatoire | Rôle                                                                                      |
+| ---------------------------------------- | ----------- | ----------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                           | Oui         | Connexion PostgreSQL (local : Docker ; production : Neon, avec `?sslmode=require`)        |
+| `AUTH_SECRET`                            | Oui         | Signe les sessions, les jetons du temps réel et le cookie des invités (`npx auth secret`) |
+| `AUTH_TRUST_HOST`                        | Oui         | `true` : nécessaire à Auth.js derrière Railway et pour `npm start`                        |
+| `AUTH_DISCORD_ID`, `AUTH_DISCORD_SECRET` | Non         | Connexion Discord ; le bouton est désactivé sans ces clés                                 |
+| `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`   | Non         | Connexion GitHub ; le bouton est désactivé sans ces clés                                  |
+| `TRUST_PROXY_HEADER`                     | En prod.    | En-tête qui contient la vraie adresse IP derrière le proxy (Railway : `x-real-ip`)        |
+| `PORT`                                   | Non         | Port du serveur, 3000 par défaut (Railway le définit lui-même)                            |
+
+## Tests
 
 ```bash
-npm run test:e2e    # lance le serveur s'il ne tourne pas, puis les scénarios
+npm run lint         # ESLint (avec la vérification Prettier)
+npm run typecheck    # tsc --noEmit
+npm test             # tests unitaires (Vitest)
+npm run test:e2e     # tests de bout en bout (Playwright), base locale requise
 ```
 
-Les scénarios (`e2e/`) se connectent par nom d'utilisateur et mot de passe
-(TEST-03), jamais par OAuth. Ils couvrent une course complète contre un bot,
-le coller bloqué, une invitée, une salle privée avec lien d'invitation,
-l'explorateur, la partie rapide, l'historique et le profil du compte de
-démonstration, et le changement de langue. La CI les exécute sur le build de
-production avec une vraie base PostgreSQL.
+`npm run test:e2e` lance le serveur s'il ne tourne pas déjà. Les scénarios
+(`e2e/`) se connectent par nom d'utilisateur et mot de passe, jamais par
+OAuth. Ils couvrent une course complète contre un bot, le coller bloqué, une
+invitée, une salle privée avec lien d'invitation, l'explorateur, la partie
+rapide, le compte de démonstration, le changement de langue,
+l'accessibilité (axe, thèmes clair et sombre), la navigation au clavier et
+l'affichage à 360 px.
+
+La CI (`.github/workflows/ci.yml`) lance le lint, la vérification des types
+et les tests unitaires à chaque push, puis les tests de bout en bout sur le
+build de production avec une vraie base PostgreSQL.
 
 ## Scripts
 
-| Script                 | Rôle                                            |
-| ---------------------- | ----------------------------------------------- |
-| `npm run dev`          | Serveur de développement (Next.js + Socket.IO)  |
-| `npm run build`        | Build de production                             |
-| `npm run lint`         | ESLint (inclut la vérification Prettier)        |
-| `npm run lint:fix`     | Corrige automatiquement ESLint et le formatage  |
-| `npm run format`       | Formate tout le projet avec Prettier            |
-| `npm run format:check` | Vérifie le formatage sans modifier (utilisé CI) |
-| `npm run typecheck`    | Vérification TypeScript                         |
-| `npm test`             | Tests unitaires (Vitest)                        |
-| `npm run test:e2e`     | Tests de bout en bout (Playwright, TEST-02)     |
-| `npm run db:migrate`   | Crée ou met à jour les tables (développement)   |
-| `npm run db:deploy`    | Applique les migrations en production           |
-| `npm run db:seed`      | Ajoute les données de départ                    |
-| `npm run db:studio`    | Ouvre Prisma Studio pour voir les données       |
+| Script               | Rôle                                             |
+| -------------------- | ------------------------------------------------ |
+| `npm run dev`        | Serveur de développement (Next.js + Socket.IO)   |
+| `npm run build`      | Build de production                              |
+| `npm start`          | Lance le build de production                     |
+| `npm run lint`       | ESLint (inclut la vérification Prettier)         |
+| `npm run lint:fix`   | Corrige automatiquement ESLint et le formatage   |
+| `npm run format`     | Formate tout le projet avec Prettier             |
+| `npm run typecheck`  | Vérification TypeScript                          |
+| `npm test`           | Tests unitaires (Vitest)                         |
+| `npm run test:e2e`   | Tests de bout en bout (Playwright)               |
+| `npm run db:migrate` | Crée ou met à jour les tables (développement)    |
+| `npm run db:deploy`  | Applique les migrations en production            |
+| `npm run db:seed`    | Ajoute les données de départ et de démonstration |
+| `npm run db:studio`  | Ouvre Prisma Studio pour voir les données        |
 
-## Composants serveur et clients
+## Organisation du code
 
-Dans l'App Router, chaque composant est un **composant serveur** par défaut.
-On ajoute `"use client"` en haut d'un fichier seulement quand il a besoin
-d'interactivité (état, événements, `localStorage`, API du navigateur).
-
-- `src/app/page.tsx` : composant serveur (page d'accueil)
-- `src/components/JoinRaceButton.tsx` : composant client (clic)
-- `src/components/ThemeToggle.tsx` : composant client (thème sombre/clair)
-- `src/app/salles/page.tsx` : composant serveur asynchrone qui lit la base avec Prisma
-
-## Salles et courses en temps réel
-
-`server.ts` démarre Next.js et Socket.IO sur le même port (voir l'ADR temps réel
-dans [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)).
-
-- `src/lib/race/engine.ts` : la salle et la machine à états de la course
-  (attente, décompte, course, résultats), sans réseau, testée dans `engine.test.ts`
-- `src/lib/race/typing.ts` : règles de frappe partagées par le navigateur et le serveur
-- `src/lib/race/bots.ts` : bots déterministes à graine, 5 niveaux
-- `src/lib/race/messages.ts` : schémas Zod des messages temps réel
-- `server.ts` : reçoit les touches par lots, fait avancer les salles 10 fois par
-  seconde et diffuse leur état
-- `src/components/RoomLive.tsx` et `src/components/race/` : la salle, la piste,
-  la zone de frappe et les résultats dans le navigateur
-- `src/lib/socket-token.ts` : jeton signé qui identifie le joueur auprès de Socket.IO
-
-Créer une salle : page `/salles`. La rejoindre : son code sur l'accueil.
+- `server.ts` : démarre Next.js et Socket.IO sur le même port ; reçoit les
+  touches par lots, fait avancer les salles 10 fois par seconde et diffuse
+  leur état
+- `src/lib/race/` : le cœur du jeu, en code pur et testé — machine à états
+  (`engine.ts`), règles de frappe partagées par le navigateur et le serveur
+  (`typing.ts`), bots à graine (`bots.ts`), bonus (`bonus.ts`), configuration
+  et messages validés par Zod (`config.ts`, `messages.ts`)
+- `src/lib/text/` : génération des textes (corpus et mots aléatoires, complexité)
+- `src/app/` : les pages (App Router) et les Server Actions
+- `src/components/` : les composants ; `race/` contient la piste, la zone de
+  frappe, les résultats et les graphiques
+- `src/i18n/` : les textes de l'interface en français et en anglais
+- `prisma/` : schéma, migrations et seed
+- `e2e/` : tests Playwright
 
 ## Documentation
 
-- [Démarche créative](docs/DEMARCHE-CREATIVE.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Matrice de traçabilité](docs/MATRICE.md) : chaque exigence, où et comment elle est vérifiée
-- [Exigences](docs/EXIGENCES.md) : les choix faits quand l'énoncé est ambigu
+- [Architecture](docs/ARCHITECTURE.md) : modèle de données, machine à états,
+  flux des messages temps réel, ADR (temps réel et bots)
+- [Exigences](docs/EXIGENCES.md) : matrice de traçabilité et choix documentés
+- [Démarche créative](docs/DEMARCHE-CREATIVE.md) : nom, logo, moodboard,
+  palette, typographies
+- [Utilisation de l'IA](docs/IA.md)
 - [Guide de déploiement](docs/DEPLOIEMENT.md)
-
-## Authentification
-
-Page `/connexion`, dans l'ordre demandé par le cahier des charges :
-
-1. Discord et GitHub (AUTH-01) : boutons actifs seulement si les clés
-   `AUTH_DISCORD_*` / `AUTH_GITHUB_*` sont dans `.env`
-2. Pseudo seul, sans mot de passe : un pseudo déjà pris est refusé
-3. Pseudo + mot de passe (AUTH-01, utilisé par les tests de bout en bout), replié en bas de page : crée le compte si le
-   pseudo est libre, sinon vérifie le mot de passe (bcrypt)
-
-Fichiers : `src/auth.ts` (configuration), `src/app/connexion/` (page et Server
-Actions), `src/components/UserMenu.tsx` (nom affiché dans l'en-tête).
-
-Génère `AUTH_SECRET` avec `npx auth secret` avant le premier lancement.
-
-## Base de données
-
-- `prisma/schema.prisma` : les tables (voir la page Architecture)
-- `prisma/migrations/` : l'historique des changements de la base, versionné dans Git
-- `prisma/seed.ts` : les données de départ
-- `src/lib/prisma.ts` : la connexion unique à la base utilisée par l'application
