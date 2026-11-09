@@ -38,7 +38,7 @@ export default async function RacePage({ params }: PageProps<"/course/[id]">) {
         className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 pt-10 pb-16"
       >
         <div className="flex flex-col gap-2">
-          <h1 className="font-display text-5xl leading-[0.95] font-extrabold tracking-tight">
+          <h1 className="font-display text-4xl leading-[0.95] font-extrabold tracking-tight sm:text-5xl">
             {fmt(t.history.raceTitle, { date: race.endedAt ? date.format(race.endedAt) : "—" })}
           </h1>
           <p className="text-sourdine font-mono">{fmt(t.history.room, { code })}</p>
