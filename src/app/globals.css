@@ -3,7 +3,7 @@
 /*
  * Identité FastClap : la piste bleue, la barre d'espace jaune (le bouton de
  * départ) et l'orange des traînées de vitesse. Mode clair par défaut, mode
- * sombre selon l'appareil ou la bascule (UI-1).
+ * sombre selon l'appareil ou la bascule (DES-05).
  */
 :root {
   --piste: #f5f7ff;
@@ -16,10 +16,29 @@
   --orange: #ff7a45;
   --orange-texte: #c2410c;
   --jaune: #ffd23f;
-  --juste: #0b7a4b;
-  --faute: #d92d2d;
+  /* A11Y-01 : ≥ 4,5:1 sur toutes les surfaces claires, zone de frappe comprise. */
+  --juste: #0a7046;
+  --faute: #c42222;
   --focus: #2448ff;
   --pied: #0d1240;
+  /* Graphiques (RES-03) : palette catégorielle validée (8 couleurs, ordre
+     fixe) et rampe séquentielle bleue pour la carte de chaleur. */
+  --serie-1: #2a78d6;
+  --serie-2: #eb6834;
+  --serie-3: #1baf7a;
+  --serie-4: #eda100;
+  --serie-5: #e87ba4;
+  --serie-6: #008300;
+  --serie-7: #6250d6;
+  --serie-8: #e34948;
+  --serie-autres: #9a9cb8;
+  --chaleur-1: #cde2fb;
+  --chaleur-2: #9ec5f4;
+  --chaleur-3: #6da7ec;
+  --chaleur-4: #3987e5;
+  --chaleur-5: #256abf;
+  --chaleur-6: #104281;
+  --chaleur-texte-fort: #ffffff;
   color-scheme: light;
 }
 
@@ -38,6 +57,22 @@
     --faute: #ff6b6b;
     --focus: #8fa3ff;
     --pied: #070a2b;
+    --serie-1: #3987e5;
+    --serie-2: #d95926;
+    --serie-3: #199e70;
+    --serie-4: #c98500;
+    --serie-5: #d55181;
+    --serie-6: #008300;
+    --serie-7: #9085e9;
+    --serie-8: #e66767;
+    --serie-autres: #5d6496;
+    --chaleur-1: #184f95;
+    --chaleur-2: #1c5cab;
+    --chaleur-3: #2a78d6;
+    --chaleur-4: #5598e7;
+    --chaleur-5: #86b6ef;
+    --chaleur-6: #cde2fb;
+    --chaleur-texte-fort: #0d1240;
     color-scheme: dark;
   }
 }
@@ -56,6 +91,22 @@
   --faute: #ff6b6b;
   --focus: #8fa3ff;
   --pied: #070a2b;
+  --serie-1: #3987e5;
+  --serie-2: #d95926;
+  --serie-3: #199e70;
+  --serie-4: #c98500;
+  --serie-5: #d55181;
+  --serie-6: #008300;
+  --serie-7: #9085e9;
+  --serie-8: #e66767;
+  --serie-autres: #5d6496;
+  --chaleur-1: #184f95;
+  --chaleur-2: #1c5cab;
+  --chaleur-3: #2a78d6;
+  --chaleur-4: #5598e7;
+  --chaleur-5: #86b6ef;
+  --chaleur-6: #cde2fb;
+  --chaleur-texte-fort: #0d1240;
   color-scheme: dark;
 }
 

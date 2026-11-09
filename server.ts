@@ -7,9 +7,22 @@ import { randomInt } from "node:crypto";
 import { createServer } from "node:http";
 import next from "next";
 import { Server, type Socket } from "socket.io";
+import { clientIp, IP_HEADER } from "./src/lib/client-ip";
+import { createInvite, hasInviteAccess, listInvites, revokeInvites } from "./src/lib/invites";
+import { claimPresence, releasePresence, releaseRoom, resetPresences } from "./src/lib/presence";
 import { prisma } from "./src/lib/prisma";
+import { codeAttempts } from "./src/lib/rate-limit";
+import { liveRooms } from "./src/lib/race/registry";
+import { saveRace } from "./src/lib/results";
 import * as engine from "./src/lib/race/engine";
 import { parseMessage, type ClientEvent, type ClientMessage } from "./src/lib/race/messages";
+import {
+  CONFIG_COLUMNS,
+  configFromRow,
+  configToRow,
+  forgetRoom,
+  pickText,
+} from "./src/lib/race/room-store";
 import { verifySocketToken, type SocketIdentity } from "./src/lib/socket-token";
 
 const port = Number(process.env.PORT ?? 3000);
@@ -23,55 +36,42 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 
 // Salles ouvertes, en mémoire, par code.
-const rooms = new Map<string, engine.Room>();
-const difficulties = new Map<string, "BEGINNER" | "INTERMEDIATE" | "PRO">();
+const rooms = liveRooms; // partagé avec l'explorateur (registry.ts)
 
 type Data = {
   user: SocketIdentity;
+  ip: string;
   code?: string;
   keyWindow: { second: number; count: number };
 };
-
-async function pickText(code: string): Promise<string> {
-  const difficulty = difficulties.get(code) ?? "BEGINNER";
-  const texts = await prisma.text.findMany({
-    where: { difficulty, language: "FR" },
-    select: { content: true },
-  });
-  const pool = texts.length > 0 ? texts : await prisma.text.findMany({ select: { content: true } });
-  return pool.length > 0
-    ? pool[randomInt(pool.length)].content
-    : "Le vif renard brun saute par-dessus le chien paresseux.";
-}
 
 async function loadRoom(code: string): Promise<engine.Room | null> {
   const existing = rooms.get(code);
   if (existing) return existing;
   const row = await prisma.room.findUnique({
     where: { code },
-    select: {
-      status: true,
-      organizerId: true,
-      maxPlayers: true,
-      timeLimitSec: true,
-      difficulty: true,
-    },
+    select: { status: true, organizerId: true, createdAt: true, ...CONFIG_COLUMNS },
   });
   if (!row || row.status === "CLOSED") return null;
   // Un autre message a pu créer la salle pendant la lecture de la base.
   const raced = rooms.get(code);
   if (raced) return raced;
-  const room = engine.createRoom(code, row.organizerId, {
-    maxPlayers: row.maxPlayers,
-    timeLimitMs: row.timeLimitSec === null ? null : row.timeLimitSec * 1000,
-  });
+  const room = engine.createRoom(
+    code,
+    row.organizerId,
+    configFromRow(row),
+    row.createdAt.getTime(),
+  );
   rooms.set(code, room);
-  difficulties.set(code, row.difficulty);
   return room;
 }
 
-app.prepare().then(() => {
-  const httpServer = createServer((req, res) => handle(req, res));
+app.prepare().then(async () => {
+  const httpServer = createServer((req, res) => {
+    // L'adresse IP calculée ici remplace toute valeur envoyée par le visiteur.
+    req.headers[IP_HEADER] = clientIp(req.headers, req.socket.remoteAddress);
+    return handle(req, res);
+  });
   // destroyUpgrade: false laisse passer le rechargement à chaud de Next.js en développement.
   const io = new Server(httpServer, { destroyUpgrade: false });
 
@@ -106,7 +106,8 @@ app.prepare().then(() => {
     broadcast(room);
     io.in(room.code).socketsLeave(room.code);
     rooms.delete(room.code);
-    difficulties.delete(room.code);
+    forgetRoom(room.code);
+    await releaseRoom(room.code);
     await prisma.room.update({
       where: { code: room.code },
       data: { status: "CLOSED", closedAt: new Date() },
@@ -117,7 +118,8 @@ app.prepare().then(() => {
   io.use((socket, nextFn) => {
     const user = verifySocketToken(socket.handshake.auth?.token, secret);
     if (!user) return nextFn(new Error("unauthorized"));
-    socket.data = { user, keyWindow: { second: 0, count: 0 } } satisfies Data;
+    const ip = clientIp(socket.handshake.headers, socket.handshake.address);
+    socket.data = { user, ip, keyWindow: { second: 0, count: 0 } } satisfies Data;
     nextFn();
   });
 
@@ -157,17 +159,93 @@ app.prepare().then(() => {
       }
     }
 
-    on("room:join", async ({ code }, ack) => {
+    // SALLE-06 : quitter la salle où l'on est, quand on choisit d'en rejoindre une autre.
+    async function leaveOtherRooms(code: string) {
+      for (const other of rooms.values()) {
+        if (other.code === code || !other.members.has(uid)) continue;
+        engine.removeMember(other, uid, Date.now());
+        for (const s of socketsOf(uid, other.code)) s.emit("room:moved");
+        detach(uid, other.code);
+        if (other.phase === "CLOSED") void closeRoom(other);
+        else broadcast(other);
+        await releasePresence([uid], other.code);
+      }
+    }
+
+    on("room:join", async ({ code, leaveOther }, ack) => {
+      // SALLE-10 : une personne déjà dans la salle revient toujours ; les
+      // autres sont bloquées après 10 codes ratés par minute.
+      if (codeAttempts.isBlocked(data.ip) && !rooms.get(code)?.members.has(uid))
+        return ack({ ok: false, reason: "too_many" });
       const room = await loadRoom(code);
-      if (!room) return ack({ ok: false, reason: "closed" });
-      const result = engine.join(room, { id: uid, name }, "PLAYER", Date.now());
+      if (!room) {
+        codeAttempts.record(data.ip);
+        return ack({ ok: false, reason: "closed" });
+      }
+      // SALLE-03, SALLE-04 : le code seul ne suffit pas pour une salle privée.
+      // L'hôte et les personnes déjà dans la salle (reconnexion) passent.
+      const invited =
+        room.config.visibility !== "PRIVATE" ||
+        room.hostId === uid ||
+        room.members.has(uid) ||
+        (await hasInviteAccess(code, uid, data.ip));
+      if (!invited) return ack({ ok: false, reason: "private" });
+
+      // SALLE-06 : une seule salle à la fois, garanti par la base. Un deuxième
+      // onglet ou une reconnexion (déjà membre) ne crée rien de nouveau.
+      const newcomer = !room.members.has(uid);
+      if (newcomer) {
+        if (leaveOther) await leaveOtherRooms(code);
+        const presence = await claimPresence(
+          uid,
+          code,
+          (other) => rooms.get(other)?.members.has(uid) ?? false,
+        );
+        if (!presence.ok)
+          return ack({ ok: false, reason: "elsewhere", otherCode: presence.otherCode });
+      }
+      const result = engine.join(
+        room,
+        { id: uid, name, avatar: data.user.avatar ?? null },
+        "PLAYER",
+        Date.now(),
+      );
+      if (!result.ok && newcomer) await releasePresence([uid], code);
       if (result.ok) {
         data.code = code;
         await socket.join(code);
         sendRace(socket, room, uid);
         broadcast(room);
+        io.to(code).emit("invite:update"); // l'hôte rafraîchit le statut des liens
       }
       ack(result);
+    });
+
+    // CONF-12 : l'hôte change la configuration ; tout le monde la voit aussitôt,
+    // et elle est gardée en base (la liste des salles l'affiche aussi).
+    on("room:config", async (patch, ack) => {
+      const room = roomOf();
+      if (!room) return ack({ ok: false, reason: "forbidden" });
+      const result = engine.updateConfig(room, uid, patch);
+      if (result !== "ok") return ack({ ok: false, reason: result });
+      broadcast(room);
+      ack({ ok: true });
+      await prisma.room.update({ where: { code: room.code }, data: configToRow(room.config) });
+    });
+
+    // SALLE-04 : l'hôte génère des liens et voit leur statut (SEC-01).
+    on("invite:list", async (_, ack) => {
+      const room = roomOf();
+      if (!room || room.hostId !== uid) return ack({ ok: false, reason: "forbidden" });
+      ack({ ok: true, invites: await listInvites(room.code) });
+    });
+
+    on("invite:create", async (_, ack) => {
+      const room = roomOf();
+      if (!room || room.hostId !== uid || room.phase === "CLOSED")
+        return ack({ ok: false, reason: "forbidden" });
+      await createInvite(room.code);
+      ack({ ok: true, invites: await listInvites(room.code) });
     });
 
     on("room:role", ({ role }) => act((room) => engine.setRole(room, uid, role)));
@@ -180,6 +258,9 @@ app.prepare().then(() => {
     on("room:kick", ({ id }) =>
       act((room, now) => {
         if (!engine.kick(room, uid, id, now)) return false;
+        // SALLE-04 : son lien ne marche plus ; l'hôte voit le nouveau statut.
+        void revokeInvites(room.code, id).then(() => io.to(room.code).emit("invite:update"));
+        void releasePresence([id], room.code);
         for (const s of socketsOf(id, room.code)) s.emit("room:kicked");
         detach(id, room.code);
         return true;
@@ -190,6 +271,7 @@ app.prepare().then(() => {
       act((room, now) => {
         engine.removeMember(room, uid, now);
         detach(uid, room.code);
+        void releasePresence([uid], room.code);
         return true;
       }),
     );
@@ -197,7 +279,7 @@ app.prepare().then(() => {
     on("race:start", async () => {
       const room = roomOf();
       if (!room || room.hostId !== uid || engine.startBlocker(room) !== null) return;
-      const text = await pickText(room.code);
+      const text = await pickText(room.code, room.config);
       if (!engine.startRace(room, uid, text, randomInt(2 ** 31), Date.now())) return;
       io.to(room.code).emit("race:text", { raceNo: room.raceNo, text });
       broadcast(room);
@@ -232,11 +314,32 @@ app.prepare().then(() => {
   setInterval(() => {
     const now = Date.now();
     for (const room of rooms.values()) {
-      const { changed } = engine.tick(room, now);
+      const { changed, removed, bonuses, ended } = engine.tick(room, now);
+      // RES-05 : une seule écriture en base, à la fin de la course. Les
+      // records (RES-04) sont annoncés quand elle est faite.
+      if (ended) {
+        const raceNo = room.raceNo;
+        saveRace(room, now)
+          .then(({ raceId, records }) =>
+            io.to(room.code).emit("race:saved", { raceNo, raceId, records }),
+          )
+          .catch((error: unknown) => console.error("Résultats non enregistrés :", error));
+      }
+      // BONUS-04 : un texte raccourci ou allongé part au joueur concerné.
+      for (const event of bonuses) {
+        const racer = room.racers.get(event.targetId);
+        if (!racer || event.type === "FOG") continue;
+        for (const s of socketsOf(event.targetId, room.code))
+          s.emit("race:mytext", { raceNo: room.raceNo, text: racer.text });
+      }
+      if (removed.length > 0) void releasePresence(removed, room.code);
       if (room.phase === "CLOSED") void closeRoom(room);
       else if (changed) broadcast(room);
     }
   }, TICK_MS);
+
+  // Les salles vivent en mémoire : au démarrage, toute présence est un reste.
+  await resetPresences();
 
   httpServer.listen(port, () => {
     console.log(
