@@ -60,7 +60,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
         <section aria-labelledby="titre-salles" className="flex flex-col gap-5">
           <div className="flex flex-wrap items-baseline justify-between gap-4">
-            <h2 id="titre-salles" className="font-display text-5xl font-extrabold tracking-tight">
+            <h2
+              id="titre-salles"
+              className="font-display text-4xl font-extrabold tracking-tight text-balance sm:text-5xl"
+            >
               {t.home.roomsTitle}
             </h2>
             <Link href="/salles" className="font-bold underline underline-offset-4">
@@ -73,7 +76,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         </section>
 
         <section id="comment" aria-labelledby="titre-comment" className="flex flex-col gap-6">
-          <h2 id="titre-comment" className="font-display text-5xl font-extrabold tracking-tight">
+          <h2
+            id="titre-comment"
+            className="font-display text-4xl font-extrabold tracking-tight text-balance sm:text-5xl"
+          >
             {t.home.howTitle}
           </h2>
           <ol className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-5">
@@ -92,12 +98,12 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         <section
           id="dossards"
           aria-labelledby="titre-dossards"
-          className="bg-bleu flex flex-wrap items-center gap-10 rounded-[2rem] p-9 text-white"
+          className="bg-bleu flex flex-wrap items-center gap-10 rounded-[2rem] p-6 text-white sm:p-9"
         >
           <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-3">
             <h2
               id="titre-dossards"
-              className="font-display text-5xl leading-[0.95] font-extrabold tracking-tight"
+              className="font-display text-4xl leading-[0.95] font-extrabold tracking-tight text-balance sm:text-5xl"
             >
               {t.home.bibsTitle}
             </h2>

@@ -110,9 +110,25 @@ export function LiveRooms({ initial, limit, showFilters, t }: Props) {
       )}
 
       {rooms.length === 0 ? (
-        <p className="border-trait text-sourdine rounded-3xl border-2 border-dashed p-6">
-          {showFilters && (filters.language || filters.complexity) ? t.noMatch : t.empty}
-        </p>
+        // État vide : dire ce qui se passe, puis offrir l'action qui le règle.
+        <div className="border-trait flex flex-wrap items-center justify-between gap-x-8 gap-y-4 rounded-3xl border-2 border-dashed p-6 sm:p-8">
+          {showFilters && (filters.language || filters.complexity) ? (
+            <p className="text-sourdine">{t.noMatch}</p>
+          ) : (
+            <>
+              <div className="flex max-w-[40em] flex-col gap-1">
+                <p className="text-lg font-bold">{t.emptyTitle}</p>
+                <p className="text-sourdine">{t.empty}</p>
+              </div>
+              <Link
+                href="/salles#creer"
+                className="bg-bleu rounded-xl px-5 py-3 font-bold text-white transition hover:-translate-y-0.5"
+              >
+                {t.createRoom}
+              </Link>
+            </>
+          )}
+        </div>
       ) : (
         <ul
           aria-live="polite"
