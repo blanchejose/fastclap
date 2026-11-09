@@ -478,7 +478,7 @@ const en: Dictionary = {
     code: "Enter a code",
     rooms: "All rooms",
     discover: "Discover",
-    credit: "Web V project · Cégep de Sorel-Tracy",
+    credit: "",
     source: "Source code",
   },
   levels: { BEGINNER: "Easy", INTERMEDIATE: "Medium", PRO: "Hard" },
