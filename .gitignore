@@ -41,9 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# fichiers générés par Next.js pour les assistants IA
-CLAUDE.md
-AGENTS.md
 
 /src/generated/prisma
 
