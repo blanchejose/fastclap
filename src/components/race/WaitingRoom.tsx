@@ -4,7 +4,9 @@ import { useState } from "react";
 import { fmt, type Dictionary } from "@/i18n/dictionaries";
 import { BOT_LEVELS, type BotLevel } from "@/lib/race/bots";
 import type { Role, RoomView } from "@/lib/race/engine";
+import { isGuestId } from "@/lib/guest-id";
 import { Avatar } from "./Avatar";
+import { ConfirmButton } from "./ConfirmButton";
 
 type Props = {
   view: RoomView;
@@ -43,7 +45,7 @@ export function WaitingRoom({ view, meId, send, t }: Props) {
     <ul className="flex flex-col gap-2" aria-live="polite">
       {members.map((m) => (
         <li key={m.id} className="bg-surface-2 flex items-center gap-3 rounded-2xl px-4 py-2">
-          <Avatar name={m.name} />
+          <Avatar name={m.name} src={m.avatar} />
           <span className="flex-1 font-semibold">
             {m.name}
             {m.kind === "BOT" && m.botLevel && (
@@ -51,6 +53,7 @@ export function WaitingRoom({ view, meId, send, t }: Props) {
                 {t.bot} · {t.botLevels[m.botLevel]}
               </span>
             )}
+            {isGuestId(m.id) && <span className="text-sourdine ml-2 text-sm">({t.guest})</span>}
             {m.id === view.hostId && (
               <span className="text-sourdine ml-2 text-sm">({t.organizer})</span>
             )}
@@ -83,13 +86,13 @@ export function WaitingRoom({ view, meId, send, t }: Props) {
   return (
     <div className="flex flex-wrap gap-6">
       <section className="bg-bleu flex min-w-0 flex-[1_1_320px] flex-col gap-4 self-start rounded-3xl p-7 text-white">
-        <span className="font-mono text-xs font-semibold tracking-widest text-white/80 uppercase">
+        <span className="font-mono text-xs font-semibold tracking-widest text-white uppercase">
           {t.code}
         </span>
         <span className="font-mono text-6xl font-semibold tracking-widest">
           {formatCode(view.code)}
         </span>
-        <p className="text-white/90">{t.share}</p>
+        <p className="text-white">{t.share}</p>
         <button
           type="button"
           onClick={copyCode}
@@ -178,6 +181,15 @@ export function WaitingRoom({ view, meId, send, t }: Props) {
             <p id="etat-depart" className="text-sourdine text-sm" aria-live="polite">
               {view.startBlocker ? t.blockers[view.startBlocker] : t.ready}
             </p>
+            <div className="border-trait mt-3 border-t pt-4">
+              <ConfirmButton
+                label={t.close}
+                question={t.confirmClose}
+                yes={t.confirmCloseYes}
+                no={t.confirmCloseNo}
+                onConfirm={() => send("room:close")}
+              />
+            </div>
           </div>
         ) : (
           <p className="text-sourdine" aria-live="polite">

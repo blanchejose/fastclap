@@ -46,3 +46,7 @@ CLAUDE.md
 AGENTS.md
 
 /src/generated/prisma
+
+# Playwright
+/test-results/
+/playwright-report/

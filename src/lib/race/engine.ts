@@ -2,18 +2,13 @@
 // (docs/ARCHITECTURE.md, section 2). Code pur, sans réseau ni base de données :
 // le serveur Socket.IO l'appelle et les tests Vitest le vérifient. Le temps
 // (`now`, en ms) est toujours passé en paramètre pour que tout soit prévisible.
+import { isGuestId } from "../guest-id";
+import { applyBonuses, type BonusEvent, type BonusType } from "./bonus";
 import { createBot, stepBot, type Bot, type BotLevel } from "./bots";
-import { hashSeed } from "./random";
+import { applyPatch, DEFAULT_CONFIG, type Config, type ConfigPatch } from "./config";
+import { createRng, hashSeed, type Rng } from "./random";
 import { accuracy, netWpm, rawWpm } from "./stats";
-import {
-  applyKey,
-  correctChars,
-  isComplete,
-  newTyping,
-  progress,
-  type ErrorMode,
-  type Typing,
-} from "./typing";
+import { applyKey, correctChars, isComplete, newTyping, progress, type Typing } from "./typing";
 
 export type Phase = "WAITING" | "COUNTDOWN" | "RUNNING" | "RESULTS" | "CLOSED";
 export type Role = "PLAYER" | "SPECTATOR";
@@ -24,14 +19,9 @@ export const RECONNECT_GRACE_MS = 30_000; // COURSE-08
 export const MAX_KEYS_PER_BATCH = 30; // COURSE-06 : au-delà, c'est un saut de progression
 export const MAX_KEYS_PER_SECOND = 25; // COURSE-06 : ≈ 300 MPM, au-delà de tout humain
 const SAMPLE_EVERY_MS = 1_000; // RES-05 : un point de la courbe de MPM par seconde
+export const BONUS_ANNOUNCE_MS = 4_000; // BONUS-03 : durée d'une annonce
 
-export type Config = {
-  maxPlayers: number; // SALLE-05 : les spectateurs ne comptent pas
-  errorMode: ErrorMode; // CONF-08
-  timeLimitMs: number | null; // CONF-01 : null = aucune limite
-};
-
-export const DEFAULT_CONFIG: Config = { maxPlayers: 30, errorMode: "STRICT", timeLimitMs: null };
+export type { Config } from "./config";
 
 export type Member = {
   id: string;
@@ -39,6 +29,7 @@ export type Member = {
   kind: "HUMAN" | "BOT";
   role: Role;
   botLevel: BotLevel | null;
+  avatar: string | null; // AUTH-04 : photo de profil, sinon avatar généré
   joinedAt: number;
   connected: boolean;
   disconnectedAt: number | null;
@@ -49,6 +40,7 @@ export type Racer = {
   name: string;
   kind: "HUMAN" | "BOT";
   botLevel: BotLevel | null;
+  avatar: string | null;
   text: string; // propre à chaque coureur : les bonus pourront l'allonger ou le raccourcir
   typing: Typing;
   status: RacerStatus;
@@ -56,10 +48,13 @@ export type Racer = {
   samples: { t: number; wpm: number }[];
   bot: Bot | null;
   recentKeys: number[]; // horodatages des touches reçues (limite de vitesse)
+  bonuses: BonusType[]; // bonus reçus (BONUS-01 : 3 au plus), affichés aux résultats
+  fogUntil: number | null; // brouillard sur les prochains mots jusqu'à cet instant
 };
 
 export type Room = {
   code: string;
+  createdAt: number; // JOIN-03 : à égalité, la plus ancienne salle l'emporte
   hostId: string;
   phase: Phase;
   config: Config;
@@ -73,19 +68,29 @@ export type Room = {
   lastSampleAt: number;
   racers: Map<string, Racer>;
   botCount: number;
+  checkpoints: number; // points de contrôle déjà passés (BONUS-01)
+  bonusEvents: BonusEvent[];
+  bonusRng: Rng; // tirage des bonus, à partir de la graine de la course
 };
 
 export type JoinResult =
   { ok: true; rejoined: boolean } | { ok: false; reason: "closed" | "kicked" | "in_progress" };
 
 export type StartBlocker = "phase" | "not_enough" | "no_human";
+export type ConfigResult = "ok" | "forbidden" | "below_players";
 
-export function createRoom(code: string, hostId: string, config: Partial<Config> = {}): Room {
+export function createRoom(
+  code: string,
+  hostId: string,
+  config: Config = DEFAULT_CONFIG,
+  createdAt = 0,
+): Room {
   return {
     code,
+    createdAt,
     hostId,
     phase: "WAITING",
-    config: { ...DEFAULT_CONFIG, ...config },
+    config,
     members: new Map(),
     kicked: new Set(),
     raceNo: 0,
@@ -96,6 +101,9 @@ export function createRoom(code: string, hostId: string, config: Partial<Config>
     lastSampleAt: 0,
     racers: new Map(),
     botCount: 0,
+    checkpoints: 0,
+    bonusEvents: [],
+    bonusRng: createRng(0),
   };
 }
 
@@ -108,7 +116,7 @@ export function players(room: Room): Member[] {
 
 export function join(
   room: Room,
-  person: { id: string; name: string },
+  person: { id: string; name: string; avatar?: string | null },
   role: Role,
   now: number,
 ): JoinResult {
@@ -131,6 +139,7 @@ export function join(
     kind: "HUMAN",
     role: full ? "SPECTATOR" : role,
     botLevel: null,
+    avatar: person.avatar ?? null,
     joinedAt: now,
     connected: true,
     disconnectedAt: null,
@@ -158,10 +167,12 @@ export function removeMember(room: Room, id: string, now: number) {
   if (id === room.hostId) transferHost(room);
 }
 
-// SALLE-08 : l'hôte passe à l'humain connecté présent depuis le plus longtemps.
+// SALLE-08 : l'hôte passe à l'utilisateur connecté présent depuis le plus
+// longtemps. Un invité ne devient jamais hôte : il ne peut pas créer de salle
+// (AUTH-03). S'il ne reste que des invités, la salle est fermée.
 function transferHost(room: Room) {
   const next = [...room.members.values()]
-    .filter((m) => m.kind === "HUMAN" && m.connected)
+    .filter((m) => m.kind === "HUMAN" && m.connected && !isGuestId(m.id))
     .sort((a, b) => a.joinedAt - b.joinedAt)[0];
   if (next) room.hostId = next.id;
   else room.phase = "CLOSED";
@@ -176,6 +187,16 @@ export function setRole(room: Room, id: string, role: Role): boolean {
   return true;
 }
 
+// CONF-01 à CONF-11 : l'hôte change la configuration entre deux courses
+// (SEC-01). La capacité ne descend pas sous le nombre de participants.
+export function updateConfig(room: Room, by: string, patch: ConfigPatch): ConfigResult {
+  if (by !== room.hostId || !isOpen(room)) return "forbidden";
+  if (patch.maxPlayers !== undefined && patch.maxPlayers < players(room).length)
+    return "below_players";
+  room.config = applyPatch(room.config, patch);
+  return "ok";
+}
+
 // CONF-10 : l'hôte ajoute un bot du niveau choisi.
 export function addBot(room: Room, by: string, level: BotLevel, now: number): boolean {
   if (by !== room.hostId || !isOpen(room)) return false;
@@ -188,6 +209,7 @@ export function addBot(room: Room, by: string, level: BotLevel, now: number): bo
     kind: "BOT",
     role: "PLAYER",
     botLevel: level,
+    avatar: null,
     joinedAt: now,
     connected: true,
     disconnectedAt: null,
@@ -231,6 +253,9 @@ export function startRace(room: Room, by: string, text: string, seed: number, no
   room.endedAt = null;
   room.lastSampleAt = room.startAt;
   room.racers = new Map();
+  room.checkpoints = 0;
+  room.bonusEvents = [];
+  room.bonusRng = createRng(seed ^ 0x5bd1e995);
   for (const m of players(room)) {
     if (!m.connected) continue;
     room.racers.set(m.id, {
@@ -238,6 +263,7 @@ export function startRace(room: Room, by: string, text: string, seed: number, no
       name: m.name,
       kind: m.kind,
       botLevel: m.botLevel,
+      avatar: m.avatar,
       text,
       typing: newTyping(),
       status: "RACING",
@@ -245,6 +271,8 @@ export function startRace(room: Room, by: string, text: string, seed: number, no
       samples: [],
       bot: m.botLevel ? createBot(m.botLevel, seed ^ hashSeed(m.id)) : null,
       recentKeys: [],
+      bonuses: [],
+      fogUntil: null,
     });
   }
   return true;
@@ -257,13 +285,21 @@ function finish(racer: Racer, at: number) {
 
 // Fait avancer tout ce qui dépend du temps. `changed` dit s'il faut diffuser
 // l'état ; `ended` signale la fin d'une course (pour l'enregistrer).
-export function tick(room: Room, now: number): { changed: boolean; ended: boolean } {
+// `removed` liste les personnes retirées (absentes depuis 30 s), pour que le
+// serveur libère leur présence (SALLE-06) ; `bonuses`, les bonus distribués.
+export function tick(
+  room: Room,
+  now: number,
+): { changed: boolean; ended: boolean; removed: string[]; bonuses: BonusEvent[] } {
   let changed = false;
   let ended = false;
+  const removed: string[] = [];
+  let bonuses: BonusEvent[] = [];
 
   for (const m of [...room.members.values()]) {
     if (!m.connected && m.disconnectedAt !== null && now - m.disconnectedAt >= RECONNECT_GRACE_MS) {
       removeMember(room, m.id, now);
+      removed.push(m.id);
       changed = true;
     }
   }
@@ -280,6 +316,12 @@ export function tick(room: Room, now: number): { changed: boolean; ended: boolea
       if (!racer.bot || racer.status !== "RACING") continue;
       stepBot(racer.bot, racer.typing, racer.text, room.config.errorMode, elapsed);
       if (isComplete(racer.typing, racer.text)) finish(racer, startAt + racer.bot.lastKeyAt);
+    }
+
+    // BONUS-01 : bonus aux points de contrôle, pour les humains comme pour les bots.
+    if (room.config.bonuses) {
+      bonuses = applyBonuses(room, now, room.bonusRng);
+      room.bonusEvents.push(...bonuses);
     }
 
     if (now - room.lastSampleAt >= SAMPLE_EVERY_MS) {
@@ -308,7 +350,7 @@ export function tick(room: Room, now: number): { changed: boolean; ended: boolea
     changed = true;
   }
 
-  return { changed, ended };
+  return { changed, ended, removed, bonuses };
 }
 
 export type KeysResult = "ok" | "rejected" | "ignored";
@@ -402,15 +444,29 @@ export function statsOf(room: Room, racer: Racer, now: number): RacerStats {
   };
 }
 
+// RES-03 : courbe du MPM d'un coureur, avec un dernier point au moment où il
+// s'est arrêté (arrivée, abandon ou fin du temps).
+export function seriesOf(room: Room, racer: Racer, now: number): { t: number; wpm: number }[] {
+  const { timeMs, wpm } = statsOf(room, racer, now);
+  const last = racer.samples.at(-1);
+  return last && last.t >= timeMs ? racer.samples : [...racer.samples, { t: timeMs, wpm }];
+}
+
 export type MemberView = Omit<Member, "disconnectedAt" | "joinedAt">;
 export type RacerView = RacerStats & {
   id: string;
   name: string;
   kind: "HUMAN" | "BOT";
   botLevel: BotLevel | null;
+  avatar: string | null;
   status: RacerStatus;
   rank: number;
   lane: number; // couloir fixe sur la piste, dans l'ordre d'arrivée dans la salle
+  bonuses: BonusType[]; // RES-02 : bonus reçus
+  fogUntil: number | null;
+  // RES-03 : seulement sur l'écran des résultats (vides pendant la course).
+  samples: { t: number; wpm: number }[];
+  missed: Record<string, number>;
 };
 
 export type RoomView = {
@@ -425,6 +481,7 @@ export type RoomView = {
   startBlocker: StartBlocker | null;
   members: MemberView[];
   racers: RacerView[];
+  bonusEvents: BonusEvent[]; // BONUS-03 : les bonus des dernières secondes, à annoncer
 };
 
 // Ce que le serveur diffuse aux navigateurs (10 fois par seconde en course).
@@ -442,12 +499,13 @@ export function snapshot(room: Room, now: number): RoomView {
     startBlocker: startBlocker(room),
     members: [...room.members.values()]
       .sort((a, b) => a.joinedAt - b.joinedAt)
-      .map(({ id, name, kind, role, botLevel, connected }) => ({
+      .map(({ id, name, kind, role, botLevel, avatar, connected }) => ({
         id,
         name,
         kind,
         role,
         botLevel,
+        avatar,
         connected,
       })),
     racers: ranking(room).map((r, i) => ({
@@ -456,9 +514,15 @@ export function snapshot(room: Room, now: number): RoomView {
       name: r.name,
       kind: r.kind,
       botLevel: r.botLevel,
+      avatar: r.avatar,
       status: r.status,
       rank: i + 1,
+      bonuses: r.bonuses,
+      fogUntil: r.fogUntil,
+      samples: room.phase === "RESULTS" ? seriesOf(room, r, now) : [],
+      missed: room.phase === "RESULTS" ? r.typing.missed : {},
       ...statsOf(room, r, now),
     })),
+    bonusEvents: room.bonusEvents.filter((e) => now - e.at < BONUS_ANNOUNCE_MS),
   };
 }

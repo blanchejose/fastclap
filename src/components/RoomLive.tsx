@@ -1,12 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
-import type { Dictionary, Locale } from "@/i18n/dictionaries";
+import { fmt, type Dictionary, type Locale } from "@/i18n/dictionaries";
+import { isGuestId } from "@/lib/guest-id";
 import { MAX_KEYS_PER_BATCH, type JoinResult, type RoomView } from "@/lib/race/engine";
 import { accuracy, netWpm } from "@/lib/race/stats";
 import { applyKey, correctChars, newTyping, progress, type Typing } from "@/lib/race/typing";
+import { BonusFeed } from "./race/BonusFeed";
+import { ConfigPanel } from "./race/ConfigPanel";
+import { InvitePanel, type InviteReply } from "./race/InvitePanel";
+import { ConfirmButton } from "./race/ConfirmButton";
 import { Countdown } from "./race/Countdown";
 import { Results } from "./race/Results";
 import { Track } from "./race/Track";
@@ -18,10 +24,17 @@ type Props = {
   token: string;
   meId: string;
   locale: Locale;
-  t: Pick<Dictionary, "room" | "race" | "results">;
+  t: Pick<
+    Dictionary,
+    "room" | "race" | "results" | "config" | "levels" | "invite" | "bonus" | "charts" | "history"
+  >;
 };
 
-type JoinReply = JoinResult | { ok: false; reason: "invalid" };
+type JoinReply =
+  | JoinResult
+  | { ok: false; reason: "invalid" | "private" | "too_many" }
+  | { ok: false; reason: "elsewhere"; otherCode: string };
+type Saved = { raceNo: number; raceId: string; records: string[] };
 type RaceText = { raceNo: number; text: string };
 type Resync = { raceNo: number; typed: string; keystrokes: number; errors: number };
 
@@ -49,12 +62,16 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   const typingRef = useRef<Typing>(newTyping());
   const pendingRef = useRef<string[]>([]);
   const [view, setView] = useState<RoomView | null>(null);
+  const [inviteVersion, setInviteVersion] = useState(0);
+  const [saved, setSaved] = useState<Saved | null>(null);
   const [race, setRace] = useState<RaceText | null>(null);
   const [typing, setTyping] = useState<Typing>(newTyping);
   const clockOffsetRef = useRef(0);
   const [error, setError] = useState<string | null>(null);
   const [kicked, setKicked] = useState(false);
-  const [confirming, setConfirming] = useState(false);
+  const [moved, setMoved] = useState(false);
+  const [elsewhere, setElsewhere] = useState<string | null>(null);
+  const joinRef = useRef<(leaveOther: boolean) => void>(() => {});
 
   useEffect(() => {
     const socket = io({ auth: { token } });
@@ -65,27 +82,41 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
       setTyping({ ...next });
     };
 
+    // SALLE-06 : déjà dans une autre salle ? Le serveur refuse, et on propose
+    // de la quitter (leaveOther).
+    const join = (leaveOther: boolean) =>
+      socket.emit("room:join", { code, leaveOther }, (reply: JoinReply) => {
+        if (reply.ok) setElsewhere(null);
+        else if (reply.reason === "elsewhere") setElsewhere(reply.otherCode);
+        else setError(t.room.errors[reply.reason]);
+      });
+    joinRef.current = join;
     socket.on("connect", () => {
       setError(null);
       // Rejoint aussi après une reconnexion : le serveur renvoie alors le
       // texte et la progression gardée (COURSE-08).
-      socket.emit("room:join", { code }, (reply: JoinReply) => {
-        if (!reply.ok) setError(t.room.errors[reply.reason]);
-      });
+      join(false);
     });
     socket.on("room:state", (next: RoomView) => {
       setView(next);
       clockOffsetRef.current = next.serverNow - Date.now();
     });
+    // BONUS-04 : mon texte a été raccourci ou allongé ; ce qui est tapé reste.
+    // RES-04, RES-05 : la course est enregistrée ; voici les records battus.
+    socket.on("race:saved", (next: Saved) => setSaved(next));
+    socket.on("race:mytext", (next: RaceText) =>
+      setRace((current) => (current && current.raceNo === next.raceNo ? next : current)),
+    );
     socket.on("race:text", (next: RaceText) => {
       setRace(next);
-      setConfirming(false);
       resetTyping(newTyping());
     });
     socket.on("race:resync", (r: Resync) =>
       resetTyping({ typed: r.typed, keystrokes: r.keystrokes, errors: r.errors, missed: {} }),
     );
     socket.on("room:kicked", () => setKicked(true));
+    socket.on("room:moved", () => setMoved(true));
+    socket.on("invite:update", () => setInviteVersion((v) => v + 1));
     socket.on("connect_error", () => setError(t.room.errors.connection));
 
     // Les touches partent par lots plutôt qu'une à une (PERF-02).
@@ -104,8 +135,35 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   const now = useServerClock(clockOffsetRef, inRace);
 
   const send = (event: string, payload: object = {}) => socketRef.current?.emit(event, payload);
+  // Stable : le panneau des liens redemande la liste seulement quand `version` change.
+  const requestInvites = useCallback(
+    (event: "invite:list" | "invite:create", reply: (r: InviteReply) => void) =>
+      socketRef.current?.emit(event, {}, reply),
+    [],
+  );
 
   if (kicked) return <Notice>{t.room.kicked}</Notice>;
+  if (moved) return <Notice>{t.room.moved}</Notice>;
+  if (elsewhere) {
+    const other = `${elsewhere.slice(0, 3)}-${elsewhere.slice(3)}`;
+    return (
+      <div role="alert" className="bg-surface flex flex-col items-start gap-4 rounded-3xl p-6">
+        <p className="text-lg font-semibold">{fmt(t.room.elsewhere, { code: other })}</p>
+        <div className="flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            onClick={() => joinRef.current(true)}
+            className="bg-jaune text-nuit min-h-12 rounded-xl px-5 font-bold shadow-[0_4px_0_var(--orange)]"
+          >
+            {fmt(t.room.switchRoom, { code: other })}
+          </button>
+          <a href={`/salle/${elsewhere}`} className="font-bold underline underline-offset-4">
+            {fmt(t.room.backToRoom, { code: other })}
+          </a>
+        </div>
+      </div>
+    );
+  }
   if (error) return <Notice>{error}</Notice>;
   if (!view) return <p className="text-sourdine">…</p>;
   if (view.phase === "CLOSED") return <Notice>{t.room.closed}</Notice>;
@@ -138,17 +196,30 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
             myRacer.status === "RACING" ? netWpm(correctChars(typing, text), elapsed) : myRacer.wpm,
         }
       : null;
-  const trackT = { ...t.race, you: t.room.you, bot: t.room.bot };
+  const trackT = { ...t.race, you: t.room.you, bot: t.room.bot, guest: t.room.guest };
 
   return (
     <div className="flex flex-col gap-6">
-      {view.phase === "WAITING" && <WaitingRoom view={view} meId={meId} send={send} t={t.room} />}
+      {view.phase === "WAITING" && (
+        <>
+          <WaitingRoom view={view} meId={meId} send={send} t={t.room} />
+          <ConfigPanel
+            config={view.config}
+            isHost={isHost}
+            update={(patch, reply) => socketRef.current?.emit("room:config", patch, reply)}
+            t={t.config}
+            levels={t.levels}
+          />
+          {isHost && <InvitePanel request={requestInvites} version={inviteVersion} t={t.invite} />}
+        </>
+      )}
 
       {inRace && (
         <>
           {view.phase === "COUNTDOWN" && view.startAt !== null && now > 0 && (
             <Countdown msLeft={view.startAt - now} t={t.race} />
           )}
+          <BonusFeed events={view.bonusEvents} meId={meId} t={t.bonus} />
           <RaceHeader
             phase={view.phase}
             elapsed={elapsed}
@@ -165,23 +236,26 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
                 typing={typing}
                 active={racing}
                 mode={view.config.errorMode}
+                fogged={myRacer.fogUntil !== null && now > 0 && now < myRacer.fogUntil}
                 onKey={onKey}
                 t={t.race}
               />
               <p className="bg-surface rounded-2xl p-4 md:hidden">{t.race.mobile}</p>
             </>
           )}
-          <Track racers={view.racers} meId={meId} local={local} t={trackT} />
+          <Track
+            racers={view.racers}
+            meId={meId}
+            local={local}
+            t={trackT}
+            effects={Object.fromEntries(view.bonusEvents.map((e) => [e.targetId, e.type]))}
+            bonusNames={t.bonus.names}
+          />
           <RaceStatus
             status={myRacer?.status ?? null}
             spectating={!myRacer}
             canAbandon={racing}
-            confirming={confirming}
-            setConfirming={setConfirming}
-            onAbandon={() => {
-              send("race:abandon");
-              setConfirming(false);
-            }}
+            onAbandon={() => send("race:abandon")}
             t={t.race}
           />
         </>
@@ -192,11 +266,28 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
           <Results
             racers={view.racers}
             meId={meId}
+            records={saved?.raceNo === view.raceNo ? saved.records : []}
             locale={locale}
-            t={{ ...t.results, statuses: t.race.status, you: t.room.you, bot: t.room.bot }}
+            t={{
+              ...t.results,
+              statuses: t.race.status,
+              you: t.room.you,
+              bot: t.room.bot,
+              bonusNames: t.bonus.names,
+              charts: t.charts,
+            }}
           />
+          {/* HIST-02 : la course est dans l'historique des utilisateurs connectés. */}
+          {saved?.raceNo === view.raceNo && myRacer && !isGuestId(meId) && (
+            <Link
+              href={`/course/${saved.raceId}`}
+              className="self-start font-bold underline underline-offset-4"
+            >
+              {t.history.view}
+            </Link>
+          )}
           {isHost ? (
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-6">
               <button
                 type="button"
                 onClick={() => send("room:lobby")}
@@ -204,13 +295,13 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
               >
                 {t.results.again}
               </button>
-              <button
-                type="button"
-                onClick={() => send("room:close")}
-                className="bg-surface min-h-14 rounded-2xl px-6 font-bold"
-              >
-                {t.results.close}
-              </button>
+              <ConfirmButton
+                label={t.results.close}
+                question={t.room.confirmClose}
+                yes={t.room.confirmCloseYes}
+                no={t.room.confirmCloseNo}
+                onConfirm={() => send("room:close")}
+              />
             </div>
           ) : (
             <p className="text-sourdine">{t.results.waitHost}</p>
@@ -288,16 +379,12 @@ function RaceStatus({
   status,
   spectating,
   canAbandon,
-  confirming,
-  setConfirming,
   onAbandon,
   t,
 }: {
   status: RoomView["racers"][number]["status"] | null;
   spectating: boolean;
   canAbandon: boolean;
-  confirming: boolean;
-  setConfirming: (value: boolean) => void;
   onAbandon: () => void;
   t: Dictionary["race"];
 }) {
@@ -306,39 +393,14 @@ function RaceStatus({
   if (status === "ABANDONED") return <p className="text-sourdine">{t.abandoned}</p>;
   if (!canAbandon) return null;
   // COURSE-07 : l'abandon demande une confirmation.
-  return confirming ? (
-    <div
-      role="alertdialog"
-      aria-labelledby="question-abandon"
-      className="flex flex-wrap items-center gap-3"
-    >
-      <p id="question-abandon" className="font-semibold">
-        {t.confirmAbandon}
-      </p>
-      <button
-        type="button"
-        onClick={onAbandon}
-        className="border-faute text-faute bg-surface min-h-11 rounded-xl border-2 px-4 font-bold"
-      >
-        {t.confirmYes}
-      </button>
-      <button
-        type="button"
-        autoFocus
-        onClick={() => setConfirming(false)}
-        className="bg-surface-2 min-h-11 rounded-xl px-4 font-bold"
-      >
-        {t.confirmNo}
-      </button>
-    </div>
-  ) : (
-    <button
-      type="button"
-      onClick={() => setConfirming(true)}
-      className="text-faute self-start font-bold underline underline-offset-4"
-    >
-      {t.abandon}
-    </button>
+  return (
+    <ConfirmButton
+      label={t.abandon}
+      question={t.confirmAbandon}
+      yes={t.confirmYes}
+      no={t.confirmNo}
+      onConfirm={onAbandon}
+    />
   );
 }
 
