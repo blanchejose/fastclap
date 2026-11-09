@@ -44,7 +44,7 @@ export default async function RoomPage({ params, searchParams }: PageProps<"/sal
         code: true,
         status: true,
         visibility: true,
-        organizer: { select: { username: true } },
+        organizer: { select: { username: true, name: true } },
       },
     }),
     auth(),
@@ -82,8 +82,8 @@ export default async function RoomPage({ params, searchParams }: PageProps<"/sal
         className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 pt-10 pb-16"
       >
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <h1 className="font-display text-5xl leading-[0.95] font-extrabold tracking-tight">
-            {fmt(t.roomList.roomOf, { name: room.organizer.username })}
+          <h1 className="font-display text-4xl leading-[0.95] font-extrabold tracking-tight sm:text-5xl">
+            {fmt(t.roomList.roomOf, { name: room.organizer.name ?? room.organizer.username })}
           </h1>
         </div>
 

@@ -64,7 +64,7 @@ export function WaitingRoom({ view, meId, send, t }: Props) {
             <button
               type="button"
               onClick={() => send("bot:remove", { id: m.id })}
-              className={`text-faute hover:bg-surface ${buttonSmall}`}
+              className={`text-sourdine hover:text-faute hover:bg-surface ${buttonSmall}`}
             >
               {fmt(t.removeBot, { name: m.name })}
             </button>
@@ -73,7 +73,7 @@ export function WaitingRoom({ view, meId, send, t }: Props) {
             <button
               type="button"
               onClick={() => send("room:kick", { id: m.id })}
-              className={`text-faute hover:bg-surface ${buttonSmall}`}
+              className={`text-sourdine hover:text-faute hover:bg-surface ${buttonSmall}`}
             >
               {fmt(t.kick, { name: m.name })}
             </button>
@@ -85,22 +85,57 @@ export function WaitingRoom({ view, meId, send, t }: Props) {
 
   return (
     <div className="flex flex-wrap gap-6">
-      <section className="bg-bleu flex min-w-0 flex-[1_1_320px] flex-col gap-4 self-start rounded-3xl p-7 text-white">
-        <span className="font-mono text-xs font-semibold tracking-widest text-white uppercase">
-          {t.code}
-        </span>
-        <span className="font-mono text-6xl font-semibold tracking-widest">
-          {formatCode(view.code)}
-        </span>
-        <p className="text-white">{t.share}</p>
-        <button
-          type="button"
-          onClick={copyCode}
-          className="text-nuit min-h-11 self-start rounded-xl bg-white px-4 font-bold transition hover:bg-[#E6EAFB]"
-        >
-          {copied ? t.copied : t.copy}
-        </button>
-      </section>
+      {/* Colonne de gauche, toujours visible : le code à partager et l'action
+          principale (lancer). Le détail (participants, rôle, bots) est à droite. */}
+      <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-6 self-start lg:sticky lg:top-6">
+        <section className="bg-bleu flex flex-col gap-4 rounded-3xl p-7 text-white">
+          <span className="font-mono text-xs font-semibold tracking-widest text-white uppercase">
+            {t.code}
+          </span>
+          <span className="font-mono text-6xl font-semibold tracking-widest">
+            {formatCode(view.code)}
+          </span>
+          <p className="text-white">{t.share}</p>
+          <button
+            type="button"
+            onClick={copyCode}
+            className="text-nuit min-h-11 self-start rounded-xl bg-white px-4 font-bold transition hover:bg-[#E6EAFB]"
+          >
+            {copied ? t.copied : t.copy}
+          </button>
+        </section>
+        <div className="bg-surface flex flex-col gap-3 rounded-3xl p-7">
+          {isHost ? (
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                disabled={view.startBlocker !== null}
+                aria-describedby="etat-depart"
+                onClick={() => send("race:start")}
+                className="bg-jaune font-display text-nuit min-h-14 rounded-2xl px-7 text-2xl font-extrabold shadow-[0_5px_0_var(--orange)] transition hover:-translate-y-0.5 active:translate-y-1 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t.start}
+              </button>
+              <p id="etat-depart" className="text-sourdine text-sm" aria-live="polite">
+                {view.startBlocker ? t.blockers[view.startBlocker] : t.ready}
+              </p>
+              <div className="border-trait mt-2 border-t pt-4">
+                <ConfirmButton
+                  label={t.close}
+                  question={t.confirmClose}
+                  yes={t.confirmCloseYes}
+                  no={t.confirmCloseNo}
+                  onConfirm={() => send("room:close")}
+                />
+              </div>
+            </div>
+          ) : (
+            <p className="text-sourdine" aria-live="polite">
+              {t.waitHost}
+            </p>
+          )}
+        </div>
+      </div>
 
       <section className="bg-surface flex min-w-0 flex-[2_1_420px] flex-col gap-5 rounded-3xl p-7">
         <h2 className="font-display text-3xl font-extrabold">
@@ -165,36 +200,6 @@ export function WaitingRoom({ view, meId, send, t }: Props) {
               {t.addBot}
             </button>
           </form>
-        )}
-
-        {isHost ? (
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              disabled={view.startBlocker !== null}
-              aria-describedby="etat-depart"
-              onClick={() => send("race:start")}
-              className="bg-jaune font-display text-nuit min-h-14 self-start rounded-2xl px-7 text-2xl font-extrabold shadow-[0_5px_0_var(--orange)] transition hover:-translate-y-0.5 active:translate-y-1 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {t.start}
-            </button>
-            <p id="etat-depart" className="text-sourdine text-sm" aria-live="polite">
-              {view.startBlocker ? t.blockers[view.startBlocker] : t.ready}
-            </p>
-            <div className="border-trait mt-3 border-t pt-4">
-              <ConfirmButton
-                label={t.close}
-                question={t.confirmClose}
-                yes={t.confirmCloseYes}
-                no={t.confirmCloseNo}
-                onConfirm={() => send("room:close")}
-              />
-            </div>
-          </div>
-        ) : (
-          <p className="text-sourdine" aria-live="polite">
-            {t.waitHost}
-          </p>
         )}
       </section>
     </div>
