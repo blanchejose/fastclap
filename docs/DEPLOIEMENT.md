@@ -3,6 +3,8 @@
 Le site FastClap tourne sur [Railway](https://railway.com) et sa base
 PostgreSQL est chez [Neon](https://neon.tech).
 
+**Adresse de production : https://fastclap-production.up.railway.app**
+
 | Ressource | Hébergeur | Rôle                                                         |
 | --------- | --------- | ------------------------------------------------------------ |
 | Site web  | Railway   | Conteneur Docker toujours allumé, HTTPS automatique          |
@@ -46,7 +48,7 @@ réveille en moins d'une seconde : aucun effet visible pour les joueurs.
    | `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET`   | OAuth App GitHub (voir plus bas)       |
 
 4. Onglet **Settings → Networking → Generate Domain** : Railway donne une
-   adresse `https://fastclap-production-xxxx.up.railway.app`
+   adresse du type `https://fastclap-production.up.railway.app`
 5. Le déploiement démarre tout seul. Il est terminé quand le statut est
    **Active**.
 

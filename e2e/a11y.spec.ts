@@ -8,6 +8,16 @@ import { addBot, createRoom, loginWithPassword, typeRaceText } from "./helpers";
 async function expectAccessible(page: Page, label: string) {
   for (const colorScheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme });
+    // Au changement de thème, les boutons passent d'une couleur à l'autre en
+    // quelques millisecondes : axe doit mesurer les couleurs finales.
+    await page.evaluate(() =>
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((animation) => animation instanceof CSSTransition)
+          .map((animation) => animation.finished.catch(() => undefined)), // annulée : rien à attendre
+      ),
+    );
     const { violations } = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
       .analyze();
