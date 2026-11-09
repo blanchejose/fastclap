@@ -2,6 +2,7 @@ import { fmt, ordinal, type Dictionary, type Locale } from "@/i18n/dictionaries"
 import type { RacerView } from "@/lib/race/engine";
 import { Avatar } from "./Avatar";
 import { KeyHeatmap } from "./KeyHeatmap";
+import { StatusLabel } from "./StatusLabel";
 import { WpmChart } from "./WpmChart";
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
   meId: string;
   records: string[]; // RES-04 : coureurs qui ont battu leur record personnel
   locale: Locale;
+  actions?: React.ReactNode; // prochaines actions, à côté du verdict
   t: Dictionary["results"] & {
     statuses: Dictionary["race"]["status"];
     you: string;
@@ -27,7 +29,7 @@ const steps = [
 
 // Podium (RES-01), puis tableau complet (RES-02), dans l'ordre du classement
 // final (COURSE-10).
-export function Results({ racers, meId, records, locale, t }: Props) {
+export function Results({ racers, meId, records, locale, actions, t }: Props) {
   const number = new Intl.NumberFormat(locale === "fr" ? "fr-CA" : "en-CA", {
     maximumFractionDigits: 1,
   });
@@ -37,23 +39,36 @@ export function Results({ racers, meId, records, locale, t }: Props) {
   return (
     <section
       aria-labelledby="titre-resultats"
-      className="bg-surface flex flex-col gap-4 rounded-3xl p-6"
+      className="bg-surface flex flex-col gap-6 rounded-3xl p-6 sm:p-8"
     >
-      <h2 id="titre-resultats" className="font-display text-4xl font-extrabold tracking-tight">
-        {t.title}
-      </h2>
-      {me && (
-        <p role="status" className="font-display text-2xl font-extrabold">
-          {me.rank === 1 && me.status === "FINISHED"
-            ? t.youWon
-            : fmt(t.yourRank, { rank: ordinal(me.rank, locale), total: racers.length })}
-        </p>
-      )}
-      {me && records.includes(me.id) && (
-        <p className="bg-jaune text-nuit font-display self-start rounded-2xl px-4 py-2 text-xl font-extrabold">
-          {fmt(t.newRecord, { wpm: number.format(me.wpm) })}
-        </p>
-      )}
+      {/* Hiérarchie : le verdict d'abord, en grand ; « Résultats » n'est qu'une
+          étiquette. Les prochaines actions sont à côté, sans faire défiler. */}
+      <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+        <div className="flex flex-col gap-3">
+          <h2
+            id="titre-resultats"
+            className="text-sourdine font-mono text-sm font-semibold tracking-[0.12em] uppercase"
+          >
+            {t.title}
+          </h2>
+          {me && (
+            <p
+              role="status"
+              className="font-display text-4xl leading-none font-extrabold tracking-tight sm:text-5xl"
+            >
+              {me.rank === 1 && me.status === "FINISHED"
+                ? t.youWon
+                : fmt(t.yourRank, { rank: ordinal(me.rank, locale), total: racers.length })}
+            </p>
+          )}
+          {me && records.includes(me.id) && (
+            <p className="bg-jaune text-nuit font-display self-start rounded-2xl px-4 py-2 text-xl font-extrabold">
+              {fmt(t.newRecord, { wpm: number.format(me.wpm) })}
+            </p>
+          )}
+        </div>
+        {actions}
+      </div>
       <ol aria-label={t.podium} className="flex items-end justify-center gap-3 pt-4">
         {racers.slice(0, 3).map((r, i) => (
           <li
@@ -136,7 +151,9 @@ export function Results({ racers, meId, records, locale, t }: Props) {
                 <td className={cell}>{number.format(r.accuracy)} %</td>
                 <td className={cell}>{number.format(r.errors)}</td>
                 <td className={cell}>{seconds(r.timeMs)}</td>
-                <td className="px-3 py-2.5">{t.statuses[r.status]}</td>
+                <td className="px-3 py-2.5">
+                  <StatusLabel status={r.status} label={t.statuses[r.status]} />
+                </td>
                 <td className="px-3 py-2.5 text-sm">
                   {r.bonuses.length > 0 ? r.bonuses.map((b) => t.bonusNames[b]).join(", ") : "—"}
                 </td>
