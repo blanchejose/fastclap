@@ -80,7 +80,7 @@ export async function SiteFooter() {
       <div className="border-t border-white/15">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5 text-sm text-white/70">
           <p>
-            © {new Date().getFullYear()} FastClap · {f.credit}
+            © {new Date().getFullYear()} FastClap{f.credit && ` · ${f.credit}`}
           </p>
           <a
             href={REPO}
