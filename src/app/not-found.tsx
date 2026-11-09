@@ -21,7 +21,7 @@ export default async function NotFound() {
         <span className="text-orange">
           <Runner className="size-16" />
         </span>
-        <h1 className="font-display text-6xl leading-[0.92] font-extrabold tracking-tight">
+        <h1 className="font-display text-5xl leading-[0.92] font-extrabold tracking-tight sm:text-6xl">
           {t.errors.notFoundTitle}
         </h1>
         <p className="text-sourdine max-w-[40em] text-lg">{t.errors.notFoundText}</p>

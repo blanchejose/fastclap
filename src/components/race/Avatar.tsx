@@ -26,10 +26,13 @@ export function Avatar({ name, src, className = "size-8" }: Props) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
+  // Les initiales suivent la taille du rond : une taille de texte passée dans
+  // className remplace la taille par défaut au lieu d'entrer en conflit avec elle.
+  const textSize = /(^|\s)text-(xs|sm|base|lg|[0-9]?xl)\b/.test(className) ? "" : "text-xs";
   return (
     <span
       aria-hidden="true"
-      className={`text-nuit inline-flex shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold ${className}`}
+      className={`text-nuit inline-flex shrink-0 items-center justify-center rounded-full font-mono font-bold ${textSize} ${className}`}
       style={{ backgroundColor: `hsl(${hue} 85% 78%)` }}
     >
       {initials || "?"}
