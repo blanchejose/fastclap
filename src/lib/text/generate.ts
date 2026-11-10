@@ -24,7 +24,7 @@ export const RANDOM_TIERS: Record<
 
 const MIN_POOL = 5; // en dessous, un filtre de caractères est ignoré
 
-export function stripAccents(text: string): string {
+function stripAccents(text: string): string {
   return text
     .normalize("NFD")
     .replace(/\p{M}/gu, "")
@@ -139,7 +139,7 @@ export function composeCoherent(
 // CONF-05, texte cohérent : complexité calculée à partir du passage.
 // Score = longueur moyenne des mots + 10 × proportion de caractères spéciaux
 // (majuscules, chiffres, ponctuation, lettres accentuées).
-export function textScore(content: string): number {
+function textScore(content: string): number {
   const words = content.split(/\s+/).filter(Boolean);
   const letters = words.map((w) => w.replace(/[^\p{L}]/gu, "").length);
   const average = letters.reduce((a, b) => a + b, 0) / Math.max(1, words.length);
@@ -148,7 +148,7 @@ export function textScore(content: string): number {
   return average + (10 * special.length) / Math.max(1, chars.length);
 }
 
-export const SCORE_THRESHOLDS = { intermediate: 5, pro: 6 };
+const SCORE_THRESHOLDS = { intermediate: 5, pro: 6 };
 
 export function classifyText(content: string): Complexity {
   const score = textScore(content);

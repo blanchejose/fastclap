@@ -22,7 +22,7 @@
 
 ## 2. Fichiers d'instructions d'agent
 
-- [`CLAUDE.md`](../CLAUDE.md), à la racine : règles du projet (TypeScript
+- [`AGENTS.md`](../AGENTS.md), à la racine : règles du projet (TypeScript
   strict, Zod sur toutes les entrées, serveur autoritaire, textes traduits,
   accessibilité), commandes à lancer avant chaque commit, et règles de
   collaboration (expliquer avant de pousser, ne jamais fusionner sans

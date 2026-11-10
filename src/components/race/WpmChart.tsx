@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import type { Dictionary, Locale } from "@/i18n/dictionaries";
 
-export type WpmSeries = {
+type WpmSeries = {
   id: string;
   name: string;
   lane: number; // couleur fixe par coureur (jamais par rang)

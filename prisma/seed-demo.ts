@@ -5,8 +5,8 @@ import { hash } from "bcryptjs";
 import type { PrismaClient } from "../src/generated/prisma/client";
 import { createRng, between, type Rng } from "../src/lib/race/random";
 
-export const DEMO_PASSWORD = "fastclap-demo";
-export const DEMO_USERS = [
+const DEMO_PASSWORD = "fastclap-demo";
+const DEMO_USERS = [
   { username: "demo_lea", name: "Léa", start: 45, gain: 25 },
   { username: "demo_max", name: "Max", start: 30, gain: 15 },
   { username: "demo_zoe", name: "Zoé", start: 62, gain: 12 },

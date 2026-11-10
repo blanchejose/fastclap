@@ -6,7 +6,7 @@ import { AVATAR_MAX_BYTES, AVATAR_SIZE } from "./avatar-limits";
 
 export { AVATAR_MAX_BYTES, AVATAR_SIZE };
 
-export type ImageType = "jpeg" | "png" | "webp";
+type ImageType = "jpeg" | "png" | "webp";
 
 const startsWith = (bytes: Uint8Array, signature: number[], offset = 0) =>
   signature.every((byte, i) => bytes[offset + i] === byte);
@@ -20,7 +20,7 @@ export function detectImageType(bytes: Uint8Array): ImageType | null {
   return null;
 }
 
-export type AvatarCheck =
+type AvatarCheck =
   { ok: true; type: ImageType } | { ok: false; reason: "empty" | "too_big" | "bad_type" };
 
 export function checkAvatar(bytes: Uint8Array): AvatarCheck {

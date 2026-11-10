@@ -295,7 +295,6 @@ app.prepare().then(async () => {
       data.keyWindow.count += 1;
       const flooding = data.keyWindow.count > MAX_KEY_MESSAGES_PER_SECOND;
       const result = flooding ? "rejected" : engine.applyKeys(room, uid, keys, Date.now());
-      console.log("keys", uid, keys.join(""), result, racer.typing.typed.length);
       if (result === "rejected") sendResync(socket, room, racer);
     });
 

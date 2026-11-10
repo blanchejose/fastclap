@@ -15,7 +15,7 @@ export type Typing = {
   missed: Record<string, number>; // caractère attendu → nombre de fautes (RES-03)
 };
 
-export type KeyOutcome = "correct" | "wrong" | "erased" | "ignored";
+type KeyOutcome = "correct" | "wrong" | "erased" | "ignored";
 
 export function newTyping(): Typing {
   return { typed: "", keystrokes: 0, errors: 0, missed: {} };

@@ -65,20 +65,12 @@ erDiagram
     }
 ```
 
-Une salle (`Room`) garde son code et sa configuration ; chaque partie jouée
-dedans est une course (`Race`), ce qui permet de relancer sans recréer la
-salle. Un `Participant` relie un utilisateur, un invité ou un bot à une course,
-et son résultat est gardé dans `RaceResult`, avec la série du MPM pour
-réafficher les graphiques depuis l'historique. Les invités n'ont pas de ligne
-`User` : leur identité (`guest_…`) vit dans un cookie signé.
-
-`RoomPresence` a l'identifiant de la personne comme clé primaire : la base
-refuse elle-même qu'une personne soit dans deux salles (SALLE-06). Les tables
-`Session`, `VerificationToken` (Auth.js), `KeyStat`, `Badge` et `UserBadge`
-existent dans le schéma mais ne sont pas utilisées (sessions en JWT, pas de
-badges). Le schéma complet est dans
-[`prisma/schema.prisma`](../prisma/schema.prisma), et les migrations dans
-`prisma/migrations/`.
+Une salle (`Room`) garde son code et sa configuration ; chaque partie est une
+course (`Race`). `Participant` relie un utilisateur, un invité ou un bot à une
+course ; `RaceResult` garde son résultat et sa courbe de MPM. Les invités n'ont
+pas de ligne `User` (cookie signé). `Account`, `Session` et
+`VerificationToken` sont les tables d'Auth.js. Schéma complet :
+[`prisma/schema.prisma`](../prisma/schema.prisma).
 
 ## 2. Machine à états d'une course (COURSE-01)
 
@@ -154,30 +146,15 @@ sequenceDiagram
     S-->>N: race:saved {raceId, records}
 ```
 
-| Message (navigateur → serveur)           | Rôle                                                          |
-| ---------------------------------------- | ------------------------------------------------------------- |
-| `room:join`, `room:leave`                | Entrer dans une salle (en quittant l'autre au besoin), sortir |
-| `room:role`                              | Courir ou regarder                                            |
-| `room:config`                            | Changer la configuration (hôte)                               |
-| `bot:add`, `bot:remove`                  | Ajouter ou retirer un bot (hôte)                              |
-| `room:kick`                              | Expulser, et révoquer son lien d'invitation (hôte)            |
-| `invite:create`, `invite:list`           | Créer un lien d'invitation, voir leur statut (hôte)           |
-| `race:start`, `room:lobby`, `room:close` | Lancer, revenir à l'attente, fermer (hôte)                    |
-| `race:keys`                              | Lot de touches (au plus 30, au plus 10 lots par seconde)      |
-| `race:abandon`                           | Abandonner                                                    |
+- **Navigateur → serveur** : `room:join`, `room:leave`, `room:role`,
+  `room:config`, `room:kick`, `room:lobby`, `room:close`, `bot:add`,
+  `bot:remove`, `invite:create`, `invite:list`, `race:start`, `race:keys`,
+  `race:abandon`.
+- **Serveur → navigateur** : `room:state` (état complet, 10 fois par seconde),
+  `race:text`, `race:mytext` (texte changé par un bonus), `race:resync`,
+  `race:saved`, `invite:update`, `room:moved`, `room:kicked`.
 
-| Message (serveur → navigateur) | Rôle                                                               |
-| ------------------------------ | ------------------------------------------------------------------ |
-| `room:state`                   | État complet de la salle (phase, membres, coureurs, configuration) |
-| `race:text`, `race:mytext`     | Texte de la course, puis texte du joueur modifié par un bonus      |
-| `race:resync`                  | État de frappe du serveur : reprise ou correction d'un lot refusé  |
-| `race:saved`                   | Course enregistrée : lien vers l'historique et records battus      |
-| `invite:update`                | Le statut des liens a changé                                       |
-| `room:moved`, `room:kicked`    | La personne est entrée dans une autre salle, ou a été expulsée     |
-
-L'explorateur de salles (JOIN-02) n'utilise pas Socket.IO : il relit
-`/api/salles` toutes les 3 secondes, ce qui suffit pour une liste et ne
-garde aucune connexion ouverte pour les visiteurs qui ne jouent pas.
+L'explorateur de salles (JOIN-02) relit `/api/salles` toutes les 3 secondes.
 
 ## 4. ADR — Temps réel avec Socket.IO
 
@@ -220,22 +197,15 @@ sans frappe (pas de fautes réelles, pas de mode d'erreur, bonus incohérents).
 tiennent sans peine dans un tick de 100 ms. Les tests rejouent une course entière
 de bot en quelques millisecondes.
 
-**Fonctionnement.**
+**Fonctionnement** (`src/lib/race/bots.ts`) :
 
-Les bots sont des participants simulés par le serveur (`src/lib/race/bots.ts`).
-Ils tapent touche par touche avec les mêmes règles que les humains, donc avec
-le même mode d'erreur (BOT-03), et apparaissent sur la piste et dans les
-résultats avec la mention « BOT » (BOT-04).
-
-- **Déterministes (BOT-05) :** tout le hasard vient d'un générateur à graine
-  (`random.ts`). À graine égale, le bot tape exactement pareil, quelle que soit
-  la fréquence à laquelle le serveur le fait avancer.
-- **Vitesse variable (BOT-02) :** délai aléatoire entre deux touches (±40 %),
-  rythme qui dérive d'un mot à l'autre (80 à 120 %), hésitations entre les mots
-  (12 % des mots, 150 à 600 ms), ralentissement sur les majuscules, chiffres,
-  ponctuation et accents (×1,3 à ×1,9) et sur les mots de 8 lettres et plus.
-- **Fautes (BOT-03) :** une faute coûte 250 à 700 ms de réaction. En correction
-  obligatoire, le bot retape la bonne lettre ; en mode libre, il efface sa faute.
+- **Graine (BOT-05)** : tout le hasard vient de `random.ts` ; même graine, même
+  frappe.
+- **Vitesse variable (BOT-02)** : délai ±40 % entre les touches, rythme qui
+  dérive d'un mot à l'autre, hésitations (12 % des mots), ralentissement sur
+  les majuscules, chiffres, ponctuation, accents et mots longs.
+- **Fautes (BOT-03)** : 250 à 700 ms de réaction, puis correction selon le mode
+  d'erreur.
 
 | Niveau        | MPM visé | Taux d'erreur |
 | ------------- | -------- | ------------- |
@@ -245,7 +215,6 @@ résultats avec la mention « BOT » (BOT-04).
 | Expert        | 70–100   | 2 %           |
 | Impossible    | 140–170  | 0,5 %         |
 
-Le MPM visé est tiré au hasard dans la plage à chaque course. Les hésitations
-et les fautes coûtent environ 20 % de vitesse : le rythme de base est accéléré
-d'autant pour que le MPM final moyen tombe dans la plage (vérifié par
-`bots.test.ts` sur 20 graines par niveau).
+Le MPM visé est tiré dans la plage à chaque course ; le rythme de base est
+accéléré de 20 % pour compenser les hésitations et les fautes
+(`bots.test.ts` vérifie la moyenne sur 20 graines par niveau).

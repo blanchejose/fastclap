@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { generateRoomCode } from "@/lib/room-code";
 
 export const DIFFICULTIES = ["BEGINNER", "INTERMEDIATE", "PRO"] as const;
-export type Difficulty = (typeof DIFFICULTIES)[number];
+type Difficulty = (typeof DIFFICULTIES)[number];
 
 // Crée une salle avec un code unique ; `organizerId` en est l'organisateur.
 // Fonction serveur ordinaire (pas une Server Action) : seul le code du serveur l'appelle.
