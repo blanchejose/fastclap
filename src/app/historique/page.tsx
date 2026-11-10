@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { SiteHeader } from "@/components/SiteHeader";
+import { StatusLabel } from "@/components/race/StatusLabel";
 import { fmt, ordinal } from "@/i18n/dictionaries";
 import { getDictionary, getLocale } from "@/i18n/server";
 import { countHistory, HISTORY_PAGE_SIZE, listHistory, parsePage } from "@/lib/history";
@@ -42,7 +43,7 @@ export default async function HistoryPage({ searchParams }: PageProps<"/historiq
         id="contenu"
         className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 pt-10 pb-16"
       >
-        <h1 className="font-display text-5xl leading-[0.95] font-extrabold tracking-tight">
+        <h1 className="font-display text-4xl leading-[0.95] font-extrabold tracking-tight sm:text-5xl">
           {t.history.title}
         </h1>
         <p className="text-sourdine max-w-[40em] text-lg">{t.history.lead}</p>
@@ -103,7 +104,9 @@ export default async function HistoryPage({ searchParams }: PageProps<"/historiq
                       </td>
                       <td className={cell}>{number.format(race.wpm)}</td>
                       <td className={cell}>{number.format(race.accuracy)} %</td>
-                      <td className="px-3 py-2.5">{t.race.status[race.status]}</td>
+                      <td className="px-3 py-2.5">
+                        <StatusLabel status={race.status} label={t.race.status[race.status]} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>

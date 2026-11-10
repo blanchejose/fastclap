@@ -276,36 +276,43 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
               bonusNames: t.bonus.names,
               charts: t.charts,
             }}
+            actions={
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                {/* COURSE-11 : une action principale (relancer), les autres en retrait. */}
+                {isHost ? (
+                  <button
+                    type="button"
+                    onClick={() => send("room:lobby")}
+                    className="bg-jaune font-display text-nuit min-h-14 rounded-2xl px-7 text-2xl font-extrabold shadow-[0_5px_0_var(--orange)] transition hover:-translate-y-0.5 active:translate-y-1 active:shadow-none"
+                  >
+                    {t.results.again}
+                  </button>
+                ) : (
+                  <p className="text-sourdine">{t.results.waitHost}</p>
+                )}
+                {/* HIST-02 : la course est dans l'historique des utilisateurs connectés. */}
+                {saved?.raceNo === view.raceNo && myRacer && !isGuestId(meId) && (
+                  <Link
+                    href={`/course/${saved.raceId}`}
+                    className="font-bold underline underline-offset-4"
+                  >
+                    {t.history.view}
+                  </Link>
+                )}
+                {isHost && (
+                  <div className="flex">
+                    <ConfirmButton
+                      label={t.results.close}
+                      question={t.room.confirmClose}
+                      yes={t.room.confirmCloseYes}
+                      no={t.room.confirmCloseNo}
+                      onConfirm={() => send("room:close")}
+                    />
+                  </div>
+                )}
+              </div>
+            }
           />
-          {/* HIST-02 : la course est dans l'historique des utilisateurs connectés. */}
-          {saved?.raceNo === view.raceNo && myRacer && !isGuestId(meId) && (
-            <Link
-              href={`/course/${saved.raceId}`}
-              className="self-start font-bold underline underline-offset-4"
-            >
-              {t.history.view}
-            </Link>
-          )}
-          {isHost ? (
-            <div className="flex flex-wrap items-center gap-6">
-              <button
-                type="button"
-                onClick={() => send("room:lobby")}
-                className="bg-jaune font-display text-nuit min-h-14 rounded-2xl px-7 text-2xl font-extrabold shadow-[0_5px_0_var(--orange)]"
-              >
-                {t.results.again}
-              </button>
-              <ConfirmButton
-                label={t.results.close}
-                question={t.room.confirmClose}
-                yes={t.room.confirmCloseYes}
-                no={t.room.confirmCloseNo}
-                onConfirm={() => send("room:close")}
-              />
-            </div>
-          ) : (
-            <p className="text-sourdine">{t.results.waitHost}</p>
-          )}
         </>
       )}
 
