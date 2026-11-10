@@ -17,11 +17,6 @@ enum Locale {
   EN
 }
 
-enum Theme {
-  DARK
-  LIGHT
-}
-
 enum Visibility {
   PUBLIC // listée sur le site
   SEMI_PUBLIC // code de salle requis
@@ -37,12 +32,6 @@ enum Difficulty {
   BEGINNER
   INTERMEDIATE
   PRO
-}
-
-enum TextLength {
-  SHORT
-  MEDIUM
-  LONG
 }
 
 // CONF-03 : passages réels ou mots tirés d'un dictionnaire.
@@ -121,8 +110,6 @@ model User {
   // en base : le disque du serveur est effacé à chaque déploiement.
   avatar          Bytes?
   avatarUpdatedAt DateTime?
-  locale          Locale    @default(FR)
-  theme           Theme     @default(DARK)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -130,8 +117,6 @@ model User {
   sessions     Session[]
   roomsOwned   Room[]        @relation("RoomOrganizer")
   participants Participant[]
-  keyStats     KeyStat[]
-  badges       UserBadge[]
 }
 
 // Compte OAuth lié (Discord, GitHub).
@@ -181,10 +166,7 @@ model Room {
   status       RoomStatus @default(OPEN)
   organizerId  String
   maxPlayers   Int        @default(30) // SALLE-05
-  lobbyWaitSec Int        @default(30) // inutilisé (checkpoint 1)
-  countdownSec Int        @default(5) // inutilisé : décompte fixe de 3 s (COURSE-03)
   difficulty   Difficulty @default(BEGINNER) // CONF-05 : complexité
-  length       TextLength @default(MEDIUM)
   blacklist    String     @default("") // CONF-07 : caractères à exclure
   timeLimitSec Int? // CONF-01 : null = aucune limite
   // Configuration de la course (CONF-02 à CONF-09), modifiable par l'hôte.
@@ -228,7 +210,6 @@ model InviteLink {
   id         String    @id @default(cuid())
   roomId     String
   token      String    @unique // 256 bits aléatoires, en base64url
-  expiresAt  DateTime? // inutilisé : un lien vit autant que sa salle
   usedAt     DateTime?
   usedById   String? // utilisateur ou invité (« guest_… »)
   usedByName String?
@@ -323,32 +304,3 @@ model RaceResult {
 }
 
 // ─── Statistiques et progression ─────────────────────────────
-
-// Compteur agrégé par touche, inutilisé : les fautes par touche sont gardées par course (RES-03).
-model KeyStat {
-  userId String
-  key    String @db.VarChar(4)
-  hits   Int    @default(0)
-  errors Int    @default(0)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([userId, key])
-}
-
-model Badge {
-  id    String      @id @default(cuid())
-  slug  String      @unique
-  users UserBadge[]
-}
-
-model UserBadge {
-  userId     String
-  badgeId    String
-  unlockedAt DateTime @default(now())
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
-
-  @@id([userId, badgeId])
-}
