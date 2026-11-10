@@ -1,94 +1,94 @@
 # Utilisation de l'IA
 
-> **Brouillon à relire et à réécrire avec tes mots.** Les faits ci-dessous
-> (outils, erreurs, corrections) viennent de l'historique du projet. La
-> réflexion de la section 4 est personnelle : l'énoncé la demande à toi, pas
-> à l'agent. Supprime cet encadré une fois le texte relu.
-
 ## 1. Agents et outils utilisés
 
-- **Claude Code** (agent de Anthropic), dans le navigateur et l'application :
-  écriture du code, des tests et de la documentation, sur une branche de
-  travail, avec une pull request par grande étape (sprint 1, puis sprints 2
-  et 3).
-- **GitHub Actions** pour vérifier chaque push de l'agent : lint, types,
-  tests unitaires et tests de bout en bout sur le build de production.
-- **Outils de vérification** utilisés par l'agent et par moi : Playwright
-  (scénarios de jeu), axe (accessibilité), Lighthouse (performance), et des
-  tests manuels sur mon Mac avec Docker.
-- **Planification** : le planning poker et le découpage en sprints ont été
-  proposés par l'agent à partir de l'énoncé, puis suivis sprint par sprint.
+- **Claude Code** (agent d'Anthropic), dans le navigateur et l'application
+  Claude, à partir du 20 octobre, après la remise du checkpoint 1. L'agent a
+  écrit la plus grande partie du code des sprints 1 à 3, les tests et la
+  documentation finale, sur une branche de travail ; chaque étape arrivait
+  dans `main` par une pull request que je fusionnais.
+- **GitHub Actions** : lint, vérification des types et tests (unitaires et de
+  bout en bout) à chaque push, pour vérifier le travail de l'agent.
+- **Vérification** : Playwright, axe et Lighthouse (lancés par l'agent), et
+  mes propres tests du site sur mon Mac avec Docker et en production.
 - **Sans IA** : le nom, le logo et la démarche créative (DES-01 à DES-03).
+
+**Mon rôle.** Je donnais l'énoncé et les priorités, je choisissais l'ordre
+des étapes, je testais chaque version en jouant, je signalais ce qui
+n'allait pas et je décidais quand fusionner. L'agent proposait le planning
+(planning poker jusqu'au 10 novembre), écrivait le code et expliquait ce
+qu'il avait fait et comment le tester.
+
+**Historique Git.** Les commits de l'agent étaient d'abord signés « Claude ».
+Le 10 novembre, je les ai fait réattribuer à mon compte GitHub ; les pull
+requests #1 à #5 gardent les commits d'origine.
 
 ## 2. Fichiers d'instructions d'agent
 
-- [`AGENTS.md`](../AGENTS.md), à la racine : règles du projet (TypeScript
-  strict, Zod sur toutes les entrées, serveur autoritaire, textes traduits,
-  accessibilité), commandes à lancer avant chaque commit, et règles de
-  collaboration (expliquer avant de pousser, ne jamais fusionner sans
-  demande, ne pas toucher à la démarche créative).
-- L'énoncé lui-même, donné à l'agent au début de chaque sprint : chaque
-  fonctionnalité est rattachée à un identifiant d'exigence, et la matrice de
-  [`EXIGENCES.md`](EXIGENCES.md) est mise à jour dans le même commit.
+- [`AGENTS.md`](../AGENTS.md) : règles du projet (TypeScript strict, Zod sur
+  toutes les entrées, serveur autoritaire, textes traduits, accessibilité),
+  commandes à lancer avant chaque commit, et règles de collaboration
+  (expliquer avant de pousser, ne jamais fusionner sans ma demande, ne pas
+  toucher à la démarche créative).
+- L'énoncé, donné à l'agent au début de chaque sprint : chaque fonctionnalité
+  est rattachée à un identifiant d'exigence de la matrice
+  ([`EXIGENCES.md`](EXIGENCES.md)).
 
 ## 3. Trois situations où l'IA s'est trompée
 
 ### 3.1 Les accents bloquaient la frappe sur Mac
 
 - **Erreur.** La zone de frappe vidait le champ après chaque touche. Sur Mac,
-  un accent se tape en maintenant la lettre (bulle de choix) ou en deux temps
-  (`^` puis `e`). Le champ vidé faisait perdre la lettre de base : le joueur
-  restait bloqué sur un « é » pourtant bien tapé.
-- **Détection.** En jouant moi-même sur mon Mac : je « calais » sur chaque
-  accent. Les tests de l'agent tapaient les caractères directement et ne
-  pouvaient pas voir le problème.
-- **Correction.** Le champ garde maintenant le dernier caractère, attend la
-  fin de la composition et normalise le texte (Unicode NFC) avant de le
-  comparer (`src/lib/race/input.ts`). Des tests unitaires reproduisent les
-  deux façons de taper un accent (`input.test.ts`).
+  un accent se tape en maintenant la lettre ou en deux temps (`^` puis `e`) :
+  le champ vidé faisait perdre la lettre, et je n'avançais plus sur un « é »
+  pourtant bien tapé.
+- **Détection.** En jouant sur mon Mac ; j'ai envoyé une capture à l'agent.
+  Ses tests tapaient les caractères directement et ne voyaient pas le
+  problème.
+- **Correction.** Le champ garde le dernier caractère, attend la fin de
+  l'accent et normalise le texte (`src/lib/race/input.ts`). Des tests
+  reproduisent les deux façons de taper un accent (`input.test.ts`).
 
-### 3.2 Les bots étaient plus lents que leur niveau
+### 3.2 Toujours la même phrase
 
-- **Erreur.** L'agent réglait la vitesse de base de chaque bot sur la plage
-  de MPM visée (BOT-01), sans compter que les hésitations et les fautes
-  ajoutées ensuite (BOT-02, BOT-03) leur font perdre environ 20 % de vitesse.
-  Un bot « Expert » finissait souvent sous 70 MPM.
+- **Erreur.** Le texte était tiré au hasard parmi très peu de passages : je
+  retombais presque toujours sur la même phrase, ce que l'énoncé ne permet pas
+  (texte cohérent tiré d'un corpus, CONF-03).
+- **Détection.** En jouant plusieurs courses de suite.
+- **Correction.** Une salle passe par tous les textes de son niveau avant d'en
+  reprendre un (`pickText`, `src/lib/race/room-store.ts`), et le corpus a été
+  élargi avec des textes du domaine public.
+
+### 3.3 Les bots étaient plus lents que leur niveau
+
+- **Erreur.** La vitesse de base des bots correspondait à la plage visée
+  (BOT-01), mais les hésitations et les fautes ajoutées ensuite (BOT-02,
+  BOT-03) leur faisaient perdre environ 20 % : un bot « Expert » finissait
+  souvent sous 70 MPM.
 - **Détection.** Un test de calibrage qui fait courir chaque niveau sur 20
-  graines et vérifie que le MPM moyen tombe dans la plage annoncée.
+  graines et compare le MPM moyen à la plage.
 - **Correction.** Le rythme de base est accéléré pour compenser
-  (`SLOWDOWN_COMPENSATION` dans `bots.ts`), et le test de calibrage reste dans
-  `bots.test.ts` pour qu'un futur réglage ne casse pas les niveaux.
+  (`bots.ts`), et le test reste dans `bots.test.ts`.
 
-### 3.3 Toujours la même phrase, et un test qui échouait une fois sur trois
+## 4. Réflexion
 
-- **Erreur.** Le choix du texte prenait un passage au hasard parmi très peu de
-  passages : je retombais sans cesse sur la même phrase. Plus tard, un test de
-  bout en bout échouait au hasard ; l'agent était prêt à le traiter comme un
-  test « instable ».
-- **Détection.** La phrase répétée : en jouant plusieurs courses de suite. Le
-  test : en relançant la CI et en lisant les captures d'écran de l'échec. La
-  vraie cause était que le bot, en retard, recevait des bonus « −3 mots » et
-  pouvait gagner la course.
-- **Correction.** Une salle passe maintenant par tous les textes de son niveau
-  avant d'en répéter un (`pickText` dans `room-store.ts`). Le test désactive
-  les bonus, qui ont leurs propres tests (`bonus.test.ts`), et passe à chaque
-  fois. Je n'ai pas accepté de simplement relancer le test jusqu'à ce qu'il
-  passe.
+Au début, je laissais l'agent avancer et pousser son code, et je ne savais
+plus exactement ce qui avait été fait. Je lui ai demandé de toujours
+m'expliquer en mots simples ce qu'il avait changé et comment le tester avant
+de pousser. Après ça, je testais chaque étape moi-même avant de fusionner.
 
-## 4. Réflexion sur ma façon de travailler avec les agents
+Les tests automatiques passaient, mais c'est en jouant que j'ai trouvé les
+vrais problèmes : les accents sur Mac, la phrase répétée, le bouton pour
+ajouter un bot que je ne trouvais pas, des étiquettes qui ressemblaient à des
+boutons. L'agent écrit vite, mais il ne sait pas ce qu'un vrai joueur
+ressent ; ce travail-là restait le mien.
 
-_À écrire toi-même (quelques paragraphes). Pistes à partir de ce qui s'est
-passé pendant le projet :_
+Découper le projet en sprints, puis en exigences numérotées, m'a permis de
+garder le contrôle sur un projet de cette taille : à chaque étape, je savais
+quelle exigence était faite et comment la vérifier. Comme je reste
+responsable de chaque ligne, j'ai aussi demandé à l'agent de m'expliquer
+l'organisation du code, dossier par dossier.
 
-- _Au début, l'agent poussait du code sans m'expliquer ce qu'il avait fait. Je
-  lui ai demandé de résumer et de dire comment tester avant de pousser : ce
-  que ça a changé pour toi._
-- _Ce que les tests automatiques ne voient pas (accents sur Mac, texte
-  répété) et que seul le fait de jouer a révélé._
-- _Le découpage en petites étapes (sprints, puis une exigence à la fois) et
-  la matrice de traçabilité pour garder le contrôle sur un projet de cette
-  taille._
-- _Ce que tu dois être capable d'expliquer toi-même (machine à états, serveur
-  autoritaire, liens d'invitation liés à l'IP) et ce que tu as fait pour bien
-  le comprendre._
-- _Ce que tu ferais différemment au prochain projet._
+Au prochain projet, je commencerais à travailler avec l'agent plus tôt et par
+plus petites étapes, pour que l'historique montre mieux mon travail au fil du
+temps, et je relirais le code au fur et à mesure plutôt qu'à la fin.
