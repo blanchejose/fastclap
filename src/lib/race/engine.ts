@@ -17,9 +17,9 @@ export type RacerStatus = "RACING" | "FINISHED" | "TIME_UP" | "ABANDONED";
 export const COUNTDOWN_MS = 3_000; // COURSE-03 : 3, 2, 1
 export const RECONNECT_GRACE_MS = 30_000; // COURSE-08
 export const MAX_KEYS_PER_BATCH = 30; // COURSE-06 : au-delà, c'est un saut de progression
-export const MAX_KEYS_PER_SECOND = 25; // COURSE-06 : ≈ 300 MPM, au-delà de tout humain
+const MAX_KEYS_PER_SECOND = 25; // COURSE-06 : ≈ 300 MPM, au-delà de tout humain
 const SAMPLE_EVERY_MS = 1_000; // RES-05 : un point de la courbe de MPM par seconde
-export const BONUS_ANNOUNCE_MS = 4_000; // BONUS-03 : durée d'une annonce
+const BONUS_ANNOUNCE_MS = 4_000; // BONUS-03 : durée d'une annonce
 
 export type { Config } from "./config";
 
@@ -77,7 +77,7 @@ export type JoinResult =
   { ok: true; rejoined: boolean } | { ok: false; reason: "closed" | "kicked" | "in_progress" };
 
 export type StartBlocker = "phase" | "not_enough" | "no_human";
-export type ConfigResult = "ok" | "forbidden" | "below_players";
+type ConfigResult = "ok" | "forbidden" | "below_players";
 
 export function createRoom(
   code: string,
@@ -353,7 +353,7 @@ export function tick(
   return { changed, ended, removed, bonuses };
 }
 
-export type KeysResult = "ok" | "rejected" | "ignored";
+type KeysResult = "ok" | "rejected" | "ignored";
 
 // Touches reçues d'un navigateur, par lots (PERF-02). Le serveur les rejoue
 // lui-même et refuse ce qu'aucun humain ne peut taper (COURSE-06).

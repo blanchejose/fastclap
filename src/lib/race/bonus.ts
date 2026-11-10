@@ -10,8 +10,8 @@ export const BONUS_TYPES = ["SHORTEN", "EXTEND", "FOG"] as const;
 // FOG : les prochains mots du meneur sont flous quelques secondes (le ralentit).
 export type BonusType = (typeof BONUS_TYPES)[number];
 
-export const CHECKPOINTS = [0.25, 0.5, 0.75]; // progression du meneur
-export const BEHIND_GAP = 0.25; // 25 points de pourcentage derrière le meneur
+const CHECKPOINTS = [0.25, 0.5, 0.75]; // progression du meneur
+const BEHIND_GAP = 0.25; // 25 points de pourcentage derrière le meneur
 export const MAX_BONUSES = 3; // par joueur et par course
 export const BONUS_WORDS = 3;
 export const FOG_MS = 5_000;
@@ -35,12 +35,12 @@ export function shortenText(text: string, typedLength: number, n = BONUS_WORDS):
   return text.slice(0, spaces[Math.max(0, spaces.length - n)]);
 }
 
-export function extendText(text: string, words: string[]): string {
+function extendText(text: string, words: string[]): string {
   return [text, ...words].join(" ");
 }
 
 // Mots ajoutés au meneur : tirés du texte de la course (même langue, même style).
-export function pickWords(source: string, rng: Rng, n = BONUS_WORDS): string[] {
+function pickWords(source: string, rng: Rng, n = BONUS_WORDS): string[] {
   const words = source.split(" ").filter(Boolean);
   return Array.from({ length: n }, () => words[Math.floor(rng() * words.length)]);
 }
@@ -49,7 +49,7 @@ const progressOf = (r: Racer) => progress(r.typing, r.text);
 
 // Les joueurs en retard (BONUS-01) : encore en course, derrière le meneur,
 // et soit derniers, soit à 25 points ou plus derrière lui.
-export function behindRacers(candidates: Racer[], leaderProgress: number): Racer[] {
+function behindRacers(candidates: Racer[], leaderProgress: number): Racer[] {
   const lowest = Math.min(...candidates.map(progressOf));
   return candidates
     .filter((r) => {

@@ -28,7 +28,7 @@ export async function listInvites(code: string): Promise<InviteView[]> {
   }));
 }
 
-export type ClaimResult =
+type ClaimResult =
   | { ok: true; code: string }
   | { ok: false; reason: Extract<ClaimDecision, { ok: false }>["reason"] | "not_found" };
 

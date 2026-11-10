@@ -10,7 +10,7 @@ export type RaceStat = {
   endedAt: Date | null;
 };
 
-export type ProfileStats = {
+type ProfileStats = {
   races: number; // toutes les courses, abandons compris
   wins: number; // 1re place à l'arrivée
   bestWpm: number | null; // sur les courses terminées

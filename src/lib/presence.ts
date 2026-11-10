@@ -4,7 +4,7 @@
 import { Prisma } from "../generated/prisma/client";
 import { prisma } from "./prisma";
 
-export type PresenceResult = { ok: true } | { ok: false; otherCode: string };
+type PresenceResult = { ok: true } | { ok: false; otherCode: string };
 
 // Ce qu'on fait d'une présence déjà enregistrée dans une autre salle.
 export function resolvePresence(
