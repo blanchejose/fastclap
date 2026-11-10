@@ -62,9 +62,9 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profil">
         className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 pt-10 pb-16"
       >
         <div className="flex flex-wrap items-center gap-5">
-          <Avatar name={name} src={photo} className="size-20 text-xl" />
+          <Avatar name={name} src={photo} className="size-20 text-2xl" />
           <div className="flex flex-col gap-1">
-            <h1 className="font-display text-5xl leading-[0.95] font-extrabold tracking-tight">
+            <h1 className="font-display text-4xl leading-[0.95] font-extrabold tracking-tight sm:text-5xl">
               {name}
             </h1>
             <p className="text-sourdine font-mono text-sm">

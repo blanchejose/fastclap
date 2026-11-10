@@ -61,13 +61,13 @@ export const fr = {
         text: "Tape sans faute, dépasse les autres, monte sur le podium.",
       },
     ],
-    bibsTitle: "Collectionne les dossards.",
+    bibsTitle: "Tes records sur ton dossard.",
     bibsText:
-      "Comme à la fin d'une vraie course, chaque exploit te rapporte un dossard : 100 mots par minute, 10 courses sans faute, une série de victoires…",
+      "Connecte-toi et chaque course compte : ton profil garde ton meilleur MPM, ta précision moyenne et tes victoires. Bats ton record, et la ligne d'arrivée te le dit tout de suite.",
     bibs: [
-      { label: "VITESSE", value: "100", unit: "WPM" },
-      { label: "SANS FAUTE", value: "10", unit: "COURSES" },
-      { label: "SÉRIE", value: "5", unit: "VICTOIRES" },
+      { label: "RECORD", value: "100", unit: "MPM" },
+      { label: "PRÉCISION", value: "98", unit: "% EN MOYENNE" },
+      { label: "VICTOIRES", value: "5", unit: "1RE PLACE" },
     ],
   },
   demo: {
@@ -76,6 +76,7 @@ export const fr = {
     todo: "par-dessus le chien paresseux.",
     caption: "Lettre juste en vert, faute en rouge soulignée : il faut la corriger pour avancer.",
     you: "Toi",
+    unit: "MPM",
   },
   code: {
     label: "Un ami t'a donné un code ?",
@@ -118,8 +119,10 @@ export const fr = {
     all: "Toutes",
     live: "Mise à jour automatique",
     empty:
-      "Personne sur la ligne de départ pour l'instant. Crée une salle et invite ta classe avec son code.",
+      "Crée une salle et invite ta classe avec son code : la course commence dès que vous êtes deux.",
     noMatch: "Aucune salle publique ne correspond à ces filtres pour l'instant.",
+    emptyTitle: "La ligne de départ est vide",
+    createRoom: "Créer une salle",
     roomOf: "Salle de {name}",
     players: "{n}/{max} participants",
     states: {
@@ -140,7 +143,8 @@ export const fr = {
     semiHint: "Avec code : seulement les personnes qui ont le code",
     levelLabel: "Niveau du texte",
     create: "Créer la salle",
-    loginToCreate: "Connecte-toi pour créer une salle.",
+    loginToCreate: "Se connecter pour créer une salle",
+    joinTitle: "Rejoindre avec un code",
   },
   room: {
     code: "Code de la salle",
@@ -421,7 +425,7 @@ export const fr = {
     metaTitle: "Connexion",
     title1: "Prêt pour",
     title2: "le départ ?",
-    lead: "Un pseudo suffit pour prendre le départ. Connecte-toi avec Discord ou GitHub si tu veux garder tes stats et tes dossards.",
+    lead: "Un pseudo suffit pour prendre le départ. Connecte-toi avec Discord ou GitHub si tu veux garder tes stats et tes records.",
     heading: "Connexion",
     discord: "Continuer avec Discord",
     github: "Continuer avec GitHub",
@@ -478,7 +482,7 @@ const en: Dictionary = {
     code: "Enter a code",
     rooms: "All rooms",
     discover: "Discover",
-    credit: "Web V project · Cégep de Sorel-Tracy",
+    credit: "",
     source: "Source code",
   },
   levels: { BEGINNER: "Easy", INTERMEDIATE: "Medium", PRO: "Hard" },
@@ -501,13 +505,13 @@ const en: Dictionary = {
         text: "Type without mistakes, pass the others, get on the podium.",
       },
     ],
-    bibsTitle: "Collect race bibs.",
+    bibsTitle: "Your records on your bib.",
     bibsText:
-      "Just like at the end of a real race, every feat earns you a bib: 100 words per minute, 10 races without a mistake, a winning streak…",
+      "Log in and every race counts: your profile keeps your best WPM, your average accuracy and your wins. Beat your record and the finish line tells you right away.",
     bibs: [
-      { label: "SPEED", value: "100", unit: "WPM" },
-      { label: "NO MISTAKES", value: "10", unit: "RACES" },
-      { label: "STREAK", value: "5", unit: "WINS" },
+      { label: "RECORD", value: "100", unit: "WPM" },
+      { label: "ACCURACY", value: "98", unit: "% ON AVERAGE" },
+      { label: "WINS", value: "5", unit: "1ST PLACE" },
     ],
   },
   demo: {
@@ -516,6 +520,7 @@ const en: Dictionary = {
     todo: "over the lazy dog.",
     caption: "Correct letters in green, mistakes in red and underlined: fix them to move on.",
     you: "You",
+    unit: "WPM",
   },
   code: {
     label: "Got a code from a friend?",
@@ -556,8 +561,11 @@ const en: Dictionary = {
     complexity: "Complexity",
     all: "All",
     live: "Updates automatically",
-    empty: "Nobody on the starting line yet. Create a room and invite your class with its code.",
+    empty:
+      "Create a room and invite your class with its code: the race starts as soon as there are two of you.",
     noMatch: "No public room matches these filters right now.",
+    emptyTitle: "The starting line is empty",
+    createRoom: "Create a room",
     roomOf: "{name}'s room",
     players: "{n}/{max} racers",
     states: {
@@ -578,7 +586,8 @@ const en: Dictionary = {
     semiHint: "With code: only people who have the code",
     levelLabel: "Text level",
     create: "Create the room",
-    loginToCreate: "Log in to create a room.",
+    loginToCreate: "Log in to create a room",
+    joinTitle: "Join with a code",
   },
   room: {
     code: "Room code",
@@ -857,7 +866,7 @@ const en: Dictionary = {
     metaTitle: "Log in",
     title1: "Ready for",
     title2: "the start?",
-    lead: "A username is all you need to race. Log in with Discord or GitHub to keep your stats and bibs.",
+    lead: "A username is all you need to race. Log in with Discord or GitHub to keep your stats and records.",
     heading: "Log in",
     discord: "Continue with Discord",
     github: "Continue with GitHub",

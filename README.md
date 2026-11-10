@@ -18,7 +18,7 @@ manquées. Tout est gardé dans l'historique et le profil.
 | Accueil                                      | Salle d'attente et configuration                           |
 | -------------------------------------------- | ---------------------------------------------------------- |
 | ![Accueil](docs/images/captures/accueil.png) | ![Salle d'attente](docs/images/captures/salle-attente.png) |
-| **Course (bonus « brouillard » en cours)**   | **Résultats**                                              |
+| **Course en direct**                         | **Résultats**                                              |
 | ![Course](docs/images/captures/course.png)   | ![Résultats](docs/images/captures/resultats.png)           |
 | **Profil et progression**                    | **Historique (thème sombre)**                              |
 | ![Profil](docs/images/captures/profil.png)   | ![Historique](docs/images/captures/historique-sombre.png)  |
@@ -148,5 +148,6 @@ build de production avec une vraie base PostgreSQL.
 - [Exigences](docs/EXIGENCES.md) : matrice de traçabilité et choix documentés
 - [Démarche créative](docs/DEMARCHE-CREATIVE.md) : nom, logo, moodboard,
   palette, typographies
+- [Retravail UI/UX](docs/UI-UX.md) : hiérarchie, espacement, texte et couleurs, avec captures avant/après
 - [Utilisation de l'IA](docs/IA.md)
 - [Guide de déploiement](docs/DEPLOIEMENT.md)
