@@ -38,6 +38,7 @@ type RaceText = { raceNo: number; text: string };
 type Resync = { raceNo: number; typed: string; keystrokes: number; errors: number };
 
 const FLUSH_MS = 100; // PERF-02 : au plus 10 lots de touches par seconde
+const GO_MS = 700; // « Go ! » reste affiché un instant après le départ
 
 // Heure du serveur, rafraîchie 10 fois par seconde pour le décompte et le MPM
 // en direct. Le décalage avec l'horloge locale change à chaque diffusion : il
@@ -214,33 +215,17 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
 
       {inRace && (
         <>
-          {view.phase === "COUNTDOWN" && view.startAt !== null && now > 0 && (
+          {view.startAt !== null && now > 0 && now - view.startAt < GO_MS && (
             <Countdown msLeft={view.startAt - now} t={t.race} />
           )}
-          <BonusFeed events={view.bonusEvents} meId={meId} t={t.bonus} />
-          <RaceHeader
-            phase={view.phase}
-            elapsed={elapsed}
+          <RaceStats
+            elapsed={view.phase === "RUNNING" ? elapsed : 0}
             deadline={view.deadline}
             now={now}
             typing={typing}
             local={local}
             t={t.race}
           />
-          {myRacer && text && (
-            <>
-              <TypingZone
-                text={text}
-                typing={typing}
-                active={racing}
-                mode={view.config.errorMode}
-                fogged={myRacer.fogUntil !== null && now > 0 && now < myRacer.fogUntil}
-                onKey={onKey}
-                t={t.race}
-              />
-              <p className="bg-surface rounded-2xl p-4 md:hidden">{t.race.mobile}</p>
-            </>
-          )}
           <Track
             racers={view.racers}
             meId={meId}
@@ -249,13 +234,44 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
             effects={Object.fromEntries(view.bonusEvents.map((e) => [e.targetId, e.type]))}
             bonusNames={t.bonus.names}
           />
-          <RaceStatus
-            status={myRacer?.status ?? null}
-            spectating={!myRacer}
-            canAbandon={racing}
-            onAbandon={() => send("race:abandon")}
-            t={t.race}
-          />
+          <div
+            className={`grid items-start gap-5 ${view.config.bonuses ? "lg:grid-cols-[minmax(0,1fr)_20rem]" : ""}`}
+          >
+            <div className="flex min-w-0 flex-col gap-4">
+              {myRacer && text && (
+                <>
+                  <TypingZone
+                    text={text}
+                    typing={typing}
+                    active={racing}
+                    mode={view.config.errorMode}
+                    fogged={myRacer.fogUntil !== null && now > 0 && now < myRacer.fogUntil}
+                    onKey={onKey}
+                    t={t.race}
+                  />
+                  <p className="carte p-4 md:hidden">{t.race.mobile}</p>
+                </>
+              )}
+              <RaceStatus
+                status={myRacer?.status ?? null}
+                spectating={!myRacer}
+                canAbandon={racing}
+                onAbandon={() => send("race:abandon")}
+                t={t.race}
+              />
+            </div>
+            {view.config.bonuses && (
+              <aside aria-label={t.bonus.feedLabel} className="flex min-w-0 flex-col gap-2.5">
+                {view.bonusEvents.length === 0 ? (
+                  <p className="border-trait text-sourdine rounded-2xl border-2 border-dashed px-4 py-3.5 text-sm">
+                    {t.bonus.empty}
+                  </p>
+                ) : (
+                  <BonusFeed events={view.bonusEvents} meId={meId} t={t.bonus} />
+                )}
+              </aside>
+            )}
+          </div>
         </>
       )}
 
@@ -327,8 +343,9 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   );
 }
 
-function RaceHeader({
-  phase,
+// Les compteurs au-dessus de la piste : MPM, précision, fautes et temps
+// (restant s'il y a une limite, sinon écoulé). Un spectateur voit le temps.
+function RaceStats({
   elapsed,
   deadline,
   now,
@@ -336,7 +353,6 @@ function RaceHeader({
   local,
   t,
 }: {
-  phase: RoomView["phase"];
   elapsed: number;
   deadline: number | null;
   now: number;
@@ -348,35 +364,35 @@ function RaceHeader({
     const s = Math.max(0, Math.floor(ms / 1000));
     return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
   };
+  const time =
+    deadline !== null && now > 0
+      ? { label: t.timeLeft, value: clock(deadline - now) }
+      : { label: t.time, value: clock(elapsed) };
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4">
-      <span className="font-mono text-3xl font-semibold tabular-nums">
-        {clock(phase === "RUNNING" ? elapsed : 0)}
-      </span>
-      {deadline !== null && now > 0 && (
-        <span className="text-sourdine font-mono">
-          {t.timeLeft} {clock(deadline - now)}
-        </span>
-      )}
+    <dl
+      className={`motion-safe:animate-monte grid gap-3 sm:gap-3.5 ${local ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-1 sm:max-w-xs"}`}
+    >
       {local && (
-        <dl className="flex gap-5 font-mono">
-          <div className="flex gap-1.5">
-            <dt className="text-sourdine">{t.wpm}</dt>
-            <dd className="font-semibold tabular-nums">{local.wpm}</dd>
+        <>
+          <div className="stat">
+            <dt>{t.wpm}</dt>
+            <dd>{local.wpm}</dd>
           </div>
-          <div className="flex gap-1.5">
-            <dt className="text-sourdine">{t.accuracy}</dt>
-            <dd className="font-semibold tabular-nums">
-              {accuracy(typing.keystrokes, typing.errors)} %
-            </dd>
+          <div className="stat">
+            <dt>{t.accuracy}</dt>
+            <dd>{accuracy(typing.keystrokes, typing.errors)} %</dd>
           </div>
-          <div className="flex gap-1.5">
-            <dt className="text-sourdine">{t.errors}</dt>
-            <dd className="font-semibold tabular-nums">{typing.errors}</dd>
+          <div className="stat">
+            <dt>{t.errors}</dt>
+            <dd className={typing.errors > 0 ? "text-faute" : undefined}>{typing.errors}</dd>
           </div>
-        </dl>
+        </>
       )}
-    </div>
+      <div className="stat">
+        <dt>{time.label}</dt>
+        <dd className="font-mono!">{time.value}</dd>
+      </div>
+    </dl>
   );
 }
 
@@ -393,9 +409,15 @@ function RaceStatus({
   onAbandon: () => void;
   t: Dictionary["race"];
 }) {
-  if (spectating) return <p className="text-sourdine">{t.spectating}</p>;
-  if (status === "FINISHED") return <p className="font-semibold">{t.finished}</p>;
-  if (status === "ABANDONED") return <p className="text-sourdine">{t.abandoned}</p>;
+  if (spectating) return <p className="carte text-sourdine p-4 font-semibold">{t.spectating}</p>;
+  if (status === "FINISHED")
+    return (
+      <p className="carte motion-safe:animate-monte p-4 text-lg font-bold">
+        <span aria-hidden="true">🏁 </span>
+        {t.finished}
+      </p>
+    );
+  if (status === "ABANDONED") return <p className="carte text-sourdine p-4">{t.abandoned}</p>;
   if (!canAbandon) return null;
   // COURSE-07 : l'abandon demande une confirmation.
   return (

@@ -61,28 +61,26 @@ export function TypingZone({ text, typing, active, mode, fogged, onKey, t }: Pro
     if (text[fogEnd] === " " && fogEnd > cursor) words++;
 
   return (
-    <section aria-labelledby="titre-texte" className="hidden flex-col gap-3 md:flex">
+    <section
+      aria-labelledby="titre-texte"
+      className="carte border-bleu! motion-safe:animate-monte hidden flex-col overflow-hidden border-2 shadow-[0_6px_0_var(--bleu)] [animation-delay:80ms] focus-within:outline-3 focus-within:outline-offset-4 focus-within:outline-[var(--focus)] md:flex"
+    >
       <h2 id="titre-texte" className="sr-only">
         {t.textLabel}
       </h2>
       <div
-        className="bg-surface-2 focus-within:ring-focus relative cursor-text rounded-2xl px-5 py-4 focus-within:ring-[3px]"
+        className="relative cursor-text px-6 py-7 transition-colors sm:px-9 sm:py-8"
         onClick={() => inputRef.current?.focus()}
       >
-        <p
-          aria-hidden="true"
-          className="font-mono text-xl leading-[1.9] break-words whitespace-pre-wrap"
-        >
+        <p aria-hidden="true" className="texte-course break-words whitespace-pre-wrap">
           {[...text].map((char, i) => {
-            let className = "text-sourdine";
+            let className = "";
             if (i < cursor)
-              className =
-                typing.typed[i] === char ? "text-juste" : "text-faute underline decoration-wavy"; // couleur + soulignement
-            else if (i === cursor && active)
-              className = "bg-jaune/50 text-encre rounded-sm shadow-[inset_3px_0_0_var(--orange)]";
-            if (i > cursor && i < fogEnd) className += " blur-[3px] select-none";
+              className = typing.typed[i] === char ? "ok" : "ko"; // couleur + soulignement
+            else if (i === cursor && active) className = "cur";
+            if (i > cursor && i < fogEnd) className += " brouillard";
             return (
-              <span key={i} className={className}>
+              <span key={i} className={className || undefined}>
                 {char}
               </span>
             );
@@ -110,7 +108,10 @@ export function TypingZone({ text, typing, active, mode, fogged, onKey, t }: Pro
           {text}
         </span>
       </div>
-      <p id="consigne-mode" className="text-sourdine text-sm">
+      <p
+        id="consigne-mode"
+        className="border-trait text-sourdine border-t px-6 py-3.5 text-sm sm:px-9"
+      >
         {mode === "STRICT" ? t.modeStrict : t.modeFree} {t.focusHint}
       </p>
     </section>
