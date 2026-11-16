@@ -294,6 +294,7 @@ export const fr = {
     kindsShort: { COHERENT: "Cohérent", RANDOM: "Aléatoire" },
     wordCountShort: "Longueur",
     wordCountHint: "Mots, de 10 à 100",
+    timeLimitHint: "Sans limite : 5 min au plus. Sans frappe pendant 60 s, on quitte la course.",
     errorModesShort: { STRICT: "Correction obligatoire", FREE: "Libre" },
     timeOther: "Autre",
     bonusesHint: "−3 mots, +3 mots, Brouillard",
@@ -330,6 +331,8 @@ export const fr = {
     spectating: "Tu regardes la course.",
     finished: "Ligne franchie ! On attend les autres…",
     abandoned: "Tu as abandonné cette course.",
+    idleWarning: "Tu es toujours là ? Sans frappe, tu quittes la course dans {n} s.",
+    idleOut: "Tu as quitté la course : rien n'a été tapé pendant 60 secondes.",
     mobile:
       "Les courses se jouent avec un clavier physique. Ouvre FastClap sur un ordinateur pour courir ; ici, tu peux suivre la piste.",
     status: {
@@ -766,6 +769,7 @@ const en: Dictionary = {
     kindsShort: { COHERENT: "Coherent", RANDOM: "Random" },
     wordCountShort: "Length",
     wordCountHint: "Words, 10 to 100",
+    timeLimitHint: "No limit: 5 min at most. No typing for 60 s and you leave the race.",
     errorModesShort: { STRICT: "Mandatory correction", FREE: "Free" },
     timeOther: "Other",
     bonusesHint: "−3 words, +3 words, Fog",
@@ -802,6 +806,8 @@ const en: Dictionary = {
     spectating: "You are watching the race.",
     finished: "Finish line crossed! Waiting for the others…",
     abandoned: "You gave up this race.",
+    idleWarning: "Still there? Without typing, you leave the race in {n} s.",
+    idleOut: "You left the race: nothing was typed for 60 seconds.",
     mobile:
       "Races are played with a physical keyboard. Open FastClap on a computer to race; here, you can follow the track.",
     status: {

@@ -237,7 +237,7 @@ export function ConfigPanel({ config, isHost, update, aside, t, levels }: Props)
                 <Value>{t.errorModesShort[config.errorMode]}</Value>
               )}
             </Row>
-            <Row label={t.timeLimit}>
+            <Row label={t.timeLimit} hint={t.timeLimitHint}>
               {isHost ? (
                 <div className="flex flex-wrap items-center justify-end gap-3">
                   <div className="seg" role="group" aria-label={t.timeLimit}>
