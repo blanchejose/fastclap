@@ -477,6 +477,85 @@
   .pied-lien:hover {
     background-size: 100% 3px;
   }
+
+  /* Contrôle segmenté : des boutons (aria-pressed) ou des boutons radio
+     (label > input) côte à côte ; le choix actif ressort en blanc. */
+  .seg {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 0.9rem;
+    background: var(--surface-2);
+  }
+  .seg > button,
+  .seg > label {
+    display: inline-flex;
+    flex: 1 1 auto;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.9rem;
+    border-radius: 0.65rem;
+    color: var(--sourdine);
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  /* Petit écran : les quatre choix tiennent sur une ligne à 360 px. */
+  @media (max-width: 30rem) {
+    .seg > button,
+    .seg > label {
+      padding: 0 0.55rem;
+      font-size: 0.85rem;
+    }
+  }
+  .seg > button:hover,
+  .seg > label:hover {
+    color: var(--encre);
+  }
+  .seg > [aria-pressed="true"],
+  .seg > label:has(:checked) {
+    background: var(--surface);
+    color: var(--encre);
+    box-shadow: 0 2px 8px -3px rgb(13 18 64 / 0.3);
+  }
+  /* Le bouton radio est caché : le focus clavier se voit sur l'étiquette. */
+  .seg > label:has(:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* Création de salle : l'aide suit le choix « Qui peut entrer ? » (sans JS). */
+  .aide-code {
+    display: none;
+  }
+  fieldset:has([value="SEMI_PUBLIC"]:checked) .aide-publique {
+    display: none;
+  }
+  fieldset:has([value="SEMI_PUBLIC"]:checked) .aide-code {
+    display: block;
+  }
+
+  /* Jauge qui se remplit à l'arrivée. */
+  .jauge {
+    transform-origin: left;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .jauge {
+      animation: jauge 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+  }
+}
+
+@keyframes jauge {
+  from {
+    transform: scaleX(0);
+  }
 }
 
 /* Slogan tapé : le texte se dévoile pas à pas (--n lettres), le curseur suit. */
