@@ -455,13 +455,13 @@
     transform: translateY(-3px);
     box-shadow: 0 14px 26px -10px rgb(36 72 255 / 0.7);
   }
-  /* Le numéro passe en blanc sur le bleu, sinon il ne se lit plus (A11Y-01). */
+  /* Le numéro passe en blanc pur sur le bleu : 5:1 même sur le bleu du thème sombre (A11Y-01). */
   .touche-num {
     color: var(--sourdine);
     transition: color 0.2s ease;
   }
   .grosse-touche:hover .touche-num {
-    color: rgb(255 255 255 / 0.85);
+    color: #fff;
   }
   .grosse-touche:active {
     transform: translateY(2px);
