@@ -11,7 +11,8 @@ type Props = {
   meId: string;
   records: string[]; // RES-04 : coureurs qui ont battu leur record personnel
   locale: Locale;
-  actions?: ReactNode; // prochaines actions, sous le podium
+  code?: string; // code de la salle, dans l'étiquette « Résultats · Salle … »
+  actions?: ReactNode; // prochaines actions, centrées sous les résultats
   t: Dictionary["results"] & {
     statuses: Dictionary["race"]["status"];
     you: string;
@@ -24,9 +25,9 @@ type Props = {
 // Marches du podium, dans l'ordre du classement : la 1re au centre, jaune et
 // la plus haute (RES-01). Les délais font monter la 3e, puis la 2e, puis la 1re.
 const STEPS = [
-  { metal: "or", order: "order-2", height: "15rem", delay: 0.4, trophy: 0.8 },
-  { metal: "argent", order: "order-1", height: "11rem", delay: 0.2, trophy: 0.65 },
-  { metal: "bronze", order: "order-3", height: "7.5rem", delay: 0, trophy: 0.5 },
+  { metal: "or", order: "order-2", height: "14.4rem", delay: 0, trophy: 0.8, who: 1 },
+  { metal: "argent", order: "order-1", height: "10.6rem", delay: 0.2, trophy: 0.65, who: 0.7 },
+  { metal: "bronze", order: "order-3", height: "7.5rem", delay: 0.4, trophy: 0.5, who: 0.9 },
 ] as const;
 
 // Couleurs des trophées : métal clair, métal foncé, reflet.
@@ -38,18 +39,18 @@ const METALS = {
 
 const CONFETTI = ["#FFD23F", "#FF7A45", "#2448FF", "#3DD68C", "#9EC5F4"];
 
-// Confettis de la victoire : positions fixes (pas de hasard au rendu, le HTML
+// Confettis de la carte des résultats : positions fixes (pas de hasard au rendu, le HTML
 // du serveur et celui du navigateur restent identiques).
 function Confetti() {
   return (
     <div aria-hidden="true" className="confettis">
-      {Array.from({ length: 18 }, (_, i) => (
+      {Array.from({ length: 26 }, (_, i) => (
         <span
           key={i}
           style={{
             left: `${(i * 37) % 100}%`,
             background: CONFETTI[i % CONFETTI.length],
-            animationDuration: `${3 + (i % 4)}s`,
+            animationDuration: `${3 + ((4 - (i % 4)) % 4)}s`,
             animationDelay: `${-((i * 0.43) % 4).toFixed(2)}s`,
           }}
         />
@@ -132,9 +133,11 @@ function Star({ size, style }: { size: number; style: CSSProperties }) {
   );
 }
 
-// Le verdict et le podium (RES-01), puis le classement complet (RES-02) dans
-// l'ordre final (COURSE-10), puis les graphiques (RES-03).
-export function Results({ racers, meId, records, locale, actions, t }: Props) {
+// Mise en page de la maquette validée : la carte du verdict avec les
+// confettis et le podium posé en bas (RES-01) ; dessous, le classement complet
+// (RES-02, COURSE-10) à gauche, les graphiques à droite (RES-03) ; puis les
+// actions, centrées.
+export function Results({ racers, meId, records, locale, code, actions, t }: Props) {
   const number = new Intl.NumberFormat(locale === "fr" ? "fr-CA" : "en-CA", {
     maximumFractionDigits: 1,
   });
@@ -142,23 +145,23 @@ export function Results({ racers, meId, records, locale, actions, t }: Props) {
   const me = racers.find((r) => r.id === meId);
   const won = me?.rank === 1 && me.status === "FINISHED";
   const cell = "text-right font-mono tabular-nums";
+  const shownCode = code ? `${code.slice(0, 3)}-${code.slice(3)}` : null;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-7">
       <section
         aria-labelledby="titre-resultats"
-        className="carte motion-safe:animate-monte relative flex flex-col items-center gap-4 overflow-hidden px-4 pt-8 pb-6 text-center sm:px-8 sm:pt-10"
+        className="carte motion-safe:animate-monte relative flex flex-col items-center gap-3 overflow-hidden px-4 pt-8 text-center sm:px-10 sm:pt-10"
       >
-        {won && <Confetti />}
-        {/* Hiérarchie : le verdict d'abord, en grand ; « Résultats » n'est
-            qu'une étiquette. */}
+        <Confetti />
         <h2 id="titre-resultats" className="eyebrow relative">
           {t.title}
+          {shownCode && ` · ${fmt(t.room, { code: shownCode })}`}
         </h2>
         {me && (
           <p
             role="status"
-            className="font-display relative text-[clamp(2.4rem,6vw,4.5rem)] leading-[0.95] font-extrabold tracking-tight"
+            className="font-display motion-safe:animate-monte relative text-[clamp(2.4rem,6vw,4.75rem)] leading-[0.95] font-extrabold tracking-tight"
           >
             {won
               ? t.youWon
@@ -166,16 +169,17 @@ export function Results({ racers, meId, records, locale, actions, t }: Props) {
           </p>
         )}
         {me && records.includes(me.id) && (
-          <p className="bandeau relative">{fmt(t.newRecord, { wpm: number.format(me.wpm) })}</p>
+          <p className="bandeau relative mt-1.5">
+            {fmt(t.newRecord, { wpm: number.format(me.wpm) })}
+          </p>
         )}
 
         <ol aria-label={t.podium} className="podium relative">
           {racers.slice(0, 3).map((r, i) => {
             const step = STEPS[i];
-            const first = i === 0;
             return (
               <li key={r.id} className={`marche ${step.order}`}>
-                {first && (
+                {i === 0 && (
                   <>
                     <Star size={18} style={{ top: 0, left: "0.6rem", animationDelay: "1.6s" }} />
                     <Star
@@ -192,25 +196,20 @@ export function Results({ racers, meId, records, locale, actions, t }: Props) {
                     label={fmt(t.trophy, { rank: ordinal(r.rank, locale) })}
                   />
                 </span>
-                <span className="qui" style={{ animationDelay: `${0.7 + i * 0.1}s` }}>
+                <span className="qui" style={{ animationDelay: `${step.who}s` }}>
                   <Avatar
                     name={r.name}
                     src={r.avatar}
-                    className="size-8 shrink-0 rounded-[10px] text-xs"
+                    className="size-[30px] shrink-0 rounded-[10px] text-[11px]"
                   />
-                  <span className="min-w-0 truncate">
-                    {r.name}
-                    {r.id === meId && (
-                      <span className="text-sourdine font-semibold"> ({t.you})</span>
-                    )}
+                  <span className="min-w-0 truncate">{r.name}</span>
+                  <span className="text-sourdine font-mono text-sm font-bold whitespace-nowrap tabular-nums">
+                    {number.format(r.wpm)} {t.wpm}
                   </span>
-                </span>
-                <span className="text-sourdine font-mono text-sm font-bold tabular-nums">
-                  {number.format(r.wpm)} {t.wpm}
                 </span>
                 <span
                   aria-hidden="true"
-                  className={`bloc ${first ? "premier" : ""}`}
+                  className={`bloc ${i === 0 ? "premier" : ""}`}
                   style={{ "--h": step.height, animationDelay: `${step.delay}s` } as CSSProperties}
                 >
                   {ordinal(r.rank, locale)}
@@ -219,102 +218,100 @@ export function Results({ racers, meId, records, locale, actions, t }: Props) {
             );
           })}
         </ol>
-
-        {actions && <div className="relative w-full pt-2">{actions}</div>}
       </section>
 
-      <section
-        aria-labelledby="titre-classement"
-        className="carte motion-safe:animate-monte flex min-w-0 flex-col gap-3 p-4 [animation-delay:120ms] sm:p-6"
-      >
-        <h2 id="titre-classement" className="font-display px-1 text-[22px] font-extrabold">
-          {t.standings}
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="classement">
-            <thead>
-              <tr>
-                <th scope="col">{t.rank}</th>
-                <th scope="col">{t.player}</th>
-                <th scope="col" className="text-right">
-                  {t.wpm}
-                </th>
-                <th scope="col" className="text-right">
-                  {t.rawWpm}
-                </th>
-                <th scope="col" className="text-right">
-                  {t.accuracy}
-                </th>
-                <th scope="col" className="text-right">
-                  {t.errors}
-                </th>
-                <th scope="col" className="text-right">
-                  {t.time}
-                </th>
-                <th scope="col">{t.status}</th>
-                <th scope="col">{t.bonuses}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {racers.map((r) => (
-                <tr key={r.id} className={r.id === meId ? "moi" : ""}>
-                  <td className="font-display text-xl font-extrabold">{r.rank}</td>
-                  <th scope="row">
-                    <span className="flex items-center gap-2.5">
-                      <Avatar
-                        name={r.name}
-                        src={r.avatar}
-                        className="size-8 shrink-0 rounded-[10px] text-xs"
-                      />
-                      <span className="font-bold">{r.name}</span>
-                      {r.kind === "BOT" && <span className="badge">{t.bot}</span>}
-                      {r.id === meId && <span className="badge">{t.you}</span>}
-                      {records.includes(r.id) && (
-                        <span className="badge badge-hote">{t.recordBadge}</span>
-                      )}
-                    </span>
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <section
+          aria-labelledby="titre-classement"
+          className="carte motion-safe:animate-monte flex min-w-0 flex-col p-5 [animation-delay:120ms] sm:p-6"
+        >
+          <h2 id="titre-classement" className="font-display mb-3 text-2xl font-extrabold">
+            {t.standings}
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="classement">
+              <thead>
+                <tr>
+                  <th scope="col">{t.rank}</th>
+                  <th scope="col">{t.player}</th>
+                  <th scope="col" className="text-right">
+                    {t.wpm}
                   </th>
-                  <td className={`${cell} font-bold`}>{number.format(r.wpm)}</td>
-                  <td className={cell}>{number.format(r.rawWpm)}</td>
-                  <td className={cell}>{number.format(r.accuracy)} %</td>
-                  <td className={cell}>{number.format(r.errors)}</td>
-                  <td className={cell}>{seconds(r.timeMs)}</td>
-                  <td>
-                    <StatusLabel status={r.status} label={t.statuses[r.status]} />
-                  </td>
-                  <td className="text-sm">
-                    {r.bonuses.length > 0 ? r.bonuses.map((b) => t.bonusNames[b]).join(", ") : "—"}
-                  </td>
+                  <th scope="col" className="text-right">
+                    {t.rawWpm}
+                  </th>
+                  <th scope="col" className="text-right">
+                    {t.accuracy}
+                  </th>
+                  <th scope="col" className="text-right">
+                    {t.errors}
+                  </th>
+                  <th scope="col" className="text-right">
+                    {t.time}
+                  </th>
+                  <th scope="col">{t.status}</th>
+                  <th scope="col">{t.bonuses}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody>
+                {racers.map((r) => (
+                  <tr key={r.id} className={r.id === meId ? "moi" : ""}>
+                    <td className="font-display text-xl font-extrabold">{r.rank}</td>
+                    <th scope="row">
+                      <span className="flex items-center gap-2">
+                        <span className="whitespace-nowrap">{r.name}</span>
+                        {r.kind === "BOT" && <span className="badge">{t.bot}</span>}
+                        {r.id === meId && <span className="badge">{t.you}</span>}
+                        {records.includes(r.id) && (
+                          <span className="badge badge-hote">{t.recordBadge}</span>
+                        )}
+                      </span>
+                    </th>
+                    <td className={`${cell} font-bold`}>{number.format(r.wpm)}</td>
+                    <td className={cell}>{number.format(r.rawWpm)}</td>
+                    <td className={`${cell} whitespace-nowrap`}>{number.format(r.accuracy)} %</td>
+                    <td className={cell}>{number.format(r.errors)}</td>
+                    <td className={`${cell} whitespace-nowrap`}>{seconds(r.timeMs)}</td>
+                    <td>
+                      <StatusLabel status={r.status} label={t.statuses[r.status]} />
+                    </td>
+                    <td className="text-sm">
+                      {r.bonuses.length > 0
+                        ? r.bonuses.map((b) => t.bonusNames[b]).join(", ")
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-      {/* RES-03 : les deux graphiques, côte à côte sur grand écran. */}
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[repeat(2,minmax(0,1fr))]">
-        {racers.some((r) => r.samples.length > 0) && (
-          <div className="carte motion-safe:animate-monte min-w-0 p-5 [animation-delay:200ms] sm:p-6">
-            <WpmChart
-              series={racers.map((r) => ({
-                id: r.id,
-                name: r.name,
-                lane: r.lane,
-                isMe: r.id === meId,
-                samples: r.samples,
-              }))}
-              locale={locale}
-              t={t.charts}
-            />
-          </div>
-        )}
-        {me && (
-          <div className="carte motion-safe:animate-monte min-w-0 p-5 [animation-delay:260ms] sm:p-6">
-            <KeyHeatmap missed={me.missed} locale={locale} t={t.charts} />
-          </div>
-        )}
+        <div className="flex min-w-0 flex-col gap-5">
+          {racers.some((r) => r.samples.length > 0) && (
+            <div className="carte motion-safe:animate-monte min-w-0 p-5 [animation-delay:200ms] sm:p-6">
+              <WpmChart
+                series={racers.map((r) => ({
+                  id: r.id,
+                  name: r.name,
+                  lane: r.lane,
+                  isMe: r.id === meId,
+                  samples: r.samples,
+                }))}
+                locale={locale}
+                t={t.charts}
+              />
+            </div>
+          )}
+          {me && (
+            <div className="carte motion-safe:animate-monte min-w-0 p-5 [animation-delay:260ms] sm:p-6">
+              <KeyHeatmap missed={me.missed} locale={locale} t={t.charts} />
+            </div>
+          )}
+        </div>
       </div>
+
+      {actions}
     </div>
   );
 }

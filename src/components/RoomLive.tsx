@@ -309,6 +309,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
             meId={meId}
             records={saved?.raceNo === view.raceNo ? saved.records : []}
             locale={locale}
+            code={code}
             t={{
               ...t.results,
               statuses: t.race.status,
@@ -318,7 +319,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
               charts: t.charts,
             }}
             actions={
-              <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
+              <div className="flex flex-wrap items-center justify-center gap-3.5">
                 {/* COURSE-11 : une action principale (relancer), les autres en retrait. */}
                 {isHost ? (
                   <button
@@ -327,6 +328,20 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
                     className="btn-go w-full px-8 text-xl sm:w-auto sm:text-2xl"
                   >
                     {t.results.again}
+                    <svg
+                      className="fleche"
+                      viewBox="0 0 24 24"
+                      width="26"
+                      height="26"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
                   </button>
                 ) : (
                   <p className="text-sourdine font-semibold">{t.results.waitHost}</p>
@@ -335,7 +350,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
                 {saved?.raceNo === view.raceNo && myRacer && !isGuestId(meId) && (
                   <Link
                     href={`/course/${saved.raceId}`}
-                    className="btn btn-contour w-full sm:w-auto"
+                    className="btn btn-contour h-[70px] w-full px-7 sm:w-auto"
                   >
                     {t.history.view}
                   </Link>
@@ -347,7 +362,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
                     yes={t.room.confirmCloseYes}
                     no={t.room.confirmCloseNo}
                     onConfirm={() => send("room:close")}
-                    triggerClassName="btn btn-contour w-full sm:w-auto"
+                    triggerClassName="btn btn-contour h-[70px] w-full px-7 sm:w-auto"
                   />
                 )}
               </div>
