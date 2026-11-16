@@ -5,7 +5,8 @@ import { loginWithPassword } from "./helpers";
 // historique et des statistiques.
 test("le compte de démonstration a un historique et un profil", async ({ page }) => {
   await loginWithPassword(page, "demo_lea", "fastclap-demo");
-  await page.getByRole("link", { name: "Historique", exact: true }).click();
+  // Le lien existe aussi dans le pied de page : on prend celui de l'en-tête.
+  await page.getByRole("banner").getByRole("link", { name: "Historique", exact: true }).click();
   await expect(page.locator("tbody tr")).toHaveCount(10);
   await expect(page.getByText("Page 1 sur 2")).toBeVisible();
 
@@ -18,7 +19,7 @@ test("le compte de démonstration a un historique et un profil", async ({ page }
 // I18N-01, I18N-02 : l'interface passe en anglais, et le choix est gardé.
 test("le sélecteur de langue passe le site en anglais", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Switch to English" }).click();
+  await page.getByRole("banner").getByRole("button", { name: "Switch to English" }).click();
   await expect(page.getByRole("link", { name: /Quick race/ }).first()).toBeVisible();
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
