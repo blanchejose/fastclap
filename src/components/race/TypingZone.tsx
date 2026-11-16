@@ -25,6 +25,25 @@ export function TypingZone({ text, typing, active, mode, fogged, onKey, t }: Pro
     if (active) inputRef.current?.focus();
   }, [active]);
 
+  // « Appuie sur une touche pour taper » : si le focus est ailleurs (un clic
+  // à côté, Tab vers « Abandonner »…), la première lettre tapée le ramène
+  // dans la zone et y entre. Les raccourcis et les autres champs sont laissés
+  // tranquilles.
+  useEffect(() => {
+    if (!active) return;
+    function onDocumentKey(event: KeyboardEvent) {
+      const input = inputRef.current;
+      if (!input || event.target === input) return;
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.key.length !== 1 && event.key !== "Backspace") return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+      input.focus();
+    }
+    document.addEventListener("keydown", onDocumentKey, true);
+    return () => document.removeEventListener("keydown", onDocumentKey, true);
+  }, [active]);
+
   const fieldRef = useRef<FieldState>(EMPTY_FIELD);
 
   function send(field: HTMLInputElement, result: { keys: string[]; state: FieldState }) {
@@ -33,11 +52,20 @@ export function TypingZone({ text, typing, active, mode, fogged, onKey, t }: Pro
     for (const key of result.keys) onKey(key);
   }
 
-  // Effacer passe par le clavier, pour ne jamais vider le champ par erreur.
   function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key !== "Backspace" || event.nativeEvent.isComposing) return;
-    event.preventDefault();
-    send(event.currentTarget, eraseField(fieldRef.current));
+    if (event.nativeEvent.isComposing) return;
+    // Effacer passe par le clavier, pour ne jamais vider le champ par erreur.
+    if (event.key === "Backspace") {
+      event.preventDefault();
+      send(event.currentTarget, eraseField(fieldRef.current));
+    }
+    // En fin de ligne, l'espace attendu ne se voit pas : Entrée compte
+    // comme cet espace, pour ne jamais rester bloqué au bout d'une ligne.
+    if (event.key === "Enter" && text[typing.typed.length] === " ") {
+      event.preventDefault();
+      const { pending } = fieldRef.current;
+      send(event.currentTarget, { keys: pending ? [pending, " "] : [" "], state: EMPTY_FIELD });
+    }
   }
 
   // Les caractères passent par l'événement « input » plutôt que par les

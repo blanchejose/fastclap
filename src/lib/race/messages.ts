@@ -19,6 +19,8 @@ export const clientMessages = {
   "room:config": configPatchSchema,
   "invite:list": z.object({}),
   "invite:create": z.object({}),
+  // Jeton d'un lien : 256 bits en base64url.
+  "invite:delete": z.object({ token: z.string().regex(/^[\w-]{20,100}$/) }),
   "bot:add": z.object({ level: z.enum(BOT_LEVELS) }),
   "bot:remove": z.object({ id: z.string().min(1).max(64) }),
   "race:start": z.object({}),

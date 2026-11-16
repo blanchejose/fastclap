@@ -232,6 +232,11 @@ export const fr = {
     copied: "Copié",
     linkLabel: "Lien {n}",
     empty: "Aucun lien pour l'instant.",
+    delete: "Supprimer",
+    deleteLabel: "Supprimer le {label}",
+    confirmDelete: "Supprimer ce lien ? {name} ne pourra plus revenir avec.",
+    confirmDeleteYes: "Oui, supprimer",
+    confirmDeleteNo: "Garder",
     status: {
       UNUSED: "Pas encore utilisé",
       USED: "Utilisé par {name}",
@@ -699,6 +704,11 @@ const en: Dictionary = {
     copied: "Copied",
     linkLabel: "Link {n}",
     empty: "No links yet.",
+    delete: "Delete",
+    deleteLabel: "Delete {label}",
+    confirmDelete: "Delete this link? {name} won't be able to come back with it.",
+    confirmDeleteYes: "Yes, delete",
+    confirmDeleteNo: "Keep",
     status: {
       UNUSED: "Not used yet",
       USED: "Used by {name}",

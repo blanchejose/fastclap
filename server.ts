@@ -8,7 +8,13 @@ import { createServer } from "node:http";
 import next from "next";
 import { Server, type Socket } from "socket.io";
 import { clientIp, IP_HEADER } from "./src/lib/client-ip";
-import { createInvite, hasInviteAccess, listInvites, revokeInvites } from "./src/lib/invites";
+import {
+  createInvite,
+  deleteInvite,
+  hasInviteAccess,
+  listInvites,
+  revokeInvites,
+} from "./src/lib/invites";
 import { claimPresence, releasePresence, releaseRoom, resetPresences } from "./src/lib/presence";
 import { prisma } from "./src/lib/prisma";
 import { codeAttempts } from "./src/lib/rate-limit";
@@ -245,6 +251,13 @@ app.prepare().then(async () => {
       if (!room || room.hostId !== uid || room.phase === "CLOSED")
         return ack({ ok: false, reason: "forbidden" });
       await createInvite(room.code);
+      ack({ ok: true, invites: await listInvites(room.code) });
+    });
+
+    on("invite:delete", async ({ token }, ack) => {
+      const room = roomOf();
+      if (!room || room.hostId !== uid) return ack({ ok: false, reason: "forbidden" });
+      await deleteInvite(room.code, token);
       ack({ ok: true, invites: await listInvites(room.code) });
     });
 

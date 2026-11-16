@@ -10,7 +10,7 @@ import { MAX_KEYS_PER_BATCH, type JoinResult, type RoomView } from "@/lib/race/e
 import { accuracy, netWpm } from "@/lib/race/stats";
 import { applyKey, correctChars, newTyping, progress, type Typing } from "@/lib/race/typing";
 import { BonusFeed } from "./race/BonusFeed";
-import { InvitePanel, type InviteReply } from "./race/InvitePanel";
+import { InvitePanel, type InviteEvent, type InviteReply } from "./race/InvitePanel";
 import { ConfirmButton } from "./race/ConfirmButton";
 import { Countdown } from "./race/Countdown";
 import { Results } from "./race/Results";
@@ -137,8 +137,8 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   const send = (event: string, payload: object = {}) => socketRef.current?.emit(event, payload);
   // Stable : le panneau des liens redemande la liste seulement quand `version` change.
   const requestInvites = useCallback(
-    (event: "invite:list" | "invite:create", reply: (r: InviteReply) => void) =>
-      socketRef.current?.emit(event, {}, reply),
+    (event: InviteEvent, reply: (r: InviteReply) => void, payload: object = {}) =>
+      socketRef.current?.emit(event, payload, reply),
     [],
   );
 
