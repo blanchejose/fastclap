@@ -10,7 +10,6 @@ import { MAX_KEYS_PER_BATCH, type JoinResult, type RoomView } from "@/lib/race/e
 import { accuracy, netWpm } from "@/lib/race/stats";
 import { applyKey, correctChars, newTyping, progress, type Typing } from "@/lib/race/typing";
 import { BonusFeed } from "./race/BonusFeed";
-import { ConfigPanel } from "./race/ConfigPanel";
 import { InvitePanel, type InviteReply } from "./race/InvitePanel";
 import { ConfirmButton } from "./race/ConfirmButton";
 import { Countdown } from "./race/Countdown";
@@ -201,17 +200,16 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   return (
     <div className="flex flex-col gap-6">
       {view.phase === "WAITING" && (
-        <>
-          <WaitingRoom view={view} meId={meId} send={send} t={t.room} />
-          <ConfigPanel
-            config={view.config}
-            isHost={isHost}
-            update={(patch, reply) => socketRef.current?.emit("room:config", patch, reply)}
-            t={t.config}
-            levels={t.levels}
-          />
-          {isHost && <InvitePanel request={requestInvites} version={inviteVersion} t={t.invite} />}
-        </>
+        <WaitingRoom
+          view={view}
+          meId={meId}
+          send={send}
+          updateConfig={(patch, reply) => socketRef.current?.emit("room:config", patch, reply)}
+          invites={
+            isHost && <InvitePanel request={requestInvites} version={inviteVersion} t={t.invite} />
+          }
+          t={t}
+        />
       )}
 
       {inRace && (
@@ -320,7 +318,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
         <button
           type="button"
           onClick={leave}
-          className="self-start font-bold underline underline-offset-4"
+          className="text-sourdine hover:text-encre self-start font-bold underline underline-offset-4 transition"
         >
           {t.room.leave}
         </button>

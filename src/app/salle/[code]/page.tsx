@@ -79,10 +79,28 @@ export default async function RoomPage({ params, searchParams }: PageProps<"/sal
       <SiteHeader />
       <main
         id="contenu"
-        className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 pt-10 pb-16"
+        className="mx-auto flex w-full max-w-[78rem] flex-1 flex-col gap-6 overflow-x-clip px-4 pt-10 pb-16 sm:px-6"
       >
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <h1 className="font-display text-4xl leading-[0.95] font-extrabold tracking-tight sm:text-5xl">
+        <div className="motion-safe:animate-monte flex flex-col items-start gap-3">
+          <Link
+            href="/salles"
+            className="text-sourdine hover:text-encre group inline-flex items-center gap-2 font-bold transition"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="size-5 transition group-hover:-translate-x-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M19 12H5M11 6l-6 6 6 6" />
+            </svg>
+            {t.room.back}
+          </Link>
+          <h1 className="font-display text-[clamp(34px,4.6vw,56px)] leading-[0.95] font-extrabold tracking-tight">
             {fmt(t.roomList.roomOf, { name: room.organizer.name ?? room.organizer.username })}
           </h1>
         </div>
@@ -107,14 +125,10 @@ export default async function RoomPage({ params, searchParams }: PageProps<"/sal
           />
         ) : room.visibility === "PRIVATE" ? (
           // SALLE-04 : sans lien d'invitation, pas de formulaire d'invité.
-          <p className="bg-surface rounded-3xl p-6 text-lg font-semibold">{t.invite.privateRoom}</p>
+          <p className="carte p-6 text-lg font-semibold">{t.invite.privateRoom}</p>
         ) : (
           <GuestForm code={room.code} error={guestError} t={t.guest} login={t.common.login} />
         )}
-
-        <Link href="/salles" className="self-start font-bold underline underline-offset-4">
-          {t.room.back}
-        </Link>
       </main>
     </>
   );

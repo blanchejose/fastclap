@@ -48,8 +48,9 @@ test("une salle privée ne s'ouvre qu'avec un lien d'invitation", async ({ page,
 test("l'explorateur montre la salle et la partie rapide y mène", async ({ page, browser }) => {
   await loginWithPassword(page, uniqueName("explo"));
   const code = await createRoom(page);
-  await page.getByLabel(/Capacité/).fill("2");
-  await page.getByLabel(/Capacité/).press("Tab");
+  await page.getByRole("tab", { name: "Salle" }).click();
+  await page.getByRole("spinbutton", { name: "Capacité" }).fill("2");
+  await page.getByRole("spinbutton", { name: "Capacité" }).press("Tab");
 
   const visitor = await newVisitor(browser, "203.0.113.40");
   await visitor.goto("/salles");
