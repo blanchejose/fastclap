@@ -3,7 +3,6 @@ import { isGuestId } from "@/lib/guest-id";
 import type { BonusType } from "@/lib/race/bonus";
 import type { RacerView } from "@/lib/race/engine";
 import { Runner } from "../Logo";
-import { Avatar } from "./Avatar";
 
 type Props = {
   racers: RacerView[];
@@ -18,90 +17,73 @@ type Props = {
 };
 
 // La piste, élément signature de FastClap (COURSE-05) : un couloir par
-// participant, le coureur avance vers la ligne d'arrivée à damier. Le serveur
-// envoie les positions 10 fois par seconde ; la transition CSS de 150 ms
-// interpole entre deux positions pour un mouvement fluide. Chaque coureur
-// garde son couloir : seul le rang affiché change quand il double.
+// participant, le coureur avance vers la ligne d'arrivée à damier en laissant
+// une trace. Le serveur envoie les positions 10 fois par seconde ; la
+// transition CSS de 150 ms interpole entre deux positions pour un mouvement
+// fluide. Chaque coureur garde son couloir : seul le rang affiché change.
 export function Track({ racers, meId, local, t, effects, bonusNames }: Props) {
   return (
-    <section
-      aria-labelledby="titre-piste"
-      className="bg-surface flex flex-col gap-3 rounded-3xl p-5"
-    >
+    <section aria-labelledby="titre-piste" className="couloirs motion-safe:animate-monte">
       <h2 id="titre-piste" className="sr-only">
         {t.track}
       </h2>
-      <ol className="flex flex-col gap-1">
+      <ol>
         {[...racers]
           .sort((a, b) => a.lane - b.lane)
           .map((racer) => {
             const isMe = racer.id === meId;
             const progress = isMe && local ? local.progress : racer.progress;
             const wpm = isMe && local ? local.wpm : racer.wpm;
+            const effect = effects[racer.id];
+            const color = isMe
+              ? "text-orange"
+              : racer.kind === "BOT"
+                ? "text-sourdine"
+                : "text-bleu";
+            const moving =
+              "transition-transform duration-150 ease-linear motion-reduce:transition-none";
             return (
-              <li
-                key={racer.id}
-                className={`grid grid-cols-[1.75rem_minmax(0,1fr)_4.5rem] items-center gap-3 rounded-2xl px-2 py-1.5 ${
-                  isMe ? "bg-surface-2 ring-bleu ring-2" : ""
-                }`}
-              >
-                <span className="font-display text-center text-xl font-extrabold">
-                  {racer.rank}
-                </span>
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <span className="flex min-w-0 items-center gap-2 text-sm">
-                    <Avatar name={racer.name} src={racer.avatar} className="size-6" />
-                    <span className={`truncate ${isMe ? "font-extrabold" : "font-semibold"}`}>
-                      {racer.name}
+              <li key={racer.id} className={`couloir ${isMe ? "moi" : ""}`}>
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="flex min-w-0 items-center gap-2 font-bold">
+                    <span className="text-sourdine font-mono text-[13px]">
+                      {String(racer.rank).padStart(2, "0")}
                     </span>
-                    {racer.kind === "BOT" && (
-                      <span className="bg-surface-2 text-sourdine rounded px-1.5 font-mono text-[11px] font-bold">
-                        {t.bot}
-                      </span>
-                    )}
-                    {isGuestId(racer.id) && <span className="text-sourdine">({t.guest})</span>}
-                    {isMe && <span className="text-sourdine">({t.you})</span>}
-                    {effects[racer.id] && (
+                    <span className="truncate">{racer.name}</span>
+                  </span>
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    {racer.kind === "BOT" && <span className="badge">{t.bot}</span>}
+                    {isGuestId(racer.id) && <span className="badge">{t.guest}</span>}
+                    {isMe && <span className="badge">{t.you}</span>}
+                    {effect && (
                       <span
-                        className={`rounded-full px-2 font-mono text-[11px] font-bold ${
-                          effects[racer.id] === "SHORTEN"
-                            ? "bg-jaune text-nuit"
-                            : "bg-encre text-piste"
-                        }`}
+                        className={`badge ${effect === "SHORTEN" ? "badge-hote" : "bg-encre! text-piste!"}`}
                       >
-                        {bonusNames[effects[racer.id]]}
+                        {bonusNames[effect]}
                       </span>
                     )}
                     {racer.status !== "RACING" && (
-                      <span className="text-sourdine text-xs">· {t.status[racer.status]}</span>
+                      <span className="text-sourdine text-xs font-semibold">
+                        {t.status[racer.status]}
+                      </span>
                     )}
                   </span>
-                  <div className="border-trait relative h-8 rounded-full border-b-[3px] border-dashed">
-                    {/* Ligne d'arrivée à damier. */}
-                    <span
-                      aria-hidden="true"
-                      className="absolute inset-y-0 right-0 w-2 bg-[repeating-conic-gradient(var(--encre)_0_25%,transparent_0_50%)] bg-[length:8px_8px] opacity-60"
-                    />
-                    <div
-                      className="absolute bottom-0 left-0 w-[calc(100%-2rem)] transition-transform duration-150 ease-linear will-change-transform motion-reduce:transition-none"
-                      style={{ transform: `translateX(${progress * 100}%)` }}
-                    >
-                      <span
-                        className={
-                          isMe
-                            ? "text-orange"
-                            : racer.kind === "BOT"
-                              ? "text-sourdine"
-                              : "text-bleu"
-                        }
-                      >
-                        <Runner className="size-8" />
-                      </span>
-                    </div>
-                  </div>
+                </span>
+                <div className={`voie ${color}`} aria-hidden="true">
+                  <span
+                    className={`trace ${moving}`}
+                    style={{ transform: `scaleX(${progress})` }}
+                  />
+                  <span className="arrivee" />
+                  <span
+                    className={`coureur will-change-transform ${moving}`}
+                    style={{ transform: `translateX(${progress * 100}%)` }}
+                  >
+                    <Runner className="size-10" />
+                  </span>
                 </div>
-                <span className="text-right font-mono text-sm font-semibold">
-                  {wpm} {t.wpm}
+                <span className="text-right font-mono font-bold tabular-nums">
+                  {wpm} <span className="text-sourdine text-[11px]">{t.wpm}</span>
                 </span>
               </li>
             );

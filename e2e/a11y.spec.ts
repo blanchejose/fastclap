@@ -61,6 +61,8 @@ test("la salle, la course et les résultats respectent WCAG AA", async ({ page }
     timeout: 10_000,
   });
   await page.keyboard.type("x"); // une faute, pour vérifier son contraste
+  // Le voile du décompte (« Go ! ») reste un instant : axe mesure la page sans lui.
+  await expect(page.locator(".decompte")).toHaveCount(0);
   await expectAccessible(page, "course");
   await typeRaceText(page);
   await expect(page.getByRole("heading", { name: "Résultats" })).toBeVisible({ timeout: 60_000 });

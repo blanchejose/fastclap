@@ -315,6 +315,7 @@ export const fr = {
     accuracy: "Précision",
     errors: "Fautes",
     timeLeft: "Temps restant",
+    time: "Temps",
     modeStrict: "Correction obligatoire : tape la bonne lettre pour avancer.",
     modeFree: "Mode libre : tu avances même sur une faute, qui est comptée.",
     abandon: "Abandonner",
@@ -346,6 +347,7 @@ export const fr = {
       FOG: "Brouillard ! Tes prochains mots sont flous quelques secondes.",
     },
     feedLabel: "Annonces des bonus",
+    empty: "Les bonus de remontée seront annoncés ici.",
   },
   charts: {
     wpmTitle: "Évolution du MPM",
@@ -776,6 +778,7 @@ const en: Dictionary = {
     accuracy: "Accuracy",
     errors: "Mistakes",
     timeLeft: "Time left",
+    time: "Time",
     modeStrict: "Mandatory correction: type the right letter to move on.",
     modeFree: "Free mode: you move on even after a mistake, which is counted.",
     abandon: "Give up",
@@ -807,6 +810,7 @@ const en: Dictionary = {
       FOG: "Fog! Your next words are blurry for a few seconds.",
     },
     feedLabel: "Bonus announcements",
+    empty: "Catch-up bonuses will be announced here.",
   },
   charts: {
     wpmTitle: "WPM over time",

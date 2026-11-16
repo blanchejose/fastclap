@@ -455,6 +455,14 @@
     transform: translateY(-3px);
     box-shadow: 0 14px 26px -10px rgb(36 72 255 / 0.7);
   }
+  /* Le numéro passe en blanc pur sur le bleu : 5:1 même sur le bleu du thème sombre (A11Y-01). */
+  .touche-num {
+    color: var(--sourdine);
+    transition: color 0.2s ease;
+  }
+  .grosse-touche:hover .touche-num {
+    color: #fff;
+  }
   .grosse-touche:active {
     transform: translateY(2px);
     box-shadow: none;
@@ -747,6 +755,195 @@
       0 0 0 1px rgb(255 255 255 / 0.08),
       0 20px 40px -16px rgb(13 18 64 / 0.6);
   }
+  /* ——— Course ——— */
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--trait);
+    border-radius: 1.25rem;
+    background: var(--surface);
+  }
+  .stat > dt {
+    color: var(--sourdine);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .stat > dd {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Les couloirs : nom, piste en pointillés avec sa trace, arrivée à damier. */
+  .couloirs {
+    overflow: hidden;
+    border: 1px solid var(--trait);
+    border-radius: 1.6rem;
+    background: var(--surface);
+  }
+  .couloir {
+    display: grid;
+    grid-template-columns: minmax(0, 9.5rem) minmax(0, 1fr) 5rem;
+    align-items: center;
+    gap: 0.875rem;
+    min-height: 4.25rem;
+    padding: 0.5rem 1.25rem;
+    border-bottom: 1px solid var(--trait);
+  }
+  .couloir:last-child {
+    border-bottom: 0;
+  }
+  .couloir.moi {
+    background: color-mix(in srgb, var(--orange) 12%, transparent);
+  }
+  @media (max-width: 40rem) {
+    .couloir {
+      grid-template-columns: minmax(0, 6rem) minmax(0, 1fr) 3.75rem;
+      gap: 0.5rem;
+      padding: 0.5rem 0.875rem;
+    }
+  }
+  .voie {
+    position: relative;
+    height: 3rem;
+  }
+  .voie::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 1.875rem;
+    left: 0;
+    border-top: 2px dashed var(--trait);
+  }
+  .voie > .arrivee {
+    position: absolute;
+    top: 0.5rem;
+    right: 0;
+    bottom: 0.5rem;
+    width: 1.125rem;
+    border-radius: 0.25rem;
+    background: repeating-conic-gradient(var(--encre) 0 25%, var(--surface) 0 50%) 0 0 / 8px 8px;
+  }
+  .voie > .trace {
+    position: absolute;
+    top: calc(50% - 2px);
+    left: 0;
+    width: calc(100% - 1.875rem);
+    height: 4px;
+    border-radius: 4px;
+    background: currentColor;
+    transform-origin: left;
+  }
+  .voie > .coureur {
+    position: absolute;
+    top: calc(50% - 1.25rem);
+    left: -1.25rem;
+    width: calc(100% - 1.875rem);
+  }
+
+  /* Le texte à taper. */
+  .texte-course {
+    color: var(--sourdine);
+    font-family: var(--font-mono);
+    font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+    font-weight: 500;
+    line-height: 1.75;
+    letter-spacing: 0.01em;
+  }
+  .texte-course .ok {
+    color: var(--juste);
+  }
+  .texte-course .ko {
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--faute) 14%, transparent);
+    color: var(--faute);
+    text-decoration: underline wavy;
+    text-underline-offset: 6px;
+  }
+  .texte-course .cur {
+    position: relative;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--bleu) 20%, transparent);
+    color: var(--encre);
+  }
+  .texte-course .cur::before {
+    content: "";
+    position: absolute;
+    top: 8%;
+    bottom: 8%;
+    left: -1px;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--bleu);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .texte-course .cur::before {
+      animation: curseur 1s steps(1) infinite;
+    }
+  }
+  .texte-course .brouillard {
+    filter: blur(4px);
+    opacity: 0.6;
+    user-select: none;
+  }
+
+  /* Annonce d'un bonus, qui glisse depuis la droite. */
+  .annonce {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--trait);
+    border-radius: 1rem;
+    background: var(--surface);
+    box-shadow: 0 12px 28px -16px rgb(13 18 64 / 0.35);
+    font-weight: 600;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .annonce {
+      animation: glisse 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+  }
+
+  /* Le décompte plein écran : voile sombre, chiffres qui tombent. */
+  .decompte {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--color-nuit) 82%, transparent);
+    backdrop-filter: blur(6px);
+    pointer-events: none;
+  }
+  .decompte > .chiffre {
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: clamp(8rem, 28vw, 15rem);
+    font-weight: 800;
+    line-height: 1;
+  }
+  .decompte > .chiffre.go {
+    color: var(--jaune);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .decompte > .chiffre {
+      animation: chiffre 1s ease both;
+    }
+    .decompte.fin {
+      animation: voile 0.8s ease forwards;
+    }
+  }
+
   /* Collée en bas seulement sur grand écran : sur un téléphone elle
      cacherait la moitié de la page. */
   @media (min-width: 40rem) {
@@ -885,4 +1082,36 @@ body {
 }
 .tape-l2 {
   animation: tape-l2 9s steps(var(--n), end) infinite;
+}
+
+@keyframes chiffre {
+  0% {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+  15% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes voile {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes glisse {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
 }

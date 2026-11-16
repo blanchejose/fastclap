@@ -77,7 +77,7 @@ export async function SiteFooter() {
           >
             {touches.map((touche, i) => (
               <Link key={touche.href} href={touche.href} className="grosse-touche">
-                <span className="text-sourdine font-mono text-[13px] font-bold" aria-hidden="true">
+                <span className="touche-num font-mono text-[13px] font-bold" aria-hidden="true">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span className="font-display flex items-end justify-between gap-2 text-xl leading-tight font-extrabold">
