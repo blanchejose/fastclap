@@ -20,6 +20,13 @@ export const MAX_KEYS_PER_BATCH = 30; // COURSE-06 : au-delà, c'est un saut de 
 const MAX_KEYS_PER_SECOND = 25; // COURSE-06 : ≈ 300 MPM, au-delà de tout humain
 const SAMPLE_EVERY_MS = 1_000; // RES-05 : un point de la courbe de MPM par seconde
 const BONUS_ANNOUNCE_MS = 4_000; // BONUS-03 : durée d'une annonce
+// Sans limite choisie par l'hôte, une course s'arrête quand même au bout de
+// 5 minutes : personne n'attend indéfiniment un joueur parti.
+export const MAX_RACE_MS = 5 * 60_000;
+// Un joueur qui ne tape plus rien est prévenu après 30 s, puis retiré de la
+// course (abandon) après 60 s.
+export const IDLE_WARNING_MS = 30_000;
+export const IDLE_OUT_MS = 60_000;
 
 export type { Config } from "./config";
 
@@ -50,6 +57,8 @@ export type Racer = {
   recentKeys: number[]; // horodatages des touches reçues (limite de vitesse)
   bonuses: BonusType[]; // bonus reçus (BONUS-01 : 3 au plus), affichés aux résultats
   fogUntil: number | null; // brouillard sur les prochains mots jusqu'à cet instant
+  lastActiveAt: number; // dernière touche reçue (ou le départ) : détection d'inactivité
+  idleOut: boolean; // abandon automatique pour inactivité
 };
 
 export type Room = {
@@ -249,7 +258,7 @@ export function startRace(room: Room, by: string, text: string, seed: number, no
   room.phase = "COUNTDOWN";
   room.text = text;
   room.startAt = now + COUNTDOWN_MS;
-  room.deadline = room.config.timeLimitMs === null ? null : room.startAt + room.config.timeLimitMs;
+  room.deadline = room.startAt + (room.config.timeLimitMs ?? MAX_RACE_MS);
   room.endedAt = null;
   room.lastSampleAt = room.startAt;
   room.racers = new Map();
@@ -273,6 +282,8 @@ export function startRace(room: Room, by: string, text: string, seed: number, no
       recentKeys: [],
       bonuses: [],
       fogUntil: null,
+      lastActiveAt: room.startAt,
+      idleOut: false,
     });
   }
   return true;
@@ -332,6 +343,15 @@ export function tick(
       }
     }
 
+    // Inactivité : un humain qui ne tape plus rien depuis 60 s abandonne.
+    for (const racer of room.racers.values()) {
+      if (racer.bot || racer.status !== "RACING" || now - racer.lastActiveAt < IDLE_OUT_MS)
+        continue;
+      racer.status = "ABANDONED";
+      racer.finishedAt = now;
+      racer.idleOut = true;
+    }
+
     if (room.deadline !== null && now >= room.deadline) {
       for (const racer of room.racers.values()) {
         if (racer.status === "RACING") {
@@ -371,6 +391,7 @@ export function applyKeys(room: Room, id: string, keys: string[], now: number): 
   if (racer.typing.keystrokes + keys.length > MAX_KEYS_PER_SECOND * elapsedSec + 10)
     return "rejected";
 
+  racer.lastActiveAt = now;
   for (const key of keys) {
     racer.recentKeys.push(now);
     applyKey(racer.typing, racer.text, key, room.config.errorMode);
@@ -464,6 +485,7 @@ export type RacerView = RacerStats & {
   lane: number; // couloir fixe sur la piste, dans l'ordre d'arrivée dans la salle
   bonuses: BonusType[]; // RES-02 : bonus reçus
   fogUntil: number | null;
+  idleOut: boolean; // abandon automatique pour inactivité
   // RES-03 : seulement sur l'écran des résultats (vides pendant la course).
   samples: { t: number; wpm: number }[];
   missed: Record<string, number>;
@@ -519,6 +541,7 @@ export function snapshot(room: Room, now: number): RoomView {
       rank: i + 1,
       bonuses: r.bonuses,
       fogUntil: r.fogUntil,
+      idleOut: r.idleOut,
       samples: room.phase === "RESULTS" ? seriesOf(room, r, now) : [],
       missed: room.phase === "RESULTS" ? r.typing.missed : {},
       ...statsOf(room, r, now),

@@ -6,7 +6,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { fmt, type Dictionary, type Locale } from "@/i18n/dictionaries";
 import { isGuestId } from "@/lib/guest-id";
-import { MAX_KEYS_PER_BATCH, type JoinResult, type RoomView } from "@/lib/race/engine";
+import {
+  IDLE_OUT_MS,
+  IDLE_WARNING_MS,
+  MAX_KEYS_PER_BATCH,
+  type JoinResult,
+  type RoomView,
+} from "@/lib/race/engine";
 import { accuracy, netWpm } from "@/lib/race/stats";
 import { applyKey, correctChars, newTyping, progress, type Typing } from "@/lib/race/typing";
 import { BonusFeed } from "./race/BonusFeed";
@@ -61,6 +67,9 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   const socketRef = useRef<Socket | null>(null);
   const typingRef = useRef<Typing>(newTyping());
   const pendingRef = useRef<string[]>([]);
+  // Dernière touche tapée (heure du serveur), pour prévenir avant l'abandon
+  // automatique pour inactivité ; null = rien tapé depuis le départ.
+  const [lastKeyAt, setLastKeyAt] = useState<{ raceNo: number; at: number } | null>(null);
   const [view, setView] = useState<RoomView | null>(null);
   const [inviteVersion, setInviteVersion] = useState(0);
   const [saved, setSaved] = useState<Saved | null>(null);
@@ -180,6 +189,7 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
     if (outcome === "ignored") return;
     pendingRef.current.push(key);
     setTyping({ ...typingRef.current });
+    setLastKeyAt({ raceNo: view.raceNo, at: Date.now() + clockOffsetRef.current });
   }
 
   function leave() {
@@ -188,6 +198,11 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   }
 
   const elapsed = view.startAt !== null && now > 0 ? Math.max(0, now - view.startAt) : 0;
+  const lastActive = Math.max(
+    view.startAt ?? 0,
+    lastKeyAt?.raceNo === view.raceNo ? lastKeyAt.at : 0,
+  );
+  const idleMs = view.phase === "RUNNING" && now > 0 ? now - lastActive : 0;
   const local =
     myRacer && text
       ? {
@@ -252,7 +267,19 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
                   <p className="carte p-4 md:hidden">{t.race.mobile}</p>
                 </>
               )}
+              {racing && idleMs >= IDLE_WARNING_MS && (
+                <p
+                  role="alert"
+                  className="carte border-orange! flex items-center gap-3 border-2 p-4 font-bold"
+                >
+                  <span aria-hidden="true" className="live bg-orange motion-safe:animate-pouls" />
+                  {fmt(t.race.idleWarning, {
+                    n: Math.max(1, Math.ceil((IDLE_OUT_MS - idleMs) / 1000)),
+                  })}
+                </p>
+              )}
               <RaceStatus
+                idleOut={myRacer?.idleOut ?? false}
                 status={myRacer?.status ?? null}
                 spectating={!myRacer}
                 canAbandon={racing}
@@ -396,12 +423,14 @@ function RaceStats({
 }
 
 function RaceStatus({
+  idleOut,
   status,
   spectating,
   canAbandon,
   onAbandon,
   t,
 }: {
+  idleOut: boolean;
   status: RoomView["racers"][number]["status"] | null;
   spectating: boolean;
   canAbandon: boolean;
@@ -416,7 +445,8 @@ function RaceStatus({
         {t.finished}
       </p>
     );
-  if (status === "ABANDONED") return <p className="carte text-sourdine p-4">{t.abandoned}</p>;
+  if (status === "ABANDONED")
+    return <p className="carte text-sourdine p-4">{idleOut ? t.idleOut : t.abandoned}</p>;
   if (!canAbandon) return null;
   // COURSE-07 : l'abandon demande une confirmation.
   return (

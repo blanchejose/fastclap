@@ -8,6 +8,8 @@ import {
   close,
   COUNTDOWN_MS,
   createRoom,
+  IDLE_OUT_MS,
+  MAX_RACE_MS,
   disconnect,
   join,
   kick,
@@ -263,6 +265,68 @@ describe("fin de course et classement (COURSE-09, COURSE-10)", () => {
       ["e", "TIME_UP"],
       ["a", "ABANDONED"],
     ]);
+  });
+
+  it("sans limite choisie, arrête quand même la course au bout de 5 minutes", () => {
+    const room = readyRoom({ timeLimitMs: null });
+    const go = running(room);
+    expect(room.deadline).toBe(go + MAX_RACE_MS);
+    // Les deux tapent régulièrement, sans finir : seul le plafond les arrête.
+    for (let t = go + 20_000; t < go + MAX_RACE_MS; t += 20_000) {
+      applyKeys(room, "h", ["x"], t);
+      applyKeys(room, "b", ["x"], t);
+      tick(room, t);
+    }
+    expect(room.phase).toBe("RUNNING");
+    tick(room, go + MAX_RACE_MS);
+    expect(room.phase).toBe("RESULTS");
+    expect(snapshot(room, go + MAX_RACE_MS).racers.map((r) => r.status)).toEqual([
+      "TIME_UP",
+      "TIME_UP",
+    ]);
+  });
+
+  it("garde la limite choisie par l'hôte, même au-delà de 5 minutes", () => {
+    const room = readyRoom({ timeLimitMs: 8 * 60_000 });
+    const go = running(room);
+    expect(room.deadline).toBe(go + 8 * 60_000);
+  });
+
+  it("fait abandonner un joueur qui ne tape plus rien depuis 60 s", () => {
+    const room = readyRoom();
+    const go = running(room);
+    applyKeys(room, "h", ["l"], go + 10_000);
+    applyKeys(room, "b", ["l"], go + 30_000);
+    tick(room, go + 10_000 + IDLE_OUT_MS - 1);
+    expect(room.racers.get("h")?.status).toBe("RACING");
+    tick(room, go + 10_000 + IDLE_OUT_MS);
+    const h = snapshot(room, go + 70_000).racers.find((r) => r.id === "h");
+    expect(h?.status).toBe("ABANDONED");
+    expect(h?.idleOut).toBe(true);
+    expect(room.racers.get("b")?.status).toBe("RACING"); // b a tapé plus tard
+    tick(room, go + 30_000 + IDLE_OUT_MS);
+    expect(room.phase).toBe("RESULTS"); // plus personne en course
+  });
+
+  it("compte le départ comme activité : rien tapé du tout, abandon après 60 s", () => {
+    const room = readyRoom();
+    const go = running(room);
+    tick(room, go + IDLE_OUT_MS);
+    expect(room.phase).toBe("RESULTS");
+    expect([...room.racers.values()].every((r) => r.idleOut)).toBe(true);
+  });
+
+  it("ne retire jamais un bot pour inactivité", () => {
+    const room = createRoom("K7X2QP", "h");
+    join(room, { id: "h", name: "Hôte" }, "PLAYER", 0);
+    addBot(room, "h", "NOOB", 0);
+    const go = running(room);
+    for (let t = go; t <= go + IDLE_OUT_MS; t += 5_000) {
+      applyKeys(room, "h", ["x"], t);
+      tick(room, t);
+    }
+    const bot = [...room.racers.values()].find((r) => r.bot);
+    expect(bot?.idleOut).toBe(false);
   });
 
   it("fait courir les bots jusqu'à la ligne", () => {

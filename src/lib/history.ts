@@ -101,6 +101,7 @@ export function toRacerViews(participants: StoredParticipant[]): RacerView[] {
       lane: i,
       bonuses: p.result.bonuses.filter(isBonus),
       fogUntil: null,
+      idleOut: false, // non gardé en base : un abandon reste un abandon
       samples: samplesSchema.parse(p.result.samples),
       missed: missedSchema.parse(p.result.missed),
       wpm: p.result.wpm,
