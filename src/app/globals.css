@@ -13,6 +13,7 @@
   --sourdine: #4f5682;
   --trait: rgb(13 18 64 / 0.12);
   --bleu: #2448ff;
+  --bleu-texte: #2448ff; /* liens et textes bleus */
   --orange: #ff7a45;
   --orange-texte: #c2410c;
   --jaune: #ffd23f;
@@ -44,6 +45,7 @@
     --sourdine: #b3b9e6;
     --trait: rgb(245 247 255 / 0.14);
     --bleu: #3d5cff;
+    --bleu-texte: #9ec5f4;
     --orange: #ff8f5e;
     --orange-texte: #ff8f5e;
     --juste: #3dd68c;
@@ -71,6 +73,7 @@
   --sourdine: #b3b9e6;
   --trait: rgb(245 247 255 / 0.14);
   --bleu: #3d5cff;
+  --bleu-texte: #9ec5f4;
   --orange: #ff8f5e;
   --orange-texte: #ff8f5e;
   --juste: #3dd68c;
@@ -97,6 +100,7 @@
   --color-sourdine: var(--sourdine);
   --color-trait: var(--trait);
   --color-bleu: var(--bleu);
+  --color-bleu-texte: var(--bleu-texte);
   --color-orange: var(--orange);
   --color-orange-texte: var(--orange-texte);
   --color-jaune: var(--jaune);

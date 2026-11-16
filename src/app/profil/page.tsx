@@ -115,7 +115,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profil">
               <Bib key={bib.label} {...bib} delay={`${-0.8 * i}s`} inDefinitionList />
             ))}
           </dl>
-          <p className="text-sm text-white/90">{p.statsNote}</p>
+          <p className="text-sm text-white">{p.statsNote}</p>
         </section>
 
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
@@ -143,7 +143,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profil">
               </h2>
               <Link
                 href="/historique"
-                className="text-bleu inline-flex items-center gap-1.5 font-bold"
+                className="text-bleu-texte inline-flex items-center gap-1.5 font-bold"
               >
                 {p.historyLink}
                 <svg
@@ -186,7 +186,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profil">
                         <th scope="row">
                           <Link
                             href={`/course/${race.raceId}`}
-                            className="text-bleu font-bold whitespace-nowrap"
+                            className="text-bleu-texte font-bold whitespace-nowrap"
                           >
                             {race.endedAt ? date.format(race.endedAt) : "—"}
                           </Link>
