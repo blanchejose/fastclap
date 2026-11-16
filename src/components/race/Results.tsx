@@ -228,7 +228,14 @@ export function Results({ racers, meId, records, locale, code, actions, t }: Pro
           <h2 id="titre-classement" className="font-display mb-3 text-2xl font-extrabold">
             {t.standings}
           </h2>
-          <div className="overflow-x-auto">
+          {/* Les 9 colonnes (RES-02) défilent sur le côté : la zone reçoit le
+              focus pour qu'on puisse la faire défiler au clavier. */}
+          <div
+            role="region"
+            aria-labelledby="titre-classement"
+            tabIndex={0}
+            className="overflow-x-auto rounded-lg"
+          >
             <table className="classement">
               <thead>
                 <tr>
