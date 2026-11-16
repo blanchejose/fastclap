@@ -63,12 +63,15 @@ export function KeyHeatmap({ missed, locale, t }: Props) {
         <p className="text-sourdine">{t.noMisses}</p>
       ) : (
         <>
-          <p>
-            {t.mostMissed}{" "}
-            <strong>
-              {top.map(([key, n]) => `${label(key)} (${number.format(n)})`).join(", ")}
-            </strong>
-          </p>
+          {/* Les touches les plus manquées, en grosses touches de clavier. */}
+          <ul aria-label={t.mostMissed} className="flex flex-wrap gap-3 pb-2">
+            {top.map(([key, n]) => (
+              <li key={key} className="touche-ratee">
+                <span className={key === " " ? "large" : ""}>{label(key)}</span>
+                <span>{fmt(n === 1 ? t.missOne : t.missMany, { n: number.format(n) })}</span>
+              </li>
+            ))}
+          </ul>
           <div className="flex flex-col items-center-safe gap-1 overflow-x-auto pb-1">
             {ROWS.map((row, i) => (
               <ul key={row} className="flex gap-1" style={{ paddingLeft: `${i * 0.75}rem` }}>

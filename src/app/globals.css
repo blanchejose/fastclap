@@ -944,6 +944,202 @@
     }
   }
 
+  /* Résultats : bandeau du record, jaune et pulsé. */
+  .bandeau {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.75rem 1.4rem;
+    border-radius: 999px;
+    background: var(--jaune);
+    color: var(--color-nuit);
+    font-weight: 800;
+  }
+
+  /* Confettis de la victoire, derrière le contenu de la carte. */
+  .confettis {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .confettis > span {
+    position: absolute;
+    top: 0;
+    width: 10px;
+    height: 16px;
+    border-radius: 3px;
+    opacity: 0.9;
+    transform: translateY(-40px);
+  }
+
+  /* Le podium : trois marches qui poussent depuis le bas. Sur un téléphone,
+     tout rétrécit pour tenir sur la largeur de l'écran. */
+  .podium {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: clamp(0.5rem, 2vw, 1.25rem);
+    width: 100%;
+    padding-top: 1.25rem;
+    /* Le sol, sous les marches. */
+    border-bottom: 4px solid var(--trait);
+  }
+  .marche {
+    position: relative;
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+    max-width: 13rem;
+  }
+  .marche .trophee {
+    width: clamp(3.5rem, 14vw, 6.75rem);
+    height: auto;
+    filter: drop-shadow(0 10px 14px rgb(13 18 64 / 0.25));
+  }
+  .marche.order-2 .trophee {
+    width: clamp(4.5rem, 18vw, 8.75rem);
+  }
+  .marche.order-3 .trophee {
+    width: clamp(3rem, 12vw, 6rem);
+  }
+  .marche .qui {
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 800;
+  }
+  .bloc {
+    display: flex;
+    width: 100%;
+    height: calc(var(--h) * 0.62);
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 0.9rem;
+    border-radius: 1.1rem 1.1rem 0 0;
+    background: var(--bleu);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    transform-origin: bottom;
+  }
+  .bloc.premier {
+    background: var(--jaune);
+    color: var(--color-nuit);
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 6vw, 4rem);
+    line-height: 1;
+  }
+  @media (min-width: 40rem) {
+    .bloc {
+      height: var(--h);
+      border-radius: 1.4rem 1.4rem 0 0;
+    }
+  }
+  .trophee-boite {
+    display: block;
+  }
+  .trophee .eclat {
+    opacity: 0;
+  }
+  .etoile {
+    position: absolute;
+    z-index: 1;
+    color: var(--jaune);
+    opacity: 0;
+  }
+
+  /* Touches les plus manquées, en grosses touches de clavier. */
+  .touche-ratee {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--sourdine);
+    font-size: 0.8125rem;
+    font-weight: 700;
+  }
+  .touche-ratee > span:first-child {
+    display: flex;
+    min-width: 3.5rem;
+    height: 3.5rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.75rem;
+    border-radius: 0.9rem;
+    background: var(--surface-2);
+    box-shadow: 0 5px 0 var(--trait);
+    color: var(--encre);
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 800;
+  }
+  .touche-ratee > span.large:first-child {
+    font-size: 1rem;
+  }
+
+  /* Le classement : en-têtes en mono, ma ligne teintée d'orange. */
+  .classement {
+    width: 100%;
+    min-width: 48rem;
+    border-collapse: collapse;
+    text-align: left;
+  }
+  .classement thead th {
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid var(--trait);
+    color: var(--sourdine);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .classement tbody :is(td, th) {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--trait);
+    font-weight: 600;
+  }
+  .classement tbody tr:last-child :is(td, th) {
+    border-bottom: 0;
+  }
+  .classement tr.moi :is(td, th) {
+    background: color-mix(in srgb, var(--orange) 12%, transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .bandeau {
+      animation:
+        monte 0.6s 1.3s both,
+        pouls 2s 2s ease-out infinite;
+    }
+    .confettis > span {
+      animation: tombe linear infinite;
+    }
+    .bloc {
+      animation: pousse 1s cubic-bezier(0.2, 1.2, 0.3, 1) both;
+    }
+    .trophee-boite {
+      animation: trophee-arrive 0.8s cubic-bezier(0.2, 1.4, 0.3, 1) both;
+    }
+    .marche.order-2 .trophee {
+      animation: flotte-t 3s 1.8s ease-in-out infinite;
+    }
+    .trophee .eclat {
+      animation: eclat 2.6s ease-in-out infinite;
+    }
+    .marche .qui {
+      animation: monte 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+    .etoile {
+      animation: scintille 1.8s ease-in-out infinite;
+    }
+  }
+
   /* Collée en bas seulement sur grand écran : sur un téléphone elle
      cacherait la moitié de la page. */
   @media (min-width: 40rem) {
@@ -1113,5 +1309,65 @@ body {
   from {
     opacity: 0;
     transform: translateX(30px);
+  }
+}
+
+@keyframes pousse {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes tombe {
+  from {
+    transform: translateY(-40px) rotate(0);
+  }
+  to {
+    transform: translateY(46rem) rotate(720deg);
+  }
+}
+
+@keyframes trophee-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.6) rotate(-12deg);
+  }
+}
+
+@keyframes eclat {
+  0%,
+  60%,
+  100% {
+    transform: translateX(-30px);
+    opacity: 0;
+  }
+  75% {
+    opacity: 0.9;
+  }
+  90% {
+    transform: translateX(30px);
+    opacity: 0;
+  }
+}
+
+@keyframes flotte-t {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes scintille {
+  0%,
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
