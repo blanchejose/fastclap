@@ -33,7 +33,7 @@ test("une course complète contre un bot, enregistrée dans l'historique", async
   await expect(page).toHaveURL(/\/course\//);
   await expect(page.getByText("Tu as gagné !")).toBeVisible();
 
-  await page.getByRole("link", { name: "Historique", exact: true }).click();
+  await page.getByRole("banner").getByRole("link", { name: "Historique", exact: true }).click();
   await expect(page.getByRole("table")).toContainText("1re sur 2");
 });
 
