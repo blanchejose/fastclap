@@ -14,7 +14,7 @@ const H = 240;
 const PAD = { top: 24, right: 20, bottom: 30, left: 44 };
 
 // AUTH-06 : MPM de chaque course terminée, de la plus ancienne à la plus
-// récente. Une seule série : le titre la nomme, pas de légende. Infobulle au
+// récente, en courbe orange qui se dessine (maquette validée). Une seule série : le titre la nomme, pas de légende. Infobulle au
 // survol et tableau des données pour lire les valeurs sans souris.
 export function ProgressChart({ points, locale, t }: Props) {
   const [hover, setHover] = useState<number | null>(null);
@@ -42,6 +42,10 @@ export function ProgressChart({ points, locale, t }: Props) {
     PAD.left + (points.length === 1 ? 0.5 : i / (points.length - 1)) * (W - PAD.left - PAD.right);
   const y = (wpm: number) => PAD.top + (1 - wpm / max) * (H - PAD.top - PAD.bottom);
   const line = points.map((p, i) => `${x(i)},${y(p.wpm)}`).join(" ");
+  const floor = H - PAD.bottom;
+  const area = `${x(0)},${floor} ${line} ${x(points.length - 1)},${floor}`;
+  const last = points.length - 1;
+  const gradientId = `${titleId.replace(/[^\w-]/g, "")}-fond`; // useId donne des « : »
 
   function onPointerMove(event: React.PointerEvent<SVGSVGElement>) {
     const box = event.currentTarget.getBoundingClientRect();
@@ -83,24 +87,35 @@ export function ProgressChart({ points, locale, t }: Props) {
           <text x={PAD.left - 8} y={12} textAnchor="end" className="fill-sourdine text-[14px]">
             {t.wpmAxis}
           </text>
+          {/* La courbe orange se dessine, sur un dégradé qui s'efface vers le bas. */}
+          <defs>
+            <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stopColor="var(--orange)" stopOpacity="0.35" />
+              <stop offset="1" stopColor="var(--orange)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <polygon points={area} fill={`url(#${gradientId})`} />
           <polyline
+            className="courbe"
+            pathLength={1}
             points={line}
             fill="none"
-            stroke="var(--serie-1)"
-            strokeWidth={2.5}
+            stroke="var(--orange)"
+            strokeWidth={4}
+            strokeLinecap="round"
             strokeLinejoin="round"
           />
-          {points.map((p, i) => (
+          <circle cx={x(last)} cy={y(points[last].wpm)} r={7} fill="var(--orange)" />
+          {hover !== null && (
             <circle
-              key={p.at}
-              cx={x(i)}
-              cy={y(p.wpm)}
-              r={hover === i ? 6 : 4}
-              fill="var(--serie-1)"
+              cx={x(hover)}
+              cy={y(points[hover].wpm)}
+              r={6}
+              fill="var(--orange)"
               stroke="var(--surface)"
               strokeWidth={2}
             />
-          ))}
+          )}
           {hover !== null && (
             <line
               x1={x(hover)}

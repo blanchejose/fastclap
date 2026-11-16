@@ -923,6 +923,15 @@
     }
   }
 
+  /* Courbe de progression du profil : elle se dessine de gauche à droite. */
+  @media (prefers-reduced-motion: no-preference) {
+    .courbe {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: dessine 2.2s 0.3s ease forwards;
+    }
+  }
+
   /* Résultats : bandeau du record, jaune et pulsé. */
   .bandeau {
     display: inline-flex;
@@ -1347,5 +1356,11 @@ body {
   50% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+@keyframes dessine {
+  to {
+    stroke-dashoffset: 0;
   }
 }
