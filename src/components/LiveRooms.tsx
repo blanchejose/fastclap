@@ -49,7 +49,8 @@ export function LiveRooms({ initial, limit, showFilters, t }: Props) {
     };
   }, [filters, limit]);
 
-  const select = "border-trait bg-surface min-h-11 rounded-xl border-2 px-3 font-normal";
+  const select =
+    "border-trait bg-surface focus:border-bleu min-h-11 rounded-xl border-2 px-3 font-normal";
 
   return (
     <div className="flex flex-col gap-4">
@@ -120,10 +121,7 @@ export function LiveRooms({ initial, limit, showFilters, t }: Props) {
                 <p className="text-lg font-bold">{t.emptyTitle}</p>
                 <p className="text-sourdine">{t.empty}</p>
               </div>
-              <Link
-                href="/salles#creer"
-                className="bg-bleu rounded-xl px-5 py-3 font-bold text-white transition hover:-translate-y-0.5"
-              >
+              <Link href="/salles#creer" className="btn btn-bleu">
                 {t.createRoom}
               </Link>
             </>
@@ -140,29 +138,53 @@ export function LiveRooms({ initial, limit, showFilters, t }: Props) {
               <li key={room.code}>
                 <Link
                   href={`/salle/${room.code}`}
-                  className="bg-surface hover:border-bleu flex h-full flex-col gap-3 rounded-3xl border-2 border-transparent p-5 transition hover:-translate-y-0.5"
+                  className="carte souleve flex h-full flex-col gap-4 border-2 border-transparent p-6"
                 >
                   <span className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-[15px] font-semibold tracking-wider">
-                      {formatCode(room.code)}
-                    </span>
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-                        joinable ? "bg-surface-2" : "bg-encre text-piste"
-                      }`}
-                    >
+                    <span className="bg-surface-2 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-bold">
+                      <span
+                        aria-hidden="true"
+                        className={`live ${joinable ? "bg-juste motion-safe:animate-pulse-lent" : ""}`}
+                      />
                       {t.states[room.phase]}
                     </span>
+                    <span className="text-sourdine font-mono text-[13px] font-bold tracking-[0.12em]">
+                      {formatCode(room.code)}
+                    </span>
                   </span>
-                  <span className="font-display text-2xl leading-tight font-extrabold">
-                    {fmt(t.roomOf, { name: room.hostName })}
+                  <span className="flex flex-col gap-2">
+                    <span className="font-display text-[26px] leading-tight font-extrabold">
+                      {fmt(t.roomOf, { name: room.hostName })}
+                    </span>
+                    <span className="flex flex-wrap gap-1.5 text-[13px] font-bold">
+                      <span className="bg-surface-2 rounded-full px-2.5 py-1">
+                        {t.languages[room.language]}
+                      </span>
+                      <span className="bg-surface-2 rounded-full px-2.5 py-1">
+                        {t.levels[room.complexity]}
+                      </span>
+                    </span>
                   </span>
-                  <span className="text-sourdine flex flex-wrap gap-x-3 text-sm">
-                    <span>{fmt(t.players, { n: room.players, max: room.maxPlayers })}</span>
-                    <span>{t.languages[room.language]}</span>
-                    <span>{t.levels[room.complexity]}</span>
+                  <span className="flex flex-col gap-2">
+                    {/* Jauge de remplissage de la salle. */}
+                    <span
+                      aria-hidden="true"
+                      className="bg-surface-2 h-2 overflow-hidden rounded-full"
+                    >
+                      <span
+                        className="bg-bleu block h-full rounded-full"
+                        style={{ width: `${Math.round((room.players / room.maxPlayers) * 100)}%` }}
+                      />
+                    </span>
+                    <span className="text-sourdine font-mono text-[13px] font-bold">
+                      {fmt(t.players, { n: room.players, max: room.maxPlayers })}
+                    </span>
                   </span>
-                  {!joinable && <span className="text-sm">{t.waitResults}</span>}
+                  {joinable ? (
+                    <span className="btn btn-bleu mt-auto min-h-12">{t.enter}</span>
+                  ) : (
+                    <span className="text-sourdine mt-auto text-sm">{t.waitResults}</span>
+                  )}
                 </Link>
               </li>
             );

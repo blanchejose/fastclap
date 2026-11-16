@@ -43,7 +43,7 @@ export function ThemeToggle({ toDark, toLight }: Props) {
       type="button"
       onClick={toggle}
       aria-label={next === "dark" ? toDark : toLight}
-      className="border-trait text-encre hover:bg-surface-2 flex size-11 items-center justify-center rounded-md border-[1.5px] transition"
+      className="icon-btn text-encre"
     >
       {theme === "dark" ? (
         <svg

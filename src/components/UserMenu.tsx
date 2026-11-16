@@ -21,10 +21,7 @@ export async function UserMenu() {
             {guest.name} <span className="text-sourdine font-sans">({t.room.guest})</span>
           </span>
         )}
-        <Link
-          href="/connexion"
-          className="bg-surface-2 hover:bg-trait flex min-h-11 items-center rounded-md px-4 text-[15px] font-bold transition"
-        >
+        <Link href="/connexion" className="btn btn-doux min-h-11 text-[15px]">
           {t.common.login}
         </Link>
       </div>

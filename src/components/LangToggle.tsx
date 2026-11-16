@@ -15,11 +15,7 @@ export function LangToggle({ next, label, short }: Props) {
   }
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      className="border-trait hover:bg-surface-2 flex h-11 min-w-11 items-center justify-center rounded-md border-[1.5px] px-2.5 font-mono text-sm font-semibold transition"
-    >
+    <button type="button" onClick={toggle} className="icon-btn font-mono text-sm font-bold">
       {/* A11Y : le nom accessible contient le texte visible (« FR »), puis
           l'action, dans la langue de destination. */}
       {short}
