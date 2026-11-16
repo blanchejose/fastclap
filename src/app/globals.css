@@ -22,7 +22,7 @@
   --focus: #2448ff;
   --pied: #0d1240;
   /* Graphiques (RES-03) : palette catégorielle validée (8 couleurs, ordre
-     fixe) et rampe séquentielle bleue pour la carte de chaleur. */
+     fixe). */
   --serie-1: #2a78d6;
   --serie-2: #eb6834;
   --serie-3: #1baf7a;
@@ -32,13 +32,6 @@
   --serie-7: #6250d6;
   --serie-8: #e34948;
   --serie-autres: #9a9cb8;
-  --chaleur-1: #cde2fb;
-  --chaleur-2: #9ec5f4;
-  --chaleur-3: #6da7ec;
-  --chaleur-4: #3987e5;
-  --chaleur-5: #256abf;
-  --chaleur-6: #104281;
-  --chaleur-texte-fort: #ffffff;
   color-scheme: light;
 }
 
@@ -66,13 +59,6 @@
     --serie-7: #9085e9;
     --serie-8: #e66767;
     --serie-autres: #5d6496;
-    --chaleur-1: #184f95;
-    --chaleur-2: #1c5cab;
-    --chaleur-3: #2a78d6;
-    --chaleur-4: #5598e7;
-    --chaleur-5: #86b6ef;
-    --chaleur-6: #cde2fb;
-    --chaleur-texte-fort: #0d1240;
     color-scheme: dark;
   }
 }
@@ -100,13 +86,6 @@
   --serie-7: #9085e9;
   --serie-8: #e66767;
   --serie-autres: #5d6496;
-  --chaleur-1: #184f95;
-  --chaleur-2: #1c5cab;
-  --chaleur-3: #2a78d6;
-  --chaleur-4: #5598e7;
-  --chaleur-5: #86b6ef;
-  --chaleur-6: #cde2fb;
-  --chaleur-texte-fort: #0d1240;
   color-scheme: dark;
 }
 
@@ -980,8 +959,6 @@
     gap: clamp(0.5rem, 2vw, 1.25rem);
     width: 100%;
     padding-top: 1.25rem;
-    /* Le sol, sous les marches. */
-    border-bottom: 4px solid var(--trait);
   }
   .marche {
     position: relative;
@@ -989,9 +966,9 @@
     flex: 1 1 0;
     flex-direction: column;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.875rem;
     min-width: 0;
-    max-width: 13rem;
+    max-width: 13.125rem;
   }
   .marche .trophee {
     width: clamp(3.5rem, 14vw, 6.75rem);
@@ -1022,19 +999,20 @@
     background: var(--bleu);
     color: #fff;
     font-family: var(--font-mono);
-    font-size: 1.1rem;
+    font-size: clamp(1rem, 3vw, 1.375rem);
     font-weight: 800;
+    line-height: 1;
     text-transform: uppercase;
     transform-origin: bottom;
   }
   .bloc.premier {
     background: var(--jaune);
     color: var(--color-nuit);
-    font-family: var(--font-display);
-    font-size: clamp(2rem, 6vw, 4rem);
-    line-height: 1;
   }
   @media (min-width: 40rem) {
+    .podium {
+      height: 32.5rem;
+    }
     .bloc {
       height: var(--h);
       border-radius: 1.4rem 1.4rem 0 0;

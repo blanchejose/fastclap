@@ -77,7 +77,7 @@ export function WpmChart({ series, locale, t }: Props) {
 
   return (
     <figure className="flex min-w-0 flex-col gap-3">
-      <figcaption id={titleId} className="font-display text-2xl font-extrabold">
+      <figcaption id={titleId} className="font-display text-[22px] font-extrabold">
         {t.wpmTitle}
       </figcaption>
 
