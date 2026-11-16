@@ -42,16 +42,16 @@ export function InvitePanel({ request, version, t }: Props) {
   return (
     <section
       aria-labelledby="titre-liens"
-      className="bg-surface flex flex-col gap-4 rounded-3xl p-7"
+      className="carte motion-safe:animate-monte flex flex-col gap-4 p-5 [animation-delay:120ms] sm:p-6"
     >
-      <h2 id="titre-liens" className="font-display text-3xl font-extrabold">
+      <h2 id="titre-liens" className="font-display text-[22px] font-extrabold">
         {t.panelTitle}
       </h2>
-      <p className="text-sourdine">{t.panelLead}</p>
+      <p className="text-sourdine text-[15px] leading-relaxed">{t.panelLead}</p>
       <button
         type="button"
         onClick={() => request("invite:create", receive)}
-        className="bg-surface-2 min-h-11 self-start rounded-xl px-4 font-bold"
+        className="btn btn-contour self-start"
       >
         {t.create}
       </button>

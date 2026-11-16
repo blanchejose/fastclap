@@ -12,8 +12,9 @@ test("une course complète contre un bot, enregistrée dans l'historique", async
   await expect(start).toBeDisabled();
   // Sans bonus de remontée : un bot en retard recevrait des « −3 mots » et
   // pourrait gagner. Les bonus ont leurs propres tests (bonus.test.ts).
-  await page.getByRole("checkbox", { name: "Bonus de remontée" }).click(); // confirmé par le serveur
-  await expect(page.getByRole("checkbox", { name: "Bonus de remontée" })).not.toBeChecked();
+  await page.getByRole("tab", { name: "Course" }).click();
+  await page.getByRole("switch", { name: "Bonus de remontée" }).click(); // confirmé par le serveur
+  await expect(page.getByRole("switch", { name: "Bonus de remontée" })).not.toBeChecked();
   await addBot(page, "EXPERT"); // assez rapide pour que la course finisse vite
   await expect(page.getByText("BOT · Expert")).toBeVisible();
   await expect(start).toBeEnabled();

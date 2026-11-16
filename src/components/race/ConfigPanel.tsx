@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { Dictionary } from "@/i18n/dictionaries";
 import {
   COMPLEXITIES,
@@ -12,30 +12,39 @@ import {
   type ConfigPatch,
 } from "@/lib/race/config";
 
-type Reply = { ok: true } | { ok: false; reason: keyof Dictionary["config"]["errors"] };
+export type ConfigReply =
+  { ok: true } | { ok: false; reason: keyof Dictionary["config"]["errors"] };
 
 type Props = {
   config: Config;
   isHost: boolean;
   // Envoie une modification au serveur et reçoit sa réponse.
-  update: (patch: ConfigPatch, reply: (r: Reply) => void) => void;
+  update: (patch: ConfigPatch, reply: (r: ConfigReply) => void) => void;
+  // Contrôle affiché à droite du titre (le choix « Je cours / Je regarde »).
+  aside?: ReactNode;
   t: Dictionary["config"];
   levels: Dictionary["levels"];
 };
 
-const radioClass =
-  "border-trait has-[:checked]:border-bleu has-[:checked]:bg-surface-2 flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border-2 px-3";
-const inputClass =
-  "border-trait bg-surface min-h-11 w-full rounded-xl border-2 px-3 font-normal disabled:opacity-60";
-const legendClass = "mb-2 font-bold";
+const TABS = ["text", "race", "room"] as const;
+type Tab = (typeof TABS)[number];
+const PRESET_SECONDS = [60, 120] as const;
 
 const clamp = (value: number, { min, max }: { min: number; max: number }) =>
   Math.min(max, Math.max(min, Math.round(value)));
 
-// Configuration de la course (CONF-01 à CONF-12) : l'hôte la modifie dans la
-// salle d'attente ; les autres en voient un résumé, mis à jour en direct.
-export function ConfigPanel({ config, isHost, update, t, levels }: Props) {
+// Configuration de la course (CONF-01 à CONF-12), en trois onglets. L'hôte la
+// modifie dans la salle d'attente ; les autres voient les mêmes onglets en
+// lecture seule, mis à jour en direct.
+export function ConfigPanel({ config, isHost, update, aside, t, levels }: Props) {
+  const [tab, setTab] = useState<Tab>("text");
   const [error, setError] = useState<string | null>(null);
+  const tabRefs = useRef<Record<Tab, HTMLButtonElement | null>>({
+    text: null,
+    race: null,
+    room: null,
+  });
+  const id = useId();
   const { text } = config;
 
   function send(patch: ConfigPatch) {
@@ -45,270 +54,282 @@ export function ConfigPanel({ config, isHost, update, t, levels }: Props) {
     });
   }
 
-  // Champs texte et nombres : envoyés en quittant le champ (ou avec Entrée),
-  // pas à chaque touche. `key` remet le champ à jour quand la valeur change.
-  function commitNumber(
-    field: HTMLInputElement,
-    current: number,
-    limits: { min: number; max: number },
-    make: (value: number) => ConfigPatch,
-  ) {
-    const value = clamp(Number(field.value), limits);
-    if (Number.isNaN(Number(field.value)) || value === current) field.value = String(current);
-    else send(make(value));
+  // Onglets au clavier (motif ARIA) : les flèches passent d'un onglet à l'autre.
+  function onTabKey(event: KeyboardEvent) {
+    const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+    if (!step) return;
+    event.preventDefault();
+    const next = TABS[(TABS.indexOf(tab) + step + TABS.length) % TABS.length];
+    setTab(next);
+    tabRefs.current[next]?.focus();
   }
 
-  if (!isHost) return <Summary config={config} t={t} levels={levels} />;
-
+  const tabNames: Record<Tab, string> = { text: t.textGroup, race: t.raceGroup, room: t.roomGroup };
+  const yes = (value: boolean) => (value ? t.on : t.off);
   const seconds = config.timeLimitMs === null ? null : config.timeLimitMs / 1000;
-  const randomOnly = text.kind === "COHERENT";
+  const customTime = seconds !== null && !(PRESET_SECONDS as readonly number[]).includes(seconds);
 
   return (
     <section
-      aria-labelledby="titre-config"
-      className="bg-surface flex flex-col gap-6 rounded-3xl p-7"
+      aria-labelledby={`${id}-titre`}
+      className="carte motion-safe:animate-monte flex min-w-0 flex-col gap-5 p-5 [animation-delay:160ms] sm:p-7"
     >
-      <h2 id="titre-config" className="font-display text-3xl font-extrabold">
-        {t.title}
-      </h2>
-      <form
-        className="grid gap-8 lg:grid-cols-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-          (document.activeElement as HTMLElement | null)?.blur();
-        }}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h2 id={`${id}-titre`} className="font-display text-[clamp(22px,3vw,28px)] font-extrabold">
+          {t.title}
+        </h2>
+        {aside}
+      </div>
+      {!isHost && <p className="text-sourdine -mt-2 text-sm">{t.hostOnly}</p>}
+
+      <div role="tablist" aria-label={t.tabsLabel} className="onglets" onKeyDown={onTabKey}>
+        {TABS.map((name) => (
+          <button
+            key={name}
+            ref={(el) => {
+              tabRefs.current[name] = el;
+            }}
+            type="button"
+            role="tab"
+            id={`${id}-onglet-${name}`}
+            aria-selected={tab === name}
+            aria-controls={`${id}-panneau`}
+            tabIndex={tab === name ? 0 : -1}
+            onClick={() => setTab(name)}
+            className="onglet"
+          >
+            {tabNames[name]}
+          </button>
+        ))}
+      </div>
+
+      <div
+        key={tab}
+        role="tabpanel"
+        id={`${id}-panneau`}
+        aria-labelledby={`${id}-onglet-${tab}`}
+        aria-live={isHost ? undefined : "polite"}
+        className="motion-safe:animate-monte flex flex-col [animation-duration:0.4s]"
       >
-        <fieldset className="flex flex-col gap-5">
-          <legend className="font-display mb-3 text-xl font-extrabold">{t.textGroup}</legend>
-
-          <fieldset>
-            <legend className={legendClass}>{t.language}</legend>
-            <div className="flex flex-wrap gap-2">
-              {LANGUAGES.map((language) => (
-                <label key={language} className={radioClass}>
-                  <input
-                    type="radio"
-                    name="language"
-                    checked={text.language === language}
-                    onChange={() => send({ language })}
-                    className="size-5 accent-[var(--bleu)]"
-                  />
-                  {t.languages[language]}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend className={legendClass}>{t.kind}</legend>
-            <div className="flex flex-col gap-2">
-              {TEXT_KINDS.map((kind) => (
-                <label key={kind} className={radioClass}>
-                  <input
-                    type="radio"
-                    name="kind"
-                    checked={text.kind === kind}
-                    onChange={() => send({ kind })}
-                    className="size-5 accent-[var(--bleu)]"
-                  />
-                  {t.kinds[kind]}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend className={legendClass}>{t.complexity}</legend>
-            <div className="flex flex-wrap gap-2">
-              {COMPLEXITIES.map((complexity) => (
-                <label key={complexity} className={radioClass}>
-                  <input
-                    type="radio"
-                    name="complexity"
-                    checked={text.complexity === complexity}
-                    onChange={() => send({ complexity })}
-                    className="size-5 accent-[var(--bleu)]"
-                  />
-                  {levels[complexity]}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <label className="flex flex-col gap-1 font-bold">
-            {t.wordCount}
-            <input
-              key={text.wordCount}
-              type="number"
-              inputMode="numeric"
-              min={LIMITS.wordCount.min}
-              max={LIMITS.wordCount.max}
-              defaultValue={text.wordCount}
-              onBlur={(e) =>
-                commitNumber(e.currentTarget, text.wordCount, LIMITS.wordCount, (wordCount) => ({
-                  wordCount,
-                }))
-              }
-              className={inputClass}
-            />
-          </label>
-
-          <fieldset>
-            <legend className={legendClass}>{t.options}</legend>
-            <div className="flex flex-wrap gap-2">
+        {tab === "text" && (
+          <>
+            <Row label={t.language}>
+              {isHost ? (
+                <Segment
+                  label={t.language}
+                  values={LANGUAGES}
+                  names={t.languages}
+                  value={text.language}
+                  onChange={(language) => send({ language })}
+                />
+              ) : (
+                <Value>{t.languages[text.language]}</Value>
+              )}
+            </Row>
+            <Row label={t.kind} hint={t.kinds[text.kind]}>
+              {isHost ? (
+                <Segment
+                  label={t.kind}
+                  values={TEXT_KINDS}
+                  names={t.kindsShort}
+                  value={text.kind}
+                  onChange={(kind) => send({ kind })}
+                />
+              ) : (
+                <Value>{t.kindsShort[text.kind]}</Value>
+              )}
+            </Row>
+            <Row label={t.wordCountShort} hint={t.wordCountHint}>
+              {isHost ? (
+                <Stepper
+                  label={t.wordCountShort}
+                  value={text.wordCount}
+                  step={5}
+                  limits={LIMITS.wordCount}
+                  less={t.less}
+                  more={t.more}
+                  onChange={(wordCount) => send({ wordCount })}
+                />
+              ) : (
+                <Value>{text.wordCount}</Value>
+              )}
+            </Row>
+            <Row label={t.complexity}>
+              {isHost ? (
+                <Segment
+                  label={t.complexity}
+                  values={COMPLEXITIES}
+                  names={levels}
+                  value={text.complexity}
+                  onChange={(complexity) => send({ complexity })}
+                />
+              ) : (
+                <Value>{levels[text.complexity]}</Value>
+              )}
+            </Row>
+            <div className="grid sm:grid-cols-2 sm:gap-x-8">
               {(["punctuation", "numbers", "capitals", "accents"] as const)
                 .filter((option) => option !== "accents" || text.language === "FR")
                 .map((option) => (
-                  <label key={option} className={radioClass}>
-                    <input
-                      type="checkbox"
-                      checked={text[option]}
-                      onChange={(e) => send({ [option]: e.currentTarget.checked })}
-                      className="size-5 accent-[var(--bleu)]"
-                    />
-                    {t[option]}
-                  </label>
+                  <Row key={option} label={t[option]}>
+                    {isHost ? (
+                      <Switch
+                        label={t[option]}
+                        checked={text[option]}
+                        onChange={(on) => send({ [option]: on })}
+                      />
+                    ) : (
+                      <Value>{yes(text[option])}</Value>
+                    )}
+                  </Row>
                 ))}
             </div>
-          </fieldset>
-
-          <div className="flex flex-col gap-3">
-            {(["include", "exclude"] as const).map((field) => (
-              <label key={field} className="flex flex-col gap-1 font-bold">
-                {t[field]}
-                <input
-                  key={text[field]}
-                  type="text"
-                  maxLength={LIMITS.chars}
-                  defaultValue={text[field]}
-                  disabled={randomOnly}
-                  aria-describedby="aide-caracteres"
-                  autoComplete="off"
-                  spellCheck={false}
-                  onBlur={(e) => {
-                    if (e.currentTarget.value !== text[field])
-                      send({ [field]: e.currentTarget.value });
-                  }}
-                  className={`${inputClass} font-mono`}
-                />
-              </label>
-            ))}
-            <p id="aide-caracteres" className="text-sourdine text-sm">
-              {randomOnly ? t.charsCoherent : t.charsHelp}
-            </p>
-          </div>
-        </fieldset>
-
-        <fieldset className="flex flex-col gap-5">
-          <legend className="font-display mb-3 text-xl font-extrabold">{t.raceGroup}</legend>
-
-          <fieldset>
-            <legend className={legendClass}>{t.errorMode}</legend>
-            <div className="flex flex-col gap-2">
-              {(["STRICT", "FREE"] as const).map((errorMode) => (
-                <label key={errorMode} className={radioClass}>
-                  <input
-                    type="radio"
-                    name="errorMode"
-                    checked={config.errorMode === errorMode}
-                    onChange={() => send({ errorMode })}
-                    className="size-5 accent-[var(--bleu)]"
-                  />
-                  {t.errorModes[errorMode]}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className="flex flex-col gap-2">
-            <legend className={legendClass}>{t.timeLimit}</legend>
-            <label className={radioClass}>
-              <input
-                type="checkbox"
-                checked={seconds !== null}
-                onChange={(e) => send({ timeLimitSec: e.currentTarget.checked ? 120 : null })}
-                className="size-5 accent-[var(--bleu)]"
-              />
-              {t.timeLimit}
-            </label>
-            {seconds !== null && (
-              <label className="flex flex-col gap-1 font-bold">
-                {t.seconds}
-                <input
-                  key={seconds}
-                  type="number"
-                  inputMode="numeric"
-                  min={LIMITS.timeLimitSec.min}
-                  max={LIMITS.timeLimitSec.max}
-                  step={10}
-                  defaultValue={seconds}
-                  onBlur={(e) =>
-                    commitNumber(e.currentTarget, seconds, LIMITS.timeLimitSec, (timeLimitSec) => ({
-                      timeLimitSec,
-                    }))
-                  }
-                  className={inputClass}
-                />
-              </label>
+            {text.kind === "RANDOM" && (
+              <div className="grid gap-4 pt-4 sm:grid-cols-2">
+                {(["include", "exclude"] as const).map((field) =>
+                  isHost ? (
+                    <label key={field} className="flex flex-col gap-1.5 font-bold">
+                      {t[field]}
+                      <input
+                        key={text[field]}
+                        type="text"
+                        maxLength={LIMITS.chars}
+                        defaultValue={text[field]}
+                        aria-describedby={`${id}-aide-car`}
+                        autoComplete="off"
+                        spellCheck={false}
+                        onBlur={(e) => {
+                          if (e.currentTarget.value !== text[field])
+                            send({ [field]: e.currentTarget.value });
+                        }}
+                        onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+                        className="border-trait bg-surface focus:border-bleu min-h-11 rounded-xl border-2 px-3 font-mono font-normal transition"
+                      />
+                    </label>
+                  ) : (
+                    <Row key={field} label={t[field]}>
+                      <Value>{text[field] || "—"}</Value>
+                    </Row>
+                  ),
+                )}
+                {isHost && (
+                  <p id={`${id}-aide-car`} className="text-sourdine text-sm sm:col-span-2">
+                    {t.charsHelp}
+                  </p>
+                )}
+              </div>
             )}
-          </fieldset>
+          </>
+        )}
 
-          <label className={radioClass}>
-            <input
-              type="checkbox"
-              checked={config.bonuses}
-              onChange={(e) => send({ bonuses: e.currentTarget.checked })}
-              className="size-5 accent-[var(--bleu)]"
-            />
-            {t.bonuses}
-          </label>
-        </fieldset>
+        {tab === "race" && (
+          <>
+            <Row label={t.errorMode}>
+              {isHost ? (
+                <Segment
+                  label={t.errorMode}
+                  values={["STRICT", "FREE"] as const}
+                  names={t.errorModesShort}
+                  value={config.errorMode}
+                  onChange={(errorMode) => send({ errorMode })}
+                />
+              ) : (
+                <Value>{t.errorModesShort[config.errorMode]}</Value>
+              )}
+            </Row>
+            <Row label={t.timeLimit}>
+              {isHost ? (
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                  <div className="seg" role="group" aria-label={t.timeLimit}>
+                    <button
+                      type="button"
+                      aria-pressed={seconds === null}
+                      onClick={() => send({ timeLimitSec: null })}
+                    >
+                      {t.noLimit}
+                    </button>
+                    {PRESET_SECONDS.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        aria-pressed={seconds === s}
+                        onClick={() => send({ timeLimitSec: s })}
+                      >
+                        {s} s
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      aria-pressed={customTime}
+                      onClick={() => customTime || send({ timeLimitSec: 180 })}
+                    >
+                      {t.timeOther}
+                    </button>
+                  </div>
+                  {customTime && (
+                    <Stepper
+                      label={t.seconds}
+                      value={seconds}
+                      step={10}
+                      limits={LIMITS.timeLimitSec}
+                      less={t.less}
+                      more={t.more}
+                      onChange={(timeLimitSec) => send({ timeLimitSec })}
+                    />
+                  )}
+                </div>
+              ) : (
+                <Value>{seconds === null ? t.noLimit : `${seconds} s`}</Value>
+              )}
+            </Row>
+            <Row label={t.bonuses} hint={t.bonusesHint}>
+              {isHost ? (
+                <Switch
+                  label={t.bonuses}
+                  checked={config.bonuses}
+                  onChange={(bonuses) => send({ bonuses })}
+                />
+              ) : (
+                <Value>{yes(config.bonuses)}</Value>
+              )}
+            </Row>
+          </>
+        )}
 
-        <fieldset className="flex flex-col gap-5">
-          <legend className="font-display mb-3 text-xl font-extrabold">{t.roomGroup}</legend>
+        {tab === "room" && (
+          <>
+            <Row label={t.visibility} hint={t.visibilities[config.visibility]}>
+              {isHost ? (
+                <Segment
+                  label={t.visibility}
+                  values={VISIBILITIES}
+                  names={t.visibilitiesShort}
+                  value={config.visibility}
+                  onChange={(visibility) => send({ visibility })}
+                />
+              ) : (
+                <Value>{t.visibilitiesShort[config.visibility]}</Value>
+              )}
+            </Row>
+            <Row label={t.maxPlayersShort} hint={t.maxPlayersHint}>
+              {isHost ? (
+                <Stepper
+                  label={t.maxPlayersShort}
+                  value={config.maxPlayers}
+                  step={1}
+                  limits={LIMITS.maxPlayers}
+                  less={t.less}
+                  more={t.more}
+                  onChange={(maxPlayers) => send({ maxPlayers })}
+                />
+              ) : (
+                <Value>{config.maxPlayers}</Value>
+              )}
+            </Row>
+          </>
+        )}
+      </div>
 
-          <fieldset>
-            <legend className={legendClass}>{t.visibility}</legend>
-            <div className="flex flex-col gap-2">
-              {VISIBILITIES.map((visibility) => (
-                <label key={visibility} className={radioClass}>
-                  <input
-                    type="radio"
-                    name="visibility"
-                    checked={config.visibility === visibility}
-                    onChange={() => send({ visibility })}
-                    className="size-5 accent-[var(--bleu)]"
-                  />
-                  {t.visibilities[visibility]}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <label className="flex flex-col gap-1 font-bold">
-            {t.maxPlayers}
-            <input
-              key={config.maxPlayers}
-              type="number"
-              inputMode="numeric"
-              min={LIMITS.maxPlayers.min}
-              max={LIMITS.maxPlayers.max}
-              defaultValue={config.maxPlayers}
-              onBlur={(e) =>
-                commitNumber(
-                  e.currentTarget,
-                  config.maxPlayers,
-                  LIMITS.maxPlayers,
-                  (maxPlayers) => ({
-                    maxPlayers,
-                  }),
-                )
-              }
-              className={inputClass}
-            />
-          </label>
-        </fieldset>
-      </form>
       {error && (
         <p role="alert" className="text-faute font-semibold">
           {error}
@@ -318,48 +339,130 @@ export function ConfigPanel({ config, isHost, update, t, levels }: Props) {
   );
 }
 
-// Ce que voient les personnes qui ne sont pas l'hôte.
-function Summary({ config, t, levels }: Omit<Props, "isHost" | "update">) {
-  const { text } = config;
-  const yes = (value: boolean) => (value ? t.on : t.off);
-  const rows: [string, string][] = [
-    [t.language, t.languages[text.language]],
-    [t.kind, t.kinds[text.kind]],
-    [t.complexity, levels[text.complexity]],
-    [t.wordCount, String(text.wordCount)],
-    [t.punctuation, yes(text.punctuation)],
-    [t.numbers, yes(text.numbers)],
-    [t.capitals, yes(text.capitals)],
-    ...(text.language === "FR" ? [[t.accents, yes(text.accents)] as [string, string]] : []),
-    ...(text.kind === "RANDOM"
-      ? ([
-          [t.include, text.include || "—"],
-          [t.exclude, text.exclude || "—"],
-        ] as [string, string][])
-      : []),
-    [t.errorMode, t.errorModes[config.errorMode]],
-    [t.timeLimit, config.timeLimitMs === null ? t.noLimit : `${config.timeLimitMs / 1000} s`],
-    [t.bonuses, yes(config.bonuses)],
-    [t.visibility, t.visibilities[config.visibility]],
-    [t.maxPlayers, String(config.maxPlayers)],
-  ];
+// Une ligne de réglage : le nom (et une aide) à gauche, le contrôle à droite.
+function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
-    <section
-      aria-labelledby="titre-config"
-      className="bg-surface flex flex-col gap-4 rounded-3xl p-7"
-    >
-      <h2 id="titre-config" className="font-display text-3xl font-extrabold">
-        {t.title}
-      </h2>
-      <p className="text-sourdine">{t.hostOnly}</p>
-      <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3" aria-live="polite">
-        {rows.map(([label, value]) => (
-          <div key={label}>
-            <dt className="text-sourdine text-sm">{label}</dt>
-            <dd className="font-semibold">{value}</dd>
-          </div>
-        ))}
-      </dl>
-    </section>
+    <div className="ligne-reglage">
+      <span className="font-bold">
+        {label}
+        {hint && <span className="text-sourdine mt-0.5 block text-[13px] font-medium">{hint}</span>}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function Value({ children }: { children: ReactNode }) {
+  return (
+    <span className="bg-surface-2 rounded-xl px-3 py-1.5 font-mono font-bold">{children}</span>
+  );
+}
+
+// Choix unique parmi quelques valeurs : boutons à bascule (aria-pressed).
+function Segment<T extends string>({
+  label,
+  values,
+  names,
+  value,
+  onChange,
+}: {
+  label: string;
+  values: readonly T[];
+  names: Record<T, string>;
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="seg" role="group" aria-label={label}>
+      {values.map((v) => (
+        <button
+          key={v}
+          type="button"
+          aria-pressed={value === v}
+          onClick={() => v !== value && onChange(v)}
+        >
+          {names[v]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Switch({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={() => onChange(!checked)}
+      className="switch"
+    />
+  );
+}
+
+// − valeur + ; la valeur reste un champ qu'on peut taper, envoyé en le
+// quittant (ou avec Entrée), pas à chaque touche.
+function Stepper({
+  label,
+  value,
+  step,
+  limits,
+  less,
+  more,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  step: number;
+  limits: { min: number; max: number };
+  less: string;
+  more: string;
+  onChange: (value: number) => void;
+}) {
+  const commit = (field: HTMLInputElement) => {
+    const next = clamp(Number(field.value), limits);
+    if (Number.isNaN(Number(field.value)) || next === value) field.value = String(value);
+    else onChange(next);
+  };
+  return (
+    <div className="stepper" role="group" aria-label={label}>
+      <button
+        type="button"
+        aria-label={`${less} (${label})`}
+        disabled={value <= limits.min}
+        onClick={() => onChange(clamp(value - step, limits))}
+      >
+        −
+      </button>
+      <input
+        key={value}
+        type="number"
+        inputMode="numeric"
+        aria-label={label}
+        min={limits.min}
+        max={limits.max}
+        step={step}
+        defaultValue={value}
+        onBlur={(e) => commit(e.currentTarget)}
+        onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+      />
+      <button
+        type="button"
+        aria-label={`${more} (${label})`}
+        disabled={value >= limits.max}
+        onClick={() => onChange(clamp(value + step, limits))}
+      >
+        +
+      </button>
+    </div>
   );
 }

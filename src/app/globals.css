@@ -550,6 +550,211 @@
       animation: jauge 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
     }
   }
+
+  /* ——— Salle d'attente ——— */
+
+  .btn-contour {
+    border: 2px solid var(--trait);
+    color: var(--encre);
+  }
+  .btn-contour:hover {
+    background: var(--surface-2);
+  }
+
+  /* Le code en grosses touches, qui arrivent une à une. */
+  .code-geant {
+    display: flex;
+    gap: 0.375rem;
+  }
+  .code-geant > span {
+    display: flex;
+    width: clamp(2.6rem, 11vw, 3.5rem);
+    height: clamp(3.2rem, 13vw, 4.25rem);
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.875rem;
+    background: var(--surface-2);
+    box-shadow: 0 5px 0 var(--trait);
+    font-family: var(--font-mono);
+    font-size: clamp(1.6rem, 7vw, 2.125rem);
+    font-weight: 700;
+  }
+  .code-geant > .tiret {
+    width: 1rem;
+    background: none;
+    box-shadow: none;
+    font-size: 1.75rem;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .code-geant > span {
+      animation: monte 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+  }
+
+  .joueur {
+    display: grid;
+    grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: 1rem;
+    transition: background-color 0.2s ease;
+  }
+  .joueur:hover {
+    background: var(--surface-2);
+  }
+  .badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    background: var(--surface-2);
+    color: var(--sourdine);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .joueur:hover .badge {
+    background: var(--surface);
+  }
+  .badge-hote {
+    background: var(--jaune);
+    color: var(--color-nuit);
+  }
+  .joueur:hover .badge-hote {
+    background: var(--jaune);
+  }
+
+  /* Onglets de la configuration. */
+  .onglets {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.3rem;
+    border-radius: 1.125rem;
+    background: var(--surface-2);
+  }
+  .onglet {
+    flex: 1;
+    min-height: 3rem;
+    border-radius: 0.875rem;
+    color: var(--sourdine);
+    font-weight: 800;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  .onglet:hover {
+    color: var(--encre);
+  }
+  .onglet[aria-selected="true"] {
+    background: var(--surface);
+    color: var(--encre);
+    box-shadow: 0 2px 8px -2px rgb(13 18 64 / 0.25);
+  }
+  .ligne-reglage {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    padding: 0.875rem 0;
+    border-bottom: 1px solid var(--trait);
+  }
+
+  /* − valeur + : la valeur reste un vrai champ qu'on peut taper. */
+  .stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.3rem;
+    border-radius: 1rem;
+    background: var(--surface-2);
+  }
+  .stepper > button {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    background: var(--surface);
+    font-size: 1.25rem;
+    font-weight: 800;
+    transition: transform 0.15s ease;
+  }
+  .stepper > button:active {
+    transform: scale(0.92);
+  }
+  .stepper > button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .stepper > input {
+    width: 3.5rem;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 1.125rem;
+    font-weight: 700;
+    text-align: center;
+    appearance: textfield;
+  }
+  .stepper > input::-webkit-inner-spin-button,
+  .stepper > input::-webkit-outer-spin-button {
+    appearance: none;
+  }
+
+  /* Interrupteur oui/non (role="switch"). */
+  .switch {
+    position: relative;
+    flex: none;
+    width: 3.25rem;
+    height: 1.875rem;
+    border-radius: 2rem;
+    background: var(--trait);
+    transition: background-color 0.2s ease;
+  }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 0.25rem;
+    left: 0.25rem;
+    width: 1.375rem;
+    height: 1.375rem;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .switch[aria-checked="true"] {
+    background: var(--bleu);
+  }
+  .switch[aria-checked="true"]::after {
+    transform: translateX(1.375rem);
+  }
+
+  /* La barre de départ, collée en bas de l'écran. */
+  .barre-depart {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 1.25rem;
+    padding: 1rem 1rem 1rem 1.6rem;
+    border-radius: 1.5rem;
+    background: var(--color-nuit);
+    color: #fff;
+    box-shadow:
+      0 0 0 1px rgb(255 255 255 / 0.08),
+      0 20px 40px -16px rgb(13 18 64 / 0.6);
+  }
+  /* Collée en bas seulement sur grand écran : sur un téléphone elle
+     cacherait la moitié de la page. */
+  @media (min-width: 40rem) {
+    .barre-depart {
+      position: sticky;
+      bottom: 1rem;
+    }
+  }
 }
 
 @keyframes jauge {

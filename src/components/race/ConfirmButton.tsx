@@ -8,11 +8,13 @@ type Props = {
   yes: string;
   no: string;
   onConfirm: () => void;
+  // Style du premier bouton, quand le lien rouge par défaut ne convient pas.
+  triggerClassName?: string;
 };
 
 // Action qu'on ne peut pas annuler (abandonner, fermer la salle) : un premier
 // clic pose la question, un second confirme (COURSE-07).
-export function ConfirmButton({ label, question, yes, no, onConfirm }: Props) {
+export function ConfirmButton({ label, question, yes, no, onConfirm, triggerClassName }: Props) {
   const [asking, setAsking] = useState(false);
   const questionId = useId();
 
@@ -21,7 +23,9 @@ export function ConfirmButton({ label, question, yes, no, onConfirm }: Props) {
       <button
         type="button"
         onClick={() => setAsking(true)}
-        className="text-faute self-start font-bold underline underline-offset-4"
+        className={
+          triggerClassName ?? "text-faute self-start font-bold underline underline-offset-4"
+        }
       >
         {label}
       </button>

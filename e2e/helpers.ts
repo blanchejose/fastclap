@@ -37,8 +37,19 @@ export async function createRoom(page: Page): Promise<string> {
   return page.url().split("/").pop()!;
 }
 
-export async function addBot(page: Page, level: string) {
-  await page.getByLabel("Niveau du bot").selectOption(level);
+const BOT_LEVEL_NAMES: Record<string, string> = {
+  NOOB: "Noob",
+  BEGINNER: "Débutant",
+  INTERMEDIATE: "Intermédiaire",
+  EXPERT: "Expert",
+  IMPOSSIBLE: "Impossible",
+};
+
+export async function addBot(page: Page, level: keyof typeof BOT_LEVEL_NAMES) {
+  await page
+    .getByRole("group", { name: "Niveau du bot" })
+    .getByRole("button", { name: BOT_LEVEL_NAMES[level], exact: true })
+    .click();
   await page.getByRole("button", { name: "Ajouter un bot" }).click();
 }
 
