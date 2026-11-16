@@ -9,12 +9,19 @@ async function expectAccessible(page: Page, label: string) {
   for (const colorScheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme });
     // Au changement de thème, les boutons passent d'une couleur à l'autre en
-    // quelques millisecondes : axe doit mesurer les couleurs finales.
+    // quelques millisecondes, et à l'arrivée les blocs apparaissent en fondu :
+    // axe doit mesurer les couleurs finales. Les animations en boucle (bandeau,
+    // démo) ne finissent jamais : on ne les attend pas.
     await page.evaluate(() =>
       Promise.all(
         document
           .getAnimations()
-          .filter((animation) => animation instanceof CSSTransition)
+          .filter(
+            (animation) =>
+              animation instanceof CSSTransition ||
+              (animation instanceof CSSAnimation &&
+                animation.effect?.getComputedTiming().iterations !== Infinity),
+          )
           .map((animation) => animation.finished.catch(() => undefined)), // annulée : rien à attendre
       ),
     );
