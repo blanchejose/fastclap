@@ -59,7 +59,7 @@ export default async function RacePage({ params }: PageProps<"/course/[id]">) {
           }}
         />
 
-        <details className="bg-surface rounded-3xl p-6">
+        <details className="carte p-6">
           <summary className="cursor-pointer font-bold">{t.history.text}</summary>
           <p className="mt-3 font-mono leading-relaxed">{race.content}</p>
         </details>

@@ -78,6 +78,12 @@ export async function hasInviteAccess(code: string, personId: string, ip: string
   return link !== null;
 }
 
+// L'hôte supprime un lien qui ne lui convient pas. Un lien déjà utilisé ne
+// donne plus accès : son invité ne pourra plus revenir dans une salle privée.
+export async function deleteInvite(code: string, token: string) {
+  await prisma.inviteLink.deleteMany({ where: { token, room: { code } } });
+}
+
 // SALLE-07 : le lien d'une personne expulsée est révoqué.
 export async function revokeInvites(code: string, personId: string) {
   await prisma.inviteLink.updateMany({

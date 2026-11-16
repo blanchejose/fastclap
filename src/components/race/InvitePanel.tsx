@@ -3,17 +3,20 @@
 import { useEffect, useState } from "react";
 import { fmt, type Dictionary } from "@/i18n/dictionaries";
 import type { InviteView } from "@/lib/invites";
+import { ConfirmButton } from "./ConfirmButton";
 
 export type InviteReply = { ok: true; invites: InviteView[] } | { ok: false };
+export type InviteEvent = "invite:list" | "invite:create" | "invite:delete";
 
 type Props = {
-  // Demande au serveur la liste des liens, ou d'en créer un.
-  request: (event: "invite:list" | "invite:create", reply: (r: InviteReply) => void) => void;
+  // Demande au serveur la liste des liens, d'en créer un ou d'en supprimer un.
+  request: (event: InviteEvent, reply: (r: InviteReply) => void, payload?: object) => void;
   version: number; // change quand quelqu'un entre avec un lien
   t: Dictionary["invite"];
 };
 
-// SALLE-04 : l'hôte génère un lien par invité, les copie et voit leur statut.
+// SALLE-04 : l'hôte génère un lien par invité, les copie, voit leur statut et
+// supprime ceux qui ne lui conviennent plus.
 export function InvitePanel({ request, version, t }: Props) {
   const [invites, setInvites] = useState<InviteView[]>([]);
   const [origin, setOrigin] = useState("");
@@ -28,6 +31,8 @@ export function InvitePanel({ request, version, t }: Props) {
   useEffect(() => {
     request("invite:list", receive);
   }, [request, version]);
+
+  const remove = (token: string) => request("invite:delete", receive, { token });
 
   async function copy(url: string, token: string) {
     try {
@@ -87,6 +92,26 @@ export function InvitePanel({ request, version, t }: Props) {
                     className="bg-surface min-h-11 rounded-xl px-4 text-sm font-bold"
                   >
                     {copied === invite.token ? t.copied : t.copy}
+                  </button>
+                )}
+                {invite.status === "USED" ? (
+                  // Un lien utilisé : son invité ne pourra plus revenir, on confirme.
+                  <ConfirmButton
+                    label={t.delete}
+                    question={fmt(t.confirmDelete, { name: invite.usedByName ?? "" })}
+                    yes={t.confirmDeleteYes}
+                    no={t.confirmDeleteNo}
+                    onConfirm={() => remove(invite.token)}
+                    triggerClassName="text-faute min-h-11 rounded-xl px-3 text-sm font-bold underline underline-offset-4"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => remove(invite.token)}
+                    aria-label={fmt(t.deleteLabel, { label })}
+                    className="text-faute min-h-11 rounded-xl px-3 text-sm font-bold underline underline-offset-4"
+                  >
+                    {t.delete}
                   </button>
                 )}
               </li>

@@ -62,7 +62,8 @@ export async function typeRaceText(page: Page) {
   for (let i = 0; ; i++) {
     const text = await page
       .locator("#texte-complet")
-      .textContent()
+      // Course finie (le texte disparaît) : on n'attend pas indéfiniment.
+      .textContent({ timeout: 2_000 })
       .catch(() => null);
     if (text === null || i >= text.length) break;
     await page.keyboard.type(text[i], { delay: 60 });
