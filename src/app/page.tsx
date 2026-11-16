@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { Bib } from "@/components/Bib";
 import { Runner } from "@/components/Logo";
 import { RaceDemo } from "@/components/RaceDemo";
 import { RoomCodeForm } from "@/components/RoomCodeForm";
@@ -200,30 +201,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                 {t.common.login}
               </Link>
             </div>
-            <ul className="relative flex flex-[1_1_440px] flex-wrap justify-center gap-6 pt-7">
+            <ul className="relative flex flex-[1_1_440px] flex-wrap justify-center gap-6 pt-7 *:w-[150px]">
               {h.bibs.map((d, i) => (
-                <li
-                  key={d.label}
-                  className="text-nuit motion-safe:animate-balance relative flex w-[150px] origin-[50%_-18px] flex-col items-center gap-1 rounded-2xl bg-white px-3.5 pt-6.5 pb-4 shadow-[0_8px_0_var(--orange),0_24px_40px_-18px_rgb(0_0_0/0.5)] transition-[scale] duration-300 hover:scale-105 hover:[animation-play-state:paused]"
-                  style={
-                    {
-                      "--r": swings[i],
-                      animationDelay: `${-1.3 * i}s`,
-                    } as React.CSSProperties
-                  }
-                >
-                  <span className="absolute top-2.5 left-2.5 size-2.5 rounded-full bg-[#E6EAFB] ring-[1.5px] ring-black/25 ring-inset" />
-                  <span className="absolute top-2.5 right-2.5 size-2.5 rounded-full bg-[#E6EAFB] ring-[1.5px] ring-black/25 ring-inset" />
-                  <span className="font-mono text-[11px] font-bold tracking-[0.12em]">
-                    {d.label}
-                  </span>
-                  <span className="font-display text-[56px] leading-none font-extrabold">
-                    {d.value}
-                  </span>
-                  <span className="font-mono text-[11px] font-bold tracking-[0.1em] text-[#4F5682]">
-                    {d.unit}
-                  </span>
-                </li>
+                <Bib key={d.label} {...d} swing={swings[i]} delay={`${-1.3 * i}s`} large />
               ))}
             </ul>
           </div>

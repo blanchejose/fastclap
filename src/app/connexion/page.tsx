@@ -92,7 +92,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
         <div className="flex min-w-0 flex-col gap-[22px]">
           <h1 className="font-display text-[clamp(52px,7vw,96px)] leading-[0.92] font-extrabold tracking-tight">
             <span className="motion-safe:animate-monte block">{t.login.title1}</span>
-            <span className="text-bleu motion-safe:animate-monte block [animation-delay:80ms]">
+            <span className="text-bleu-texte motion-safe:animate-monte block [animation-delay:80ms]">
               {t.login.title2}
             </span>
           </h1>
@@ -205,7 +205,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
           {/* AUTH-01 : mot de passe, disponible mais en retrait (en dernier, replié).
               Un <details> s'ouvre sans JavaScript. */}
           <details open={passwordError} className="group flex flex-col">
-            <summary className="text-bleu mx-auto flex min-h-11 cursor-pointer list-none items-center px-2 font-bold [&::-webkit-details-marker]:hidden">
+            <summary className="text-bleu-texte mx-auto flex min-h-11 cursor-pointer list-none items-center px-2 font-bold [&::-webkit-details-marker]:hidden">
               {t.login.hasPassword}
             </summary>
             <form
