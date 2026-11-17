@@ -24,11 +24,19 @@ async function requireUser() {
   return session.user.id;
 }
 
+// Le nom tapé revient avec l'erreur : React vide le formulaire après l'envoi.
+export type NameState = { error: boolean; name?: string };
+
 // AUTH-05 : le pseudonyme affiché. Le nom d'utilisateur (connexion) ne change pas.
-export async function updateDisplayName(formData: FormData) {
+// Appelée par useActionState : un nom refusé revient au formulaire.
+export async function updateDisplayName(
+  _previous: NameState,
+  formData: FormData,
+): Promise<NameState> {
   const userId = await requireUser();
-  const input = nameSchema.safeParse({ name: formData.get("name") ?? "" });
-  if (!input.success) redirect("/profil?erreur=nom#pseudonyme");
+  const typed = String(formData.get("name") ?? "").slice(0, 80);
+  const input = nameSchema.safeParse({ name: typed });
+  if (!input.success) return { error: true, name: typed };
   await prisma.user.update({ where: { id: userId }, data: { name: input.data.name } });
   redirect("/profil?ok=nom#pseudonyme");
 }

@@ -13,14 +13,14 @@ import { avatarUrl } from "@/lib/avatar-url";
 import { displayNameOf } from "@/lib/display-name";
 import { listHistory } from "@/lib/history";
 import { getProfile } from "@/lib/profile";
-import { updateDisplayName } from "./actions";
+import { NameForm } from "./NameForm";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getDictionary()).profile.metaTitle };
 }
 
 type Messages = "nom" | "photo" | "photo-retiree";
-type Errors = "nom" | "vide" | "taille" | "type";
+type Errors = "vide" | "taille" | "type";
 const pick = <T extends string>(value: unknown, keys: readonly T[]) =>
   keys.find((k) => k === value);
 
@@ -39,7 +39,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profil">
   ]);
   if (!profile) redirect("/connexion?suite=/profil");
   const ok = pick<Messages>(query.ok, ["nom", "photo", "photo-retiree"]);
-  const error = pick<Errors>(query.erreur, ["nom", "vide", "taille", "type"]);
+  const error = pick<Errors>(query.erreur, ["vide", "taille", "type"]);
 
   const { user, stats } = profile;
   const name = displayNameOf(user);
@@ -64,8 +64,6 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profil">
   // « Nom d'utilisateur pour te connecter : {username} », le pseudo en gras.
   const [before, after] = p.username.split("{username}");
   const card = "carte motion-safe:animate-monte flex min-w-0 flex-col p-[26px]";
-  const field =
-    "bg-surface-2 text-encre focus:border-bleu focus:bg-surface h-[52px] w-full rounded-[14px] border-2 px-4 text-[17px] font-semibold transition-colors outline-none";
 
   return (
     <>
@@ -221,37 +219,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profil">
             <h2 id="titre-pseudonyme" className="font-display text-[22px] font-extrabold">
               {p.nameTitle}
             </h2>
-            <form action={updateDisplayName} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <label htmlFor="pseudonyme-affiche" className="text-[15px] font-bold">
-                  {p.nameLabel}
-                </label>
-                <input
-                  id="pseudonyme-affiche"
-                  name="name"
-                  required
-                  minLength={3}
-                  maxLength={20}
-                  defaultValue={name}
-                  autoComplete="nickname"
-                  aria-describedby="aide-pseudonyme"
-                  aria-invalid={error === "nom" || undefined}
-                  className={`${field} ${error === "nom" ? "border-faute" : "border-trait"}`}
-                />
-                <p
-                  id="aide-pseudonyme"
-                  role={error === "nom" ? "alert" : undefined}
-                  className={
-                    error === "nom" ? "text-faute font-semibold" : "text-sourdine text-[13px]"
-                  }
-                >
-                  {error === "nom" ? p.errors.nom : p.nameHelp}
-                </p>
-              </div>
-              <button type="submit" className="btn btn-bleu self-start">
-                {p.nameSubmit}
-              </button>
-            </form>
+            <NameForm name={name} t={p} />
           </section>
 
           <section
@@ -262,7 +230,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profil">
             <h2 id="titre-photo" className="font-display text-[22px] font-extrabold">
               {p.photoTitle}
             </h2>
-            {error && error !== "nom" && (
+            {error && (
               <p role="alert" className="text-faute font-semibold">
                 {p.errors[error]}
               </p>

@@ -1,18 +1,23 @@
+"use client";
+
+import { useActionState } from "react";
 import { joinByCode } from "@/app/salle/actions";
 import type { Dictionary } from "@/i18n/dictionaries";
 
 type Props = {
   t: Dictionary["code"];
-  error?: "invalide" | "introuvable" | "prive" | "trop";
   note?: string;
 };
 
-// Formulaire sans JavaScript : il appelle une Server Action (JOIN-01).
-export function RoomCodeForm({ t, error, note }: Props) {
+// JOIN-01 : le formulaire appelle une Server Action. Il marche aussi avant le
+// chargement du JavaScript ; ensuite, l'erreur s'affiche sans recharger la page
+// et le code tapé reste dans le champ.
+export function RoomCodeForm({ t, note }: Props) {
+  const [{ error, code }, action, pending] = useActionState(joinByCode, { error: null });
   return (
     <form
       id="rejoindre"
-      action={joinByCode}
+      action={action}
       className="carte flex max-w-[29rem] flex-col gap-2.5 p-[18px]"
     >
       <label htmlFor="code-salle" className="text-[15px] font-bold">
@@ -22,6 +27,7 @@ export function RoomCodeForm({ t, error, note }: Props) {
         <input
           id="code-salle"
           name="code"
+          defaultValue={code}
           required
           autoComplete="off"
           placeholder="K7X-2QP"
@@ -29,7 +35,12 @@ export function RoomCodeForm({ t, error, note }: Props) {
           aria-describedby={error ? "code-erreur" : undefined}
           className={`bg-surface-2 placeholder:text-sourdine focus:border-bleu focus:bg-surface min-h-[52px] w-0 min-w-0 flex-1 rounded-[14px] border-2 px-4 font-mono text-xl font-bold tracking-[0.18em] uppercase transition-colors outline-none ${error ? "border-faute" : "border-trait"}`}
         />
-        <button type="submit" className="btn btn-bleu min-h-[52px] rounded-[14px]">
+        <button
+          type="submit"
+          aria-busy={pending}
+          disabled={pending}
+          className="btn btn-bleu min-h-[52px] rounded-[14px]"
+        >
           {t.submit}
         </button>
       </div>

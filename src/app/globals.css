@@ -314,6 +314,15 @@
     box-shadow: 0 2px 0 var(--orange);
   }
 
+  /* Formulaire en cours d'envoi (useActionState) : le bouton reste en place,
+     atténué, et ne réagit plus au survol. */
+  .btn[aria-busy="true"],
+  .btn-go[aria-busy="true"] {
+    opacity: 0.7;
+    cursor: progress;
+    transform: none;
+  }
+
   /* La flèche glisse quand on survole son lien ou son bouton. */
   .fleche {
     transition: transform 0.2s ease;

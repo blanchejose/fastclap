@@ -31,16 +31,23 @@ const guestSchema = z.object({
     .catch(undefined),
 });
 
-// Server Action : rejoindre une salle avec son code (JOIN-01).
-export async function joinByCode(formData: FormData) {
+export type CodeError = "invalide" | "introuvable" | "prive" | "trop";
+// Le code tapé revient avec l'erreur : React vide le formulaire après l'envoi.
+export type CodeState = { error: CodeError | null; code?: string };
+
+// Server Action : rejoindre une salle avec son code (JOIN-01). Appelée par
+// useActionState : une erreur revient au formulaire, qui reste là où il est
+// (accueil, salles ou /go) ; un bon code redirige vers la salle.
+export async function joinByCode(_previous: CodeState, formData: FormData): Promise<CodeState> {
   // SALLE-10 : 10 essais ratés par minute et par adresse IP.
   const ip = (await headers()).get(IP_HEADER) ?? "inconnue";
-  if (codeAttempts.isBlocked(ip)) redirect("/?code=trop#rejoindre");
+  const typed = String(formData.get("code") ?? "").slice(0, 20);
+  if (codeAttempts.isBlocked(ip)) return { error: "trop", code: typed };
 
-  const input = joinSchema.safeParse({ code: formData.get("code") ?? "" });
+  const input = joinSchema.safeParse({ code: typed });
   if (!input.success) {
     codeAttempts.record(ip);
-    redirect("/?code=invalide#rejoindre");
+    return { error: "invalide", code: typed };
   }
   const { code } = input.data;
 
@@ -50,10 +57,10 @@ export async function joinByCode(formData: FormData) {
   });
   if (!room || room.status === "CLOSED") {
     codeAttempts.record(ip);
-    redirect("/?code=introuvable#rejoindre");
+    return { error: "introuvable", code: typed };
   }
   // SALLE-04 : le code seul ne suffit pas pour une salle privée.
-  if (room.visibility === "PRIVATE") redirect("/?code=prive#rejoindre");
+  if (room.visibility === "PRIVATE") return { error: "prive", code: typed };
 
   redirect(`/salle/${code}`);
 }

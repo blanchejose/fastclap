@@ -37,12 +37,8 @@ function Fleche({ className }: { className: string }) {
 
 // Composant serveur (par défaut dans l'App Router). Les animations sont en CSS :
 // aucun JavaScript de plus n'est envoyé au navigateur pour elles.
-export default async function Home({ searchParams }: PageProps<"/">) {
-  const [{ code }, t] = await Promise.all([searchParams, getDictionary()]);
-  const codeError =
-    code === "invalide" || code === "introuvable" || code === "prive" || code === "trop"
-      ? code
-      : undefined;
+export default async function Home() {
+  const t = await getDictionary();
   const h = t.home;
 
   return (
@@ -90,7 +86,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
               </Link>
             </div>
             <div className="motion-safe:animate-monte [animation-delay:560ms]">
-              <RoomCodeForm t={t.code} error={codeError} note={h.noAccount} />
+              <RoomCodeForm t={t.code} note={h.noAccount} />
             </div>
           </div>
           <div className="motion-safe:animate-monte flex min-w-0 flex-[1_1_440px] [animation-delay:320ms]">

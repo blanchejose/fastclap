@@ -8,6 +8,7 @@ export const fr = {
   },
   common: {
     skip: "Aller au contenu",
+    loading: "Chargement…",
     home: "FastClap, accueil",
     nav: "Navigation principale",
     rooms: "Salles",
@@ -495,6 +496,7 @@ const en: Dictionary = {
   },
   common: {
     skip: "Skip to content",
+    loading: "Loading…",
     home: "FastClap, home",
     nav: "Main navigation",
     rooms: "Rooms",

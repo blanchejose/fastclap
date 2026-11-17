@@ -9,15 +9,12 @@ import { isGuestId } from "@/lib/guest-id";
 import { Avatar } from "./Avatar";
 import { ConfigPanel, type ConfigReply } from "./ConfigPanel";
 import { ConfirmButton } from "./ConfirmButton";
+import { useRoom } from "./RoomContext";
 
 type Props = {
-  view: RoomView;
-  meId: string;
-  send: (event: string, payload?: object) => void;
   updateConfig: (patch: ConfigPatch, reply: (r: ConfigReply) => void) => void;
   // Panneau des liens d'invitation (hôte seulement), placé sous les participants.
   invites?: ReactNode;
-  t: Pick<Dictionary, "room" | "config" | "levels">;
 };
 
 function Fleche() {
@@ -40,8 +37,8 @@ function Fleche() {
 // Salle d'attente (EN_ATTENTE) : code à partager, participants et bots à
 // gauche, configuration à droite, et la barre de départ collée en bas
 // (COURSE-02 : seul l'hôte lance).
-export function WaitingRoom({ view, meId, send, updateConfig, invites, t }: Props) {
-  const isHost = view.hostId === meId;
+export function WaitingRoom({ updateConfig, invites }: Props) {
+  const { view, meId, isHost, send, t } = useRoom();
   const me = view.members.find((m) => m.id === meId);
   const racers = view.members.filter((m) => m.role === "PLAYER");
   const spectators = view.members.filter((m) => m.role === "SPECTATOR");
@@ -84,25 +81,18 @@ export function WaitingRoom({ view, meId, send, updateConfig, invites, t }: Prop
               {racers.length}/{view.config.maxPlayers}
             </span>
           </div>
-          <MemberList members={racers} view={view} meId={meId} isHost={isHost} send={send} t={r} />
+          <MemberList members={racers} />
 
           {spectators.length > 0 && (
             <>
               <h3 className="font-display px-1.5 pt-4 pb-2 text-lg font-extrabold">
                 {r.spectators} · {spectators.length}
               </h3>
-              <MemberList
-                members={spectators}
-                view={view}
-                meId={meId}
-                isHost={isHost}
-                send={send}
-                t={r}
-              />
+              <MemberList members={spectators} />
             </>
           )}
 
-          {isHost && <AddBot send={send} t={r} />}
+          {isHost && <AddBot />}
         </section>
 
         <div className="min-w-0 lg:col-start-2 lg:row-span-3 lg:row-start-1">
@@ -224,21 +214,14 @@ function CodeCard({ code, t }: { code: string; t: Dictionary["room"] }) {
   );
 }
 
-function MemberList({
-  members,
-  view,
-  meId,
-  isHost,
-  send,
-  t,
-}: {
-  members: RoomView["members"];
-  view: RoomView;
-  meId: string;
-  isHost: boolean;
-  send: Props["send"];
-  t: Dictionary["room"];
-}) {
+function MemberList({ members }: { members: RoomView["members"] }) {
+  const {
+    view,
+    meId,
+    isHost,
+    send,
+    t: { room: t },
+  } = useRoom();
   return (
     <ul className="flex flex-col gap-0.5" aria-live="polite">
       {members.map((m, i) => {
@@ -296,7 +279,11 @@ function MemberList({
 }
 
 // BOT-01 : l'hôte choisit un niveau puis ajoute le bot.
-function AddBot({ send, t }: { send: Props["send"]; t: Dictionary["room"] }) {
+function AddBot() {
+  const {
+    send,
+    t: { room: t },
+  } = useRoom();
   const [level, setLevel] = useState<BotLevel>("INTERMEDIATE");
   return (
     <div className="border-trait mt-3.5 flex flex-col gap-3 border-t px-1.5 pt-3.5">
