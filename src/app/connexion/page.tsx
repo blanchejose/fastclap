@@ -5,18 +5,12 @@ import { DiscordIcon, GitHubIcon } from "@/components/BrandIcons";
 import { Runner } from "@/components/Logo";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getDictionary } from "@/i18n/server";
-import { signInWithOAuth, signInWithPassword, signInWithUsername } from "./actions";
+import { signInWithOAuth } from "./actions";
+import { ErrorText, loginMessage, PasswordForm, UsernameForm } from "./LoginForms";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getDictionary()).login.metaTitle };
 }
-
-const pseudoErrors = new Set(["username_taken", "invalid_username"]);
-const passwordErrors = new Set(["weak_password", "wrong_password"]);
-
-// Champ de saisie de la maquette : fond doux, bordure qui passe au bleu au focus.
-const fieldClass =
-  "bg-surface-2 text-encre placeholder:text-sourdine focus:border-bleu focus:bg-surface h-[52px] w-full rounded-[14px] border-2 px-4 text-[17px] font-semibold transition-colors outline-none";
 
 // Couloirs de la piste décorative : couleur, durée de la traversée et départ
 // décalé pour que les trois coureurs ne soient jamais alignés.
@@ -25,30 +19,6 @@ const LANES = [
   { top: 70, color: "text-bleu", duration: "7.5s", delay: "-2s" },
   { top: 110, color: "text-sourdine", duration: "9s", delay: "-5s" },
 ] as const;
-
-function ErrorText({ id, children }: { id: string; children: React.ReactNode }) {
-  return (
-    <p
-      id={id}
-      role="alert"
-      className="text-faute flex items-center gap-2 text-[15px] font-semibold"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        className="size-4.5 shrink-0"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        aria-hidden="true"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 7v6M12 17h.01" />
-      </svg>
-      {children}
-    </p>
-  );
-}
 
 // Composant serveur : il lit la session, l'erreur éventuelle et la page où
 // revenir dans l'URL. Les formulaires appellent des Server Actions.
@@ -62,12 +32,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
     typeof suite === "string" && suite.startsWith("/") && !suite.startsWith("//") ? suite : "/";
   if (session) redirect(next);
 
-  const code = typeof erreur === "string" ? erreur : null;
-  const errors = t.login.errors as Record<string, string>;
-  const message = code ? (errors[code] ?? t.login.errors.other) : null;
-  const pseudoError = code !== null && pseudoErrors.has(code);
-  const passwordError = code !== null && passwordErrors.has(code);
-  const otherError = message && !pseudoError && !passwordError;
+  // Erreurs des fournisseurs (Discord, GitHub), revenues dans l'URL. Celles
+  // des formulaires s'affichent sous leur champ (LoginForms).
+  const message = typeof erreur === "string" ? loginMessage(erreur, t.login) : null;
 
   const oauth = [
     {
@@ -129,7 +96,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
           <h2 className="font-display text-[30px] font-extrabold tracking-tight">
             {t.login.heading}
           </h2>
-          {otherError && <ErrorText id="erreur-generale">{message}</ErrorText>}
+          {message && <ErrorText id="erreur-generale">{message}</ErrorText>}
 
           {/* AUTH-01 : Discord et GitHub, les connexions recommandées, en premier */}
           {oauth.map((provider) => (
@@ -158,95 +125,8 @@ export default async function LoginPage({ searchParams }: PageProps<"/connexion"
             <span className="bg-trait h-px flex-1" />
           </div>
 
-          {/* Connexion rapide : un pseudo suffit */}
-          <form action={signInWithUsername} className="flex flex-col gap-4">
-            {nextField}
-            <div className="flex flex-col gap-2">
-              <label htmlFor="pseudo" className="text-[15px] font-bold">
-                {t.login.pseudo}
-              </label>
-              <input
-                id="pseudo"
-                name="username"
-                required
-                minLength={3}
-                maxLength={20}
-                pattern="[a-zA-Z0-9_\-]{3,20}"
-                autoComplete="username"
-                placeholder={t.login.pseudoPlaceholder}
-                aria-invalid={pseudoError || undefined}
-                aria-describedby={pseudoError ? "pseudo-aide pseudo-erreur" : "pseudo-aide"}
-                className={`${fieldClass} ${pseudoError ? "border-faute!" : "border-trait"}`}
-              />
-              <span id="pseudo-aide" className="text-sourdine text-[13px]">
-                {t.login.pseudoHelp}
-              </span>
-              {pseudoError && <ErrorText id="pseudo-erreur">{message}</ErrorText>}
-            </div>
-            <button type="submit" className="btn-go p-4 text-xl">
-              {t.login.go}
-              <svg
-                className="fleche"
-                viewBox="0 0 24 24"
-                width="24"
-                height="24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
-            </button>
-          </form>
-
-          {/* AUTH-01 : mot de passe, disponible mais en retrait (en dernier, replié).
-              Un <details> s'ouvre sans JavaScript. */}
-          <details open={passwordError} className="group flex flex-col">
-            <summary className="text-bleu-texte mx-auto flex min-h-11 cursor-pointer list-none items-center px-2 font-bold [&::-webkit-details-marker]:hidden">
-              {t.login.hasPassword}
-            </summary>
-            <form
-              action={signInWithPassword}
-              className="border-trait motion-safe:animate-monte mt-2 flex flex-col gap-3.5 border-t pt-4"
-            >
-              {nextField}
-              <div className="flex flex-col gap-2">
-                <label htmlFor="mdp-pseudo" className="text-[15px] font-bold">
-                  {t.login.username}
-                </label>
-                <input
-                  id="mdp-pseudo"
-                  name="username"
-                  required
-                  autoComplete="username"
-                  className={`${fieldClass} border-trait`}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label htmlFor="mdp" className="text-[15px] font-bold">
-                  {t.login.password}
-                </label>
-                <input
-                  id="mdp"
-                  name="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  autoComplete="current-password"
-                  aria-invalid={passwordError || undefined}
-                  aria-describedby={passwordError ? "mdp-erreur" : undefined}
-                  className={`${fieldClass} ${passwordError ? "border-faute!" : "border-trait"}`}
-                />
-                {passwordError && <ErrorText id="mdp-erreur">{message}</ErrorText>}
-              </div>
-              <button type="submit" className="btn btn-bleu">
-                {t.login.submitPassword}
-              </button>
-            </form>
-          </details>
+          <UsernameForm next={next} t={t.login} />
+          <PasswordForm next={next} t={t.login} />
         </main>
       </div>
     </>

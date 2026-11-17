@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { fmt, type Dictionary, type Locale } from "@/i18n/dictionaries";
 import { isGuestId } from "@/lib/guest-id";
@@ -14,12 +14,21 @@ import {
   type RoomView,
 } from "@/lib/race/engine";
 import { accuracy, netWpm } from "@/lib/race/stats";
-import { applyKey, correctChars, newTyping, progress, type Typing } from "@/lib/race/typing";
+import { initialRoomState, roomReducer, type RaceText, type Saved } from "@/lib/race/room-state";
+import {
+  applyKey,
+  correctChars,
+  newTyping,
+  progress,
+  type ErrorMode,
+  type Typing,
+} from "@/lib/race/typing";
 import { BonusFeed } from "./race/BonusFeed";
 import { InvitePanel, type InviteEvent, type InviteReply } from "./race/InvitePanel";
 import { ConfirmButton } from "./race/ConfirmButton";
 import { Countdown } from "./race/Countdown";
 import { Results } from "./race/Results";
+import { RoomContext } from "./race/RoomContext";
 import { Track } from "./race/Track";
 import { TypingZone } from "./race/TypingZone";
 import { WaitingRoom } from "./race/WaitingRoom";
@@ -39,8 +48,6 @@ type JoinReply =
   | JoinResult
   | { ok: false; reason: "invalid" | "private" | "too_many" }
   | { ok: false; reason: "elsewhere"; otherCode: string };
-type Saved = { raceNo: number; raceId: string; records: string[] };
-type RaceText = { raceNo: number; text: string };
 type Resync = { raceNo: number; typed: string; keystrokes: number; errors: number };
 
 const FLUSH_MS = 100; // PERF-02 : au plus 10 lots de touches par seconde
@@ -48,15 +55,40 @@ const GO_MS = 700; // « Go ! » reste affiché un instant après le départ
 
 // Heure du serveur, rafraîchie 10 fois par seconde pour le décompte et le MPM
 // en direct. Le décalage avec l'horloge locale change à chaque diffusion : il
-// est lu dans une ref pour ne pas relancer l'intervalle à chaque fois.
-function useServerClock(offsetRef: React.RefObject<number>, active: boolean): number {
+// est gardé dans une ref pour ne pas relancer l'intervalle à chaque fois.
+function useServerClock(offset: number, active: boolean): number {
   const [now, setNow] = useState(0);
+  const offsetRef = useRef(offset);
+  useEffect(() => {
+    offsetRef.current = offset;
+  }, [offset]);
   useEffect(() => {
     if (!active) return;
     const id = setInterval(() => setNow(Date.now() + offsetRef.current), 100);
     return () => clearInterval(id);
-  }, [offsetRef, active]);
+  }, [active]);
   return now;
+}
+
+// Ma frappe : calculée ici pour un retour immédiat. Une ref garde l'état à
+// jour entre deux rendus (un collage envoie plusieurs touches d'un coup), et
+// une copie en état React sert à l'affichage.
+function useTyping() {
+  const ref = useRef<Typing>(newTyping());
+  const pending = useRef<string[]>([]);
+  const [typing, setTyping] = useState<Typing>(newTyping);
+  const reset = useCallback((next: Typing) => {
+    ref.current = next;
+    pending.current = [];
+    setTyping({ ...next });
+  }, []);
+  const type = (text: string, key: string, mode: ErrorMode): boolean => {
+    if (applyKey(ref.current, text, key, mode) === "ignored") return false;
+    pending.current.push(key);
+    setTyping({ ...ref.current });
+    return true;
+  };
+  return { typing, pending, reset, type };
 }
 
 // Composant client : la salle et ses courses, en direct. Le serveur Socket.IO
@@ -65,92 +97,77 @@ function useServerClock(offsetRef: React.RefObject<number>, active: boolean): nu
 export function RoomLive({ code, token, meId, locale, t }: Props) {
   const router = useRouter();
   const socketRef = useRef<Socket | null>(null);
-  const typingRef = useRef<Typing>(newTyping());
-  const pendingRef = useRef<string[]>([]);
-  // Dernière touche tapée (heure du serveur), pour prévenir avant l'abandon
-  // automatique pour inactivité ; null = rien tapé depuis le départ.
-  const [lastKeyAt, setLastKeyAt] = useState<{ raceNo: number; at: number } | null>(null);
-  const [view, setView] = useState<RoomView | null>(null);
-  const [inviteVersion, setInviteVersion] = useState(0);
-  const [saved, setSaved] = useState<Saved | null>(null);
-  const [race, setRace] = useState<RaceText | null>(null);
-  const [typing, setTyping] = useState<Typing>(newTyping);
-  const clockOffsetRef = useRef(0);
-  const [error, setError] = useState<string | null>(null);
-  const [kicked, setKicked] = useState(false);
-  const [moved, setMoved] = useState(false);
-  const [elsewhere, setElsewhere] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(roomReducer, initialRoomState);
+  const { view, race, saved, inviteVersion, lastKeyAt, clockOffset } = state;
+  const { typing, pending, reset, type } = useTyping();
   const joinRef = useRef<(leaveOther: boolean) => void>(() => {});
 
   useEffect(() => {
     const socket = io({ auth: { token } });
     socketRef.current = socket;
-    const resetTyping = (next: Typing) => {
-      typingRef.current = next;
-      pendingRef.current = [];
-      setTyping({ ...next });
-    };
 
     // SALLE-06 : déjà dans une autre salle ? Le serveur refuse, et on propose
     // de la quitter (leaveOther).
     const join = (leaveOther: boolean) =>
       socket.emit("room:join", { code, leaveOther }, (reply: JoinReply) => {
-        if (reply.ok) setElsewhere(null);
-        else if (reply.reason === "elsewhere") setElsewhere(reply.otherCode);
-        else setError(t.room.errors[reply.reason]);
+        if (reply.ok) dispatch({ type: "joined" });
+        else if (reply.reason === "elsewhere")
+          dispatch({ type: "elsewhere", code: reply.otherCode });
+        else dispatch({ type: "error", message: t.room.errors[reply.reason] });
       });
     joinRef.current = join;
     socket.on("connect", () => {
-      setError(null);
+      dispatch({ type: "connected" });
       // Rejoint aussi après une reconnexion : le serveur renvoie alors le
       // texte et la progression gardée (COURSE-08).
       join(false);
     });
-    socket.on("room:state", (next: RoomView) => {
-      setView(next);
-      clockOffsetRef.current = next.serverNow - Date.now();
-    });
-    // BONUS-04 : mon texte a été raccourci ou allongé ; ce qui est tapé reste.
-    // RES-04, RES-05 : la course est enregistrée ; voici les records battus.
-    socket.on("race:saved", (next: Saved) => setSaved(next));
-    socket.on("race:mytext", (next: RaceText) =>
-      setRace((current) => (current && current.raceNo === next.raceNo ? next : current)),
+    socket.on("room:state", (next: RoomView) =>
+      dispatch({ type: "state", view: next, localNow: Date.now() }),
     );
+    socket.on("race:saved", (next: Saved) => dispatch({ type: "saved", saved: next }));
+    socket.on("race:mytext", (next: RaceText) => dispatch({ type: "mytext", race: next }));
     socket.on("race:text", (next: RaceText) => {
-      setRace(next);
-      resetTyping(newTyping());
+      dispatch({ type: "text", race: next });
+      reset(newTyping());
     });
     socket.on("race:resync", (r: Resync) =>
-      resetTyping({ typed: r.typed, keystrokes: r.keystrokes, errors: r.errors, missed: {} }),
+      reset({ typed: r.typed, keystrokes: r.keystrokes, errors: r.errors, missed: {} }),
     );
-    socket.on("room:kicked", () => setKicked(true));
-    socket.on("room:moved", () => setMoved(true));
-    socket.on("invite:update", () => setInviteVersion((v) => v + 1));
-    socket.on("connect_error", () => setError(t.room.errors.connection));
+    socket.on("room:kicked", () => dispatch({ type: "kicked" }));
+    socket.on("room:moved", () => dispatch({ type: "moved" }));
+    socket.on("invite:update", () => dispatch({ type: "invites" }));
+    socket.on("connect_error", () =>
+      dispatch({ type: "error", message: t.room.errors.connection }),
+    );
 
     // Les touches partent par lots plutôt qu'une à une (PERF-02).
     const flush = setInterval(() => {
-      if (pendingRef.current.length === 0 || !socket.connected) return;
-      socket.emit("race:keys", { keys: pendingRef.current.splice(0, MAX_KEYS_PER_BATCH) });
+      if (pending.current.length === 0 || !socket.connected) return;
+      socket.emit("race:keys", { keys: pending.current.splice(0, MAX_KEYS_PER_BATCH) });
     }, FLUSH_MS);
 
     return () => {
       clearInterval(flush);
       socket.disconnect();
     };
-  }, [code, token, t]);
+  }, [code, token, t, reset, pending]);
 
   const inRace = view?.phase === "COUNTDOWN" || view?.phase === "RUNNING";
-  const now = useServerClock(clockOffsetRef, inRace);
+  const now = useServerClock(clockOffset, inRace);
 
-  const send = (event: string, payload: object = {}) => socketRef.current?.emit(event, payload);
+  const send = useCallback(
+    (event: string, payload: object = {}) => socketRef.current?.emit(event, payload),
+    [],
+  );
   // Stable : le panneau des liens redemande la liste seulement quand `version` change.
   const requestInvites = useCallback(
     (event: InviteEvent, reply: (r: InviteReply) => void, payload: object = {}) =>
       socketRef.current?.emit(event, payload, reply),
     [],
   );
-
+  const isHost = view?.hostId === meId;
+  const { kicked, moved, elsewhere, error } = state;
   if (kicked) return <Notice>{t.room.kicked}</Notice>;
   if (moved) return <Notice>{t.room.moved}</Notice>;
   if (elsewhere) {
@@ -177,7 +194,6 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   if (!view) return <p className="text-sourdine">…</p>;
   if (view.phase === "CLOSED") return <Notice>{t.room.closed}</Notice>;
 
-  const isHost = view.hostId === meId;
   const me = view.members.find((m) => m.id === meId);
   const myRacer = view.racers.find((r) => r.id === meId);
   const text = race && race.raceNo === view.raceNo ? race.text : null;
@@ -185,11 +201,8 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
 
   function onKey(key: string) {
     if (!racing || !text || !view) return;
-    const outcome = applyKey(typingRef.current, text, key, view.config.errorMode);
-    if (outcome === "ignored") return;
-    pendingRef.current.push(key);
-    setTyping({ ...typingRef.current });
-    setLastKeyAt({ raceNo: view.raceNo, at: Date.now() + clockOffsetRef.current });
+    if (type(text, key, view.config.errorMode))
+      dispatch({ type: "typed", at: Date.now() + clockOffset });
   }
 
   function leave() {
@@ -214,173 +227,173 @@ export function RoomLive({ code, token, meId, locale, t }: Props) {
   const trackT = { ...t.race, you: t.room.you, bot: t.room.bot, guest: t.room.guest };
 
   return (
-    <div className="flex flex-col gap-6">
-      {view.phase === "WAITING" && (
-        <WaitingRoom
-          view={view}
-          meId={meId}
-          send={send}
-          updateConfig={(patch, reply) => socketRef.current?.emit("room:config", patch, reply)}
-          invites={
-            isHost && <InvitePanel request={requestInvites} version={inviteVersion} t={t.invite} />
-          }
-          t={t}
-        />
-      )}
-
-      {inRace && (
-        <>
-          {view.startAt !== null && now > 0 && now - view.startAt < GO_MS && (
-            <Countdown msLeft={view.startAt - now} t={t.race} />
-          )}
-          <RaceStats
-            elapsed={view.phase === "RUNNING" ? elapsed : 0}
-            deadline={view.deadline}
-            now={now}
-            typing={typing}
-            local={local}
-            t={t.race}
-          />
-          <Track
-            racers={view.racers}
-            meId={meId}
-            local={local}
-            t={trackT}
-            effects={Object.fromEntries(view.bonusEvents.map((e) => [e.targetId, e.type]))}
-            bonusNames={t.bonus.names}
-          />
-          <div
-            className={`grid items-start gap-5 ${view.config.bonuses ? "lg:grid-cols-[minmax(0,1fr)_20rem]" : ""}`}
-          >
-            <div className="flex min-w-0 flex-col gap-4">
-              {myRacer && text && (
-                <>
-                  <TypingZone
-                    text={text}
-                    typing={typing}
-                    active={racing}
-                    mode={view.config.errorMode}
-                    fogged={myRacer.fogUntil !== null && now > 0 && now < myRacer.fogUntil}
-                    onKey={onKey}
-                    t={t.race}
-                  />
-                  <p className="carte p-4 md:hidden">{t.race.mobile}</p>
-                </>
-              )}
-              {racing && idleMs >= IDLE_WARNING_MS && (
-                <p
-                  role="alert"
-                  className="carte border-orange! flex items-center gap-3 border-2 p-4 font-bold"
-                >
-                  <span aria-hidden="true" className="live bg-orange motion-safe:animate-pouls" />
-                  {fmt(t.race.idleWarning, {
-                    n: Math.max(1, Math.ceil((IDLE_OUT_MS - idleMs) / 1000)),
-                  })}
-                </p>
-              )}
-              <RaceStatus
-                idleOut={myRacer?.idleOut ?? false}
-                status={myRacer?.status ?? null}
-                spectating={!myRacer}
-                canAbandon={racing}
-                onAbandon={() => send("race:abandon")}
-                t={t.race}
-              />
-            </div>
-            {view.config.bonuses && (
-              <aside aria-label={t.bonus.feedLabel} className="flex min-w-0 flex-col gap-2.5">
-                {view.bonusEvents.length === 0 ? (
-                  <p className="border-trait text-sourdine rounded-2xl border-2 border-dashed px-4 py-3.5 text-sm">
-                    {t.bonus.empty}
-                  </p>
-                ) : (
-                  <BonusFeed events={view.bonusEvents} meId={meId} t={t.bonus} />
-                )}
-              </aside>
-            )}
-          </div>
-        </>
-      )}
-
-      {view.phase === "RESULTS" && (
-        <>
-          <Results
-            racers={view.racers}
-            meId={meId}
-            records={saved?.raceNo === view.raceNo ? saved.records : []}
-            locale={locale}
-            code={code}
-            t={{
-              ...t.results,
-              statuses: t.race.status,
-              you: t.room.you,
-              bot: t.room.bot,
-              bonusNames: t.bonus.names,
-              charts: t.charts,
-            }}
-            actions={
-              <div className="flex flex-wrap items-center justify-center gap-3.5">
-                {/* COURSE-11 : une action principale (relancer), les autres en retrait. */}
-                {isHost ? (
-                  <button
-                    type="button"
-                    onClick={() => send("room:lobby")}
-                    className="btn-go w-full px-8 text-xl sm:w-auto sm:text-2xl"
-                  >
-                    {t.results.again}
-                    <svg
-                      className="fleche"
-                      viewBox="0 0 24 24"
-                      width="26"
-                      height="26"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M5 12h14M13 6l6 6-6 6" />
-                    </svg>
-                  </button>
-                ) : (
-                  <p className="text-sourdine font-semibold">{t.results.waitHost}</p>
-                )}
-                {/* HIST-02 : la course est dans l'historique des utilisateurs connectés. */}
-                {saved?.raceNo === view.raceNo && myRacer && !isGuestId(meId) && (
-                  <Link
-                    href={`/course/${saved.raceId}`}
-                    className="btn btn-contour h-[70px] w-full px-7 sm:w-auto"
-                  >
-                    {t.history.view}
-                  </Link>
-                )}
-                {isHost && (
-                  <ConfirmButton
-                    label={t.results.close}
-                    question={t.room.confirmClose}
-                    yes={t.room.confirmCloseYes}
-                    no={t.room.confirmCloseNo}
-                    onConfirm={() => send("room:close")}
-                    triggerClassName="btn btn-contour h-[70px] w-full px-7 sm:w-auto"
-                  />
-                )}
-              </div>
+    <RoomContext value={{ view, meId, isHost, send, t }}>
+      <div className="flex flex-col gap-6">
+        {view.phase === "WAITING" && (
+          <WaitingRoom
+            updateConfig={(patch, reply) => socketRef.current?.emit("room:config", patch, reply)}
+            invites={
+              isHost && (
+                <InvitePanel request={requestInvites} version={inviteVersion} t={t.invite} />
+              )
             }
           />
-        </>
-      )}
+        )}
 
-      {me && !inRace && (
-        <button
-          type="button"
-          onClick={leave}
-          className="text-sourdine hover:text-encre self-start font-bold underline underline-offset-4 transition"
-        >
-          {t.room.leave}
-        </button>
-      )}
-    </div>
+        {inRace && (
+          <>
+            {view.startAt !== null && now > 0 && now - view.startAt < GO_MS && (
+              <Countdown msLeft={view.startAt - now} t={t.race} />
+            )}
+            <RaceStats
+              elapsed={view.phase === "RUNNING" ? elapsed : 0}
+              deadline={view.deadline}
+              now={now}
+              typing={typing}
+              local={local}
+              t={t.race}
+            />
+            <Track
+              racers={view.racers}
+              meId={meId}
+              local={local}
+              t={trackT}
+              effects={Object.fromEntries(view.bonusEvents.map((e) => [e.targetId, e.type]))}
+              bonusNames={t.bonus.names}
+            />
+            <div
+              className={`grid items-start gap-5 ${view.config.bonuses ? "lg:grid-cols-[minmax(0,1fr)_20rem]" : ""}`}
+            >
+              <div className="flex min-w-0 flex-col gap-4">
+                {myRacer && text && (
+                  <>
+                    <TypingZone
+                      text={text}
+                      typing={typing}
+                      active={racing}
+                      mode={view.config.errorMode}
+                      fogged={myRacer.fogUntil !== null && now > 0 && now < myRacer.fogUntil}
+                      onKey={onKey}
+                      t={t.race}
+                    />
+                    <p className="carte p-4 md:hidden">{t.race.mobile}</p>
+                  </>
+                )}
+                {racing && idleMs >= IDLE_WARNING_MS && (
+                  <p
+                    role="alert"
+                    className="carte border-orange! flex items-center gap-3 border-2 p-4 font-bold"
+                  >
+                    <span aria-hidden="true" className="live bg-orange motion-safe:animate-pouls" />
+                    {fmt(t.race.idleWarning, {
+                      n: Math.max(1, Math.ceil((IDLE_OUT_MS - idleMs) / 1000)),
+                    })}
+                  </p>
+                )}
+                <RaceStatus
+                  idleOut={myRacer?.idleOut ?? false}
+                  status={myRacer?.status ?? null}
+                  spectating={!myRacer}
+                  canAbandon={racing}
+                  onAbandon={() => send("race:abandon")}
+                  t={t.race}
+                />
+              </div>
+              {view.config.bonuses && (
+                <aside aria-label={t.bonus.feedLabel} className="flex min-w-0 flex-col gap-2.5">
+                  {view.bonusEvents.length === 0 ? (
+                    <p className="border-trait text-sourdine rounded-2xl border-2 border-dashed px-4 py-3.5 text-sm">
+                      {t.bonus.empty}
+                    </p>
+                  ) : (
+                    <BonusFeed events={view.bonusEvents} meId={meId} t={t.bonus} />
+                  )}
+                </aside>
+              )}
+            </div>
+          </>
+        )}
+
+        {view.phase === "RESULTS" && (
+          <>
+            <Results
+              racers={view.racers}
+              meId={meId}
+              records={saved?.raceNo === view.raceNo ? saved.records : []}
+              locale={locale}
+              code={code}
+              t={{
+                ...t.results,
+                statuses: t.race.status,
+                you: t.room.you,
+                bot: t.room.bot,
+                bonusNames: t.bonus.names,
+                charts: t.charts,
+              }}
+              actions={
+                <div className="flex flex-wrap items-center justify-center gap-3.5">
+                  {/* COURSE-11 : une action principale (relancer), les autres en retrait. */}
+                  {isHost ? (
+                    <button
+                      type="button"
+                      onClick={() => send("room:lobby")}
+                      className="btn-go w-full px-8 text-xl sm:w-auto sm:text-2xl"
+                    >
+                      {t.results.again}
+                      <svg
+                        className="fleche"
+                        viewBox="0 0 24 24"
+                        width="26"
+                        height="26"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M5 12h14M13 6l6 6-6 6" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <p className="text-sourdine font-semibold">{t.results.waitHost}</p>
+                  )}
+                  {/* HIST-02 : la course est dans l'historique des utilisateurs connectés. */}
+                  {saved?.raceNo === view.raceNo && myRacer && !isGuestId(meId) && (
+                    <Link
+                      href={`/course/${saved.raceId}`}
+                      className="btn btn-contour h-[70px] w-full px-7 sm:w-auto"
+                    >
+                      {t.history.view}
+                    </Link>
+                  )}
+                  {isHost && (
+                    <ConfirmButton
+                      label={t.results.close}
+                      question={t.room.confirmClose}
+                      yes={t.room.confirmCloseYes}
+                      no={t.room.confirmCloseNo}
+                      onConfirm={() => send("room:close")}
+                      triggerClassName="btn btn-contour h-[70px] w-full px-7 sm:w-auto"
+                    />
+                  )}
+                </div>
+              }
+            />
+          </>
+        )}
+
+        {me && !inRace && (
+          <button
+            type="button"
+            onClick={leave}
+            className="text-sourdine hover:text-encre self-start font-bold underline underline-offset-4 transition"
+          >
+            {t.room.leave}
+          </button>
+        )}
+      </div>
+    </RoomContext>
   );
 }
 

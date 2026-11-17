@@ -6,6 +6,9 @@ import { addBot, createRoom, loginWithPassword, typeRaceText } from "./helpers";
 // les pages connectées, dans les deux thèmes : contrastes WCAG AA, libellés,
 // balises, noms accessibles.
 async function expectAccessible(page: Page, label: string) {
+  // Les pages qui lisent la base passent d'abord par l'écran de chargement
+  // (loading.tsx) : on attend la vraie page.
+  await expect(page.locator("[data-chargement]")).toHaveCount(0);
   for (const colorScheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme });
     // Au changement de thème, les boutons passent d'une couleur à l'autre en
