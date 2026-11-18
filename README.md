@@ -7,14 +7,6 @@ salle, et des bonus de remontée gardent la course serrée.
 
 **Production : https://fastclap-production.up.railway.app**
 
-| Accueil                                      | Salle d'attente                                            |
-| -------------------------------------------- | ---------------------------------------------------------- |
-| ![Accueil](docs/images/captures/accueil.png) | ![Salle d'attente](docs/images/captures/salle-attente.png) |
-| **Course**                                   | **Résultats**                                              |
-| ![Course](docs/images/captures/course.png)   | ![Résultats](docs/images/captures/resultats.png)           |
-| **Profil**                                   | **Historique (thème sombre)**                              |
-| ![Profil](docs/images/captures/profil.png)   | ![Historique](docs/images/captures/historique-sombre.png)  |
-
 ## Compte de démonstration
 
 Sur `/connexion`, section « J'ai un mot de passe » :
