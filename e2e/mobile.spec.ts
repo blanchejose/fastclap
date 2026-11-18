@@ -1,11 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
-import { addBot, createRoom, loginWithPassword } from "./helpers";
+import { addBot, createRoom, loginWithPassword, uniqueName } from "./helpers";
 
 // DES-06 : toutes les pages sont utilisables à 360 px de large, sans défilement
 // horizontal ; pendant la course, un message recommande un clavier physique.
 test.use({ viewport: { width: 360, height: 740 } });
 
 async function expectNoHorizontalScroll(page: Page, label: string) {
+  // On mesure la vraie page, pas l'écran de chargement (loading.tsx).
+  await expect(page.locator("[data-chargement]")).toHaveCount(0);
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
@@ -28,7 +30,8 @@ test("les pages tiennent dans un écran de 360 px", async ({ page }) => {
 });
 
 test("sur mobile, la course est remplacée par un message", async ({ page }) => {
-  await loginWithPassword(page, "demo_zoe", "fastclap-demo");
+  // Compte neuf : une nouvelle tentative ne retombe pas sur l'ancienne salle.
+  await loginWithPassword(page, uniqueName("mobile"));
   await createRoom(page);
   await expectNoHorizontalScroll(page, "salle d'attente");
   await addBot(page, "NOOB");

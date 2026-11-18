@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { addBot, createRoom, loginWithPassword, typeRaceText } from "./helpers";
+import { addBot, createRoom, loginWithPassword, typeRaceText, uniqueName } from "./helpers";
 
 // A11Y-01 à A11Y-04 : axe (le moteur d'accessibilité de Lighthouse) vérifie
 // les pages connectées, dans les deux thèmes : contrastes WCAG AA, libellés,
@@ -55,7 +55,9 @@ test("les pages publiques et connectées respectent WCAG AA", async ({ page }) =
 });
 
 test("la salle, la course et les résultats respectent WCAG AA", async ({ page }) => {
-  await loginWithPassword(page, "demo_max", "fastclap-demo");
+  // Un compte neuf à chaque essai : après un échec, la nouvelle tentative ne
+  // retombe pas sur « tu es déjà dans une autre salle » (SALLE-06).
+  await loginWithPassword(page, uniqueName("a11y"));
   await createRoom(page);
   await addBot(page, "IMPOSSIBLE");
   await expectAccessible(page, "salle d'attente");

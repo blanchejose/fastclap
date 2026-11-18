@@ -12,7 +12,9 @@ test("le compte de démonstration a un historique et un profil", async ({ page }
 
   await page.goto("/profil");
   await expect(page.getByRole("heading", { level: 1, name: "Léa" })).toBeVisible();
-  await expect(page.locator("dl > div").filter({ hasText: "Courses" })).toContainText("12");
+  // Le seed donne 12 courses ; une base où l'on a joué depuis en a davantage.
+  const races = page.locator("dl > div").filter({ hasText: "Courses" }).locator("dd").first();
+  expect(Number((await races.innerText()).match(/\d+/)?.[0])).toBeGreaterThanOrEqual(12);
   await expect(page.getByRole("img", { name: "Progression du MPM" })).toBeVisible();
 });
 
