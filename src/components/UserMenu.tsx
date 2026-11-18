@@ -40,14 +40,16 @@ export async function UserMenu() {
       <Link
         href="/profil"
         aria-label={`${name} · ${t.common.profile}`}
-        className="flex min-h-11 items-center gap-2 font-semibold underline-offset-4 hover:underline"
+        className="flex min-h-11 min-w-0 items-center gap-2 font-semibold underline-offset-4 hover:underline"
       >
         <Avatar
           name={name}
           src={account ? avatarUrl(session.user.id, account.avatarUpdatedAt) : null}
           className="size-7"
         />
-        {name}
+        {/* Un long nom est coupé (…) sur téléphone pour que l'en-tête tienne
+            dans 360 px (DES-06) ; le nom complet reste dans l'étiquette du lien. */}
+        <span className="max-w-[4.5rem] truncate sm:max-w-[12rem]">{name}</span>
       </Link>
       <form action={logout}>
         <button

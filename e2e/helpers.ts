@@ -45,12 +45,17 @@ const BOT_LEVEL_NAMES: Record<string, string> = {
   IMPOSSIBLE: "Impossible",
 };
 
+// Ajoute un bot et attend qu'il apparaisse dans la liste : sans cette attente,
+// axe pouvait mesurer sa ligne pendant son fondu d'arrivée.
 export async function addBot(page: Page, level: keyof typeof BOT_LEVEL_NAMES) {
+  const bots = page.locator(".joueur").filter({ hasText: /bot ·/i });
+  const before = await bots.count();
   await page
     .getByRole("group", { name: "Niveau du bot" })
     .getByRole("button", { name: BOT_LEVEL_NAMES[level], exact: true })
     .click();
   await page.getByRole("button", { name: "Ajouter un bot" }).click();
+  await expect(bots).toHaveCount(before + 1);
 }
 
 // Attend le départ, puis tape le texte affiché (relu à chaque lettre : un
